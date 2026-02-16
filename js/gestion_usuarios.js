@@ -19,7 +19,23 @@ let companies = [
             { name: "María López", phone: "654987321", email: "maria@techsolutions.com", role: "Gerente" }
         ],
         createdAt: "2020-03-15",
-        activity: []
+        activity: [],
+        equipos: [
+            { id: 1, nombre: "PC-Dirección", usuario: "jgarcia", password: "Tech2024!", ip: "192.168.1.10", anydesk: "123456789" },
+            { id: 2, nombre: "PC-Gerencia", usuario: "mlopez", password: "Secure#456", ip: "192.168.1.11", anydesk: "987654321" }
+        ],
+        servidores: [
+            { id: 1, nombre: "SRV-Principal", ip: "192.168.1.5", usuario: "admin", password: "SrvPass2024!", so: "Windows Server 2022" }
+        ],
+        nas: [
+            { id: 1, nombre: "NAS-Backup", ip: "192.168.1.20", usuario: "admin", password: "NasSecure#2024", capacidad: "4TB" }
+        ],
+        redes: [
+            { id: 1, dispositivo: "Router Principal", ip: "192.168.1.1", usuario: "admin", password: "RouterPass!", modelo: "Cisco RV340" }
+        ],
+        licencias: [
+            { id: 1, software: "Microsoft 365 Business", usuarios: 15, vencimiento: "2025-12-31", clave: "XXXXX-XXXXX-XXXXX-XXXXX" }
+        ]
     },
     {
         id: 2,
@@ -35,7 +51,12 @@ let companies = [
             { name: "Carlos Ruiz", phone: "678123456", email: "carlos@reddigital.es", role: "Técnico" }
         ],
         createdAt: "2021-06-20",
-        activity: []
+        activity: [],
+        equipos: [],
+        servidores: [],
+        nas: [],
+        redes: [],
+        licencias: []
     },
     {
         id: 3,
@@ -51,7 +72,12 @@ let companies = [
             { name: "Ana Martínez", phone: "666777888", email: "ana@servidata.com", role: "Administración" }
         ],
         createdAt: "2019-01-10",
-        activity: []
+        activity: [],
+        equipos: [],
+        servidores: [],
+        nas: [],
+        redes: [],
+        licencias: []
     },
     {
         id: 4,
@@ -69,7 +95,12 @@ let companies = [
             { name: "Miguel Torres", phone: "600555666", email: "miguel@globaltech.es", role: "Técnico Senior" }
         ],
         createdAt: "2018-09-05",
-        activity: []
+        activity: [],
+        equipos: [],
+        servidores: [],
+        nas: [],
+        redes: [],
+        licencias: []
     }
 ];
 
@@ -124,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStats();
     setupNavigation();
     setupFormTabs();
+    setupITTabs();
 });
 
 // ============================================
@@ -561,65 +593,443 @@ function saveCompany() {
 // VER DETALLE DE EMPRESA
 // ============================================
 
+// Variable global para saber qué empresa estamos viendo
+let currentCompanyId = null;
+
 function viewCompany(id) {
+    currentCompanyId = id;
     const company = companies.find(c => c.id === id);
     if (!company) return;
     
-    document.getElementById('detailCompanyName').innerText = company.name;
-    document.getElementById('detailCif').innerText = company.cif;
-    document.getElementById('detailEmail').innerText = company.email;
-    document.getElementById('detailPhone').innerText = company.phone;
-    document.getElementById('detailAddress').innerText = company.address || 'No especificada';
-    document.getElementById('detailStatus').innerText = company.status;
-    document.getElementById('detailStatus').className = `status ${company.status.replace(' ', '-')}`;
+    document.getElementById('itModalCompanyName').innerText = company.name;
     
-    // Servicios
-    document.getElementById('detailServices').innerHTML = company.services.length > 0 
-        ? company.services.map(s => `<span class="service-tag">${s}</span>`).join('')
-        : '<span style="color: var(--gray)">Sin servicios activos</span>';
+    // Renderizar la primera pestaña (Equipos) por defecto
+    renderEquipos(id);
     
-    // Contactos
-    document.getElementById('detailContacts').innerHTML = company.contacts.length > 0
-        ? company.contacts.map(contact => `
-            <div class="detail-contact">
-                <div class="detail-contact-avatar">${contact.name.charAt(0)}</div>
-                <div class="detail-contact-info">
-                    <div class="detail-contact-name">${contact.name}</div>
-                    <div class="detail-contact-role">${contact.role}</div>
+    // Mostrar modal
+    document.getElementById('itInfraModal').style.display = 'flex';
+    
+    // Activar primera pestaña
+    document.querySelectorAll('.it-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.it-tab[data-tab="equipos"]').classList.add('active');
+}
+
+function closeITModal() {
+    document.getElementById('itInfraModal').style.display = 'none';
+    currentCompanyId = null;
+}
+
+// ============================================
+// PESTAÑAS DE INFRAESTRUCTURA IT
+// ============================================
+
+function setupITTabs() {
+    const tabs = document.querySelectorAll('.it-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Actualizar tabs activos
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Renderizar contenido según pestaña
+            if (currentCompanyId) {
+                switch(tabName) {
+                    case 'equipos':
+                        renderEquipos(currentCompanyId);
+                        break;
+                    case 'servidores':
+                        renderServidores(currentCompanyId);
+                        break;
+                    case 'nas':
+                        renderNAS(currentCompanyId);
+                        break;
+                    case 'redes':
+                        renderRedes(currentCompanyId);
+                        break;
+                    case 'licencias':
+                        renderLicencias(currentCompanyId);
+                        break;
+                }
+            }
+        });
+    });
+}
+
+// ============================================
+// RENDER EQUIPOS
+// ============================================
+
+function renderEquipos(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    if (!company) return;
+    
+    const container = document.getElementById('itContent');
+    
+    if (!company.equipos || company.equipos.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--gray);">
+                <i class="fas fa-desktop" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>No hay equipos registrados</p>
+                <button class="btn-primary" onclick="openAddEquipoModal()">
+                    <i class="fas fa-plus"></i> Añadir Primer Equipo
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3><i class="fas fa-desktop"></i> Equipos (Ordenadores)</h3>
+            <button class="btn-primary" onclick="openAddEquipoModal()">
+                <i class="fas fa-plus"></i> Añadir Equipo
+            </button>
+        </div>
+        <div class="it-items-grid">
+    `;
+    
+    company.equipos.forEach(equipo => {
+        html += `
+            <div class="it-item-card">
+                <div class="it-item-header">
+                    <h4><i class="fas fa-desktop"></i> ${equipo.nombre}</h4>
+                    <button class="btn-action btn-delete" onclick="deleteEquipo(${equipo.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <div class="detail-contact-contact">
-                    ${contact.email}<br>${contact.phone}
+                <div class="it-item-body">
+                    <div class="it-item-row">
+                        <span class="it-label">Usuario:</span>
+                        <span>${equipo.usuario}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Contraseña:</span>
+                        <span id="pass-equipo-${equipo.id}" class="password-hidden">••••••••</span>
+                        <button class="btn-icon" onclick="togglePassword('pass-equipo-${equipo.id}', '${equipo.password}')" title="Ver contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">IP:</span>
+                        <span>${equipo.ip}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">AnyDesk ID:</span>
+                        <span>${equipo.anydesk}</span>
+                    </div>
                 </div>
             </div>
-        `).join('')
-        : '<span style="color: var(--gray)">Sin contactos registrados</span>';
+        `;
+    });
     
-    // Contratos
-    const companyContracts = contracts.filter(c => c.companyId === id);
-    document.getElementById('detailContracts').innerHTML = companyContracts.length > 0
-        ? companyContracts.map(contract => `
-            <div class="detail-contract">
-                <div class="detail-contract-info">
-                    <div class="detail-contract-type">${contract.type}</div>
-                    <div class="detail-contract-dates">${formatDate(contract.startDate)} - ${formatDate(contract.endDate)}</div>
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ============================================
+// RENDER SERVIDORES
+// ============================================
+
+function renderServidores(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    if (!company) return;
+    
+    const container = document.getElementById('itContent');
+    
+    if (!company.servidores || company.servidores.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--gray);">
+                <i class="fas fa-server" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>No hay servidores registrados</p>
+                <button class="btn-primary" onclick="openAddServidorModal()">
+                    <i class="fas fa-plus"></i> Añadir Primer Servidor
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3><i class="fas fa-server"></i> Servidores</h3>
+            <button class="btn-primary" onclick="openAddServidorModal()">
+                <i class="fas fa-plus"></i> Añadir Servidor
+            </button>
+        </div>
+        <div class="it-items-grid">
+    `;
+    
+    company.servidores.forEach(servidor => {
+        html += `
+            <div class="it-item-card">
+                <div class="it-item-header">
+                    <h4><i class="fas fa-server"></i> ${servidor.nombre}</h4>
+                    <button class="btn-action btn-delete" onclick="deleteServidor(${servidor.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <span class="status ${contract.status.replace(' ', '-')}">${contract.status}</span>
+                <div class="it-item-body">
+                    <div class="it-item-row">
+                        <span class="it-label">IP:</span>
+                        <span>${servidor.ip}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Usuario:</span>
+                        <span>${servidor.usuario}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Contraseña:</span>
+                        <span id="pass-servidor-${servidor.id}" class="password-hidden">••••••••</span>
+                        <button class="btn-icon" onclick="togglePassword('pass-servidor-${servidor.id}', '${servidor.password}')" title="Ver contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Sistema Operativo:</span>
+                        <span>${servidor.so}</span>
+                    </div>
+                </div>
             </div>
-        `).join('')
-        : '<span style="color: var(--gray)">Sin contratos activos</span>';
+        `;
+    });
     
-    // Actividad
-    document.getElementById('detailActivity').innerHTML = company.activity && company.activity.length > 0
-        ? company.activity.slice(0, 10).map(act => `
-            <div class="detail-activity-item">
-                <i class="fas fa-circle"></i>
-                <span>${act.description}</span>
-                <span class="detail-activity-time">${act.date}</span>
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ============================================
+// RENDER NAS
+// ============================================
+
+function renderNAS(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    if (!company) return;
+    
+    const container = document.getElementById('itContent');
+    
+    if (!company.nas || company.nas.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--gray);">
+                <i class="fas fa-hdd" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>No hay dispositivos NAS registrados</p>
+                <button class="btn-primary" onclick="openAddNASModal()">
+                    <i class="fas fa-plus"></i> Añadir Primer NAS
+                </button>
             </div>
-        `).join('')
-        : '<span style="color: var(--gray)">Sin actividad reciente</span>';
+        `;
+        return;
+    }
     
-    document.getElementById('companyDetailModal').style.display = 'flex';
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3><i class="fas fa-hdd"></i> Dispositivos NAS</h3>
+            <button class="btn-primary" onclick="openAddNASModal()">
+                <i class="fas fa-plus"></i> Añadir NAS
+            </button>
+        </div>
+        <div class="it-items-grid">
+    `;
+    
+    company.nas.forEach(nas => {
+        html += `
+            <div class="it-item-card">
+                <div class="it-item-header">
+                    <h4><i class="fas fa-hdd"></i> ${nas.nombre}</h4>
+                    <button class="btn-action btn-delete" onclick="deleteNAS(${nas.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="it-item-body">
+                    <div class="it-item-row">
+                        <span class="it-label">IP:</span>
+                        <span>${nas.ip}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Usuario:</span>
+                        <span>${nas.usuario}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Contraseña:</span>
+                        <span id="pass-nas-${nas.id}" class="password-hidden">••••••••</span>
+                        <button class="btn-icon" onclick="togglePassword('pass-nas-${nas.id}', '${nas.password}')" title="Ver contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Capacidad:</span>
+                        <span>${nas.capacidad}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ============================================
+// RENDER REDES
+// ============================================
+
+function renderRedes(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    if (!company) return;
+    
+    const container = document.getElementById('itContent');
+    
+    if (!company.redes || company.redes.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--gray);">
+                <i class="fas fa-network-wired" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>No hay dispositivos de red registrados</p>
+                <button class="btn-primary" onclick="openAddRedModal()">
+                    <i class="fas fa-plus"></i> Añadir Primer Dispositivo
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3><i class="fas fa-network-wired"></i> Dispositivos de Red</h3>
+            <button class="btn-primary" onclick="openAddRedModal()">
+                <i class="fas fa-plus"></i> Añadir Dispositivo
+            </button>
+        </div>
+        <div class="it-items-grid">
+    `;
+    
+    company.redes.forEach(red => {
+        html += `
+            <div class="it-item-card">
+                <div class="it-item-header">
+                    <h4><i class="fas fa-network-wired"></i> ${red.dispositivo}</h4>
+                    <button class="btn-action btn-delete" onclick="deleteRed(${red.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="it-item-body">
+                    <div class="it-item-row">
+                        <span class="it-label">IP:</span>
+                        <span>${red.ip}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Usuario:</span>
+                        <span>${red.usuario}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Contraseña:</span>
+                        <span id="pass-red-${red.id}" class="password-hidden">••••••••</span>
+                        <button class="btn-icon" onclick="togglePassword('pass-red-${red.id}', '${red.password}')" title="Ver contraseña">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Modelo:</span>
+                        <span>${red.modelo}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ============================================
+// RENDER LICENCIAS
+// ============================================
+
+function renderLicencias(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    if (!company) return;
+    
+    const container = document.getElementById('itContent');
+    
+    if (!company.licencias || company.licencias.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--gray);">
+                <i class="fas fa-key" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                <p>No hay licencias registradas</p>
+                <button class="btn-primary" onclick="openAddLicenciaModal()">
+                    <i class="fas fa-plus"></i> Añadir Primera Licencia
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3><i class="fas fa-key"></i> Licencias de Software</h3>
+            <button class="btn-primary" onclick="openAddLicenciaModal()">
+                <i class="fas fa-plus"></i> Añadir Licencia
+            </button>
+        </div>
+        <div class="it-items-grid">
+    `;
+    
+    company.licencias.forEach(licencia => {
+        html += `
+            <div class="it-item-card">
+                <div class="it-item-header">
+                    <h4><i class="fas fa-key"></i> ${licencia.software}</h4>
+                    <button class="btn-action btn-delete" onclick="deleteLicencia(${licencia.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="it-item-body">
+                    <div class="it-item-row">
+                        <span class="it-label">Usuarios/Puestos:</span>
+                        <span>${licencia.usuarios}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Vencimiento:</span>
+                        <span>${formatDate(licencia.vencimiento)}</span>
+                    </div>
+                    <div class="it-item-row">
+                        <span class="it-label">Clave de Licencia:</span>
+                        <span id="clave-licencia-${licencia.id}" class="password-hidden">••••••••••••••••</span>
+                        <button class="btn-icon" onclick="togglePassword('clave-licencia-${licencia.id}', '${licencia.clave}')" title="Ver clave">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ============================================
+// TOGGLE PASSWORD
+// ============================================
+
+function togglePassword(elementId, password) {
+    const element = document.getElementById(elementId);
+    const button = element.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (element.classList.contains('password-hidden')) {
+        element.innerText = password;
+        element.classList.remove('password-hidden');
+        element.classList.add('password-visible');
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        element.innerText = '••••••••';
+        element.classList.remove('password-visible');
+        element.classList.add('password-hidden');
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
 }
 
 function closeDetailModal() {
@@ -871,6 +1281,346 @@ function deleteTicket(id) {
         showToast('success', 'Eliminado', 'Ticket eliminado');
         renderTickets();
     }
+}
+
+// ============================================
+// GESTIÓN DE INFRAESTRUCTURA IT
+// ============================================
+
+// EQUIPOS
+function openAddEquipoModal() {
+    document.getElementById('itItemModal').style.display = 'flex';
+    document.getElementById('itItemModalTitle').innerText = 'Añadir Equipo';
+    document.getElementById('itItemForm').innerHTML = `
+        <div class="form-group">
+            <label>Nombre del Equipo *</label>
+            <input type="text" id="equipoNombre" placeholder="Ej: PC-Dirección" required>
+        </div>
+        <div class="form-group">
+            <label>Usuario *</label>
+            <input type="text" id="equipoUsuario" placeholder="Ej: jgarcia" required>
+        </div>
+        <div class="form-group">
+            <label>Contraseña *</label>
+            <input type="text" id="equipoPassword" placeholder="Contraseña del equipo" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Dirección IP *</label>
+                <input type="text" id="equipoIP" placeholder="192.168.1.10" required>
+            </div>
+            <div class="form-group">
+                <label>AnyDesk ID *</label>
+                <input type="text" id="equipoAnydesk" placeholder="123456789" required>
+            </div>
+        </div>
+    `;
+    document.getElementById('saveITItemBtn').onclick = saveEquipo;
+}
+
+function saveEquipo() {
+    const nombre = document.getElementById('equipoNombre').value.trim();
+    const usuario = document.getElementById('equipoUsuario').value.trim();
+    const password = document.getElementById('equipoPassword').value.trim();
+    const ip = document.getElementById('equipoIP').value.trim();
+    const anydesk = document.getElementById('equipoAnydesk').value.trim();
+    
+    if (!nombre || !usuario || !password || !ip || !anydesk) {
+        showToast('error', 'Error', 'Por favor completa todos los campos');
+        return;
+    }
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    if (!company.equipos) company.equipos = [];
+    
+    company.equipos.push({
+        id: Date.now(),
+        nombre, usuario, password, ip, anydesk
+    });
+    
+    showToast('success', 'Éxito', 'Equipo añadido correctamente');
+    closeITItemModal();
+    renderEquipos(currentCompanyId);
+}
+
+function deleteEquipo(equipoId) {
+    if (!confirm('¿Eliminar este equipo?')) return;
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    company.equipos = company.equipos.filter(e => e.id !== equipoId);
+    showToast('success', 'Eliminado', 'Equipo eliminado correctamente');
+    renderEquipos(currentCompanyId);
+}
+
+// SERVIDORES
+function openAddServidorModal() {
+    document.getElementById('itItemModal').style.display = 'flex';
+    document.getElementById('itItemModalTitle').innerText = 'Añadir Servidor';
+    document.getElementById('itItemForm').innerHTML = `
+        <div class="form-group">
+            <label>Nombre del Servidor *</label>
+            <input type="text" id="servidorNombre" placeholder="Ej: SRV-Principal" required>
+        </div>
+        <div class="form-group">
+            <label>Dirección IP *</label>
+            <input type="text" id="servidorIP" placeholder="192.168.1.5" required>
+        </div>
+        <div class="form-group">
+            <label>Usuario *</label>
+            <input type="text" id="servidorUsuario" placeholder="admin" required>
+        </div>
+        <div class="form-group">
+            <label>Contraseña *</label>
+            <input type="text" id="servidorPassword" placeholder="Contraseña del servidor" required>
+        </div>
+        <div class="form-group">
+            <label>Sistema Operativo *</label>
+            <input type="text" id="servidorSO" placeholder="Ej: Windows Server 2022" required>
+        </div>
+    `;
+    document.getElementById('saveITItemBtn').onclick = saveServidor;
+}
+
+function saveServidor() {
+    const nombre = document.getElementById('servidorNombre').value.trim();
+    const ip = document.getElementById('servidorIP').value.trim();
+    const usuario = document.getElementById('servidorUsuario').value.trim();
+    const password = document.getElementById('servidorPassword').value.trim();
+    const so = document.getElementById('servidorSO').value.trim();
+    
+    if (!nombre || !ip || !usuario || !password || !so) {
+        showToast('error', 'Error', 'Por favor completa todos los campos');
+        return;
+    }
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    if (!company.servidores) company.servidores = [];
+    
+    company.servidores.push({
+        id: Date.now(),
+        nombre, ip, usuario, password, so
+    });
+    
+    showToast('success', 'Éxito', 'Servidor añadido correctamente');
+    closeITItemModal();
+    renderServidores(currentCompanyId);
+}
+
+function deleteServidor(servidorId) {
+    if (!confirm('¿Eliminar este servidor?')) return;
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    company.servidores = company.servidores.filter(s => s.id !== servidorId);
+    showToast('success', 'Eliminado', 'Servidor eliminado correctamente');
+    renderServidores(currentCompanyId);
+}
+
+// NAS
+function openAddNASModal() {
+    document.getElementById('itItemModal').style.display = 'flex';
+    document.getElementById('itItemModalTitle').innerText = 'Añadir NAS';
+    document.getElementById('itItemForm').innerHTML = `
+        <div class="form-group">
+            <label>Nombre del NAS *</label>
+            <input type="text" id="nasNombre" placeholder="Ej: NAS-Backup" required>
+        </div>
+        <div class="form-group">
+            <label>Dirección IP *</label>
+            <input type="text" id="nasIP" placeholder="192.168.1.20" required>
+        </div>
+        <div class="form-group">
+            <label>Usuario *</label>
+            <input type="text" id="nasUsuario" placeholder="admin" required>
+        </div>
+        <div class="form-group">
+            <label>Contraseña *</label>
+            <input type="text" id="nasPassword" placeholder="Contraseña del NAS" required>
+        </div>
+        <div class="form-group">
+            <label>Capacidad *</label>
+            <input type="text" id="nasCapacidad" placeholder="Ej: 4TB, 8TB" required>
+        </div>
+    `;
+    document.getElementById('saveITItemBtn').onclick = saveNAS;
+}
+
+function saveNAS() {
+    const nombre = document.getElementById('nasNombre').value.trim();
+    const ip = document.getElementById('nasIP').value.trim();
+    const usuario = document.getElementById('nasUsuario').value.trim();
+    const password = document.getElementById('nasPassword').value.trim();
+    const capacidad = document.getElementById('nasCapacidad').value.trim();
+    
+    if (!nombre || !ip || !usuario || !password || !capacidad) {
+        showToast('error', 'Error', 'Por favor completa todos los campos');
+        return;
+    }
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    if (!company.nas) company.nas = [];
+    
+    company.nas.push({
+        id: Date.now(),
+        nombre, ip, usuario, password, capacidad
+    });
+    
+    showToast('success', 'Éxito', 'NAS añadido correctamente');
+    closeITItemModal();
+    renderNAS(currentCompanyId);
+}
+
+function deleteNAS(nasId) {
+    if (!confirm('¿Eliminar este NAS?')) return;
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    company.nas = company.nas.filter(n => n.id !== nasId);
+    showToast('success', 'Eliminado', 'NAS eliminado correctamente');
+    renderNAS(currentCompanyId);
+}
+
+// REDES
+function openAddRedModal() {
+    document.getElementById('itItemModal').style.display = 'flex';
+    document.getElementById('itItemModalTitle').innerText = 'Añadir Dispositivo de Red';
+    document.getElementById('itItemForm').innerHTML = `
+        <div class="form-group">
+            <label>Nombre del Dispositivo *</label>
+            <input type="text" id="redDispositivo" placeholder="Ej: Router Principal" required>
+        </div>
+        <div class="form-group">
+            <label>Dirección IP *</label>
+            <input type="text" id="redIP" placeholder="192.168.1.1" required>
+        </div>
+        <div class="form-group">
+            <label>Usuario *</label>
+            <input type="text" id="redUsuario" placeholder="admin" required>
+        </div>
+        <div class="form-group">
+            <label>Contraseña *</label>
+            <input type="text" id="redPassword" placeholder="Contraseña del dispositivo" required>
+        </div>
+        <div class="form-group">
+            <label>Modelo *</label>
+            <input type="text" id="redModelo" placeholder="Ej: Cisco RV340" required>
+        </div>
+    `;
+    document.getElementById('saveITItemBtn').onclick = saveRed;
+}
+
+function saveRed() {
+    const dispositivo = document.getElementById('redDispositivo').value.trim();
+    const ip = document.getElementById('redIP').value.trim();
+    const usuario = document.getElementById('redUsuario').value.trim();
+    const password = document.getElementById('redPassword').value.trim();
+    const modelo = document.getElementById('redModelo').value.trim();
+    
+    if (!dispositivo || !ip || !usuario || !password || !modelo) {
+        showToast('error', 'Error', 'Por favor completa todos los campos');
+        return;
+    }
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    if (!company.redes) company.redes = [];
+    
+    company.redes.push({
+        id: Date.now(),
+        dispositivo, ip, usuario, password, modelo
+    });
+    
+    showToast('success', 'Éxito', 'Dispositivo añadido correctamente');
+    closeITItemModal();
+    renderRedes(currentCompanyId);
+}
+
+function deleteRed(redId) {
+    if (!confirm('¿Eliminar este dispositivo?')) return;
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    company.redes = company.redes.filter(r => r.id !== redId);
+    showToast('success', 'Eliminado', 'Dispositivo eliminado correctamente');
+    renderRedes(currentCompanyId);
+}
+
+// LICENCIAS
+function openAddLicenciaModal() {
+    document.getElementById('itItemModal').style.display = 'flex';
+    document.getElementById('itItemModalTitle').innerText = 'Añadir Licencia';
+    document.getElementById('itItemForm').innerHTML = `
+        <div class="form-group">
+            <label>Software *</label>
+            <input type="text" id="licenciaSoftware" placeholder="Ej: Microsoft 365 Business" required>
+        </div>
+        <div class="form-group">
+            <label>Número de Usuarios/Puestos *</label>
+            <input type="number" id="licenciaUsuarios" placeholder="Ej: 15" required>
+        </div>
+        <div class="form-group">
+            <label>Fecha de Vencimiento *</label>
+            <input type="date" id="licenciaVencimiento" required>
+        </div>
+        <div class="form-group">
+            <label>Clave de Licencia *</label>
+            <input type="text" id="licenciaClave" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" required>
+        </div>
+    `;
+    document.getElementById('saveITItemBtn').onclick = saveLicencia;
+}
+
+function saveLicencia() {
+    const software = document.getElementById('licenciaSoftware').value.trim();
+    const usuarios = parseInt(document.getElementById('licenciaUsuarios').value);
+    const vencimiento = document.getElementById('licenciaVencimiento').value;
+    const clave = document.getElementById('licenciaClave').value.trim();
+    
+    if (!software || !usuarios || !vencimiento || !clave) {
+        showToast('error', 'Error', 'Por favor completa todos los campos');
+        return;
+    }
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    if (!company.licencias) company.licencias = [];
+    
+    company.licencias.push({
+        id: Date.now(),
+        software, usuarios, vencimiento, clave
+    });
+    
+    showToast('success', 'Éxito', 'Licencia añadida correctamente');
+    closeITItemModal();
+    renderLicencias(currentCompanyId);
+}
+
+function deleteLicencia(licenciaId) {
+    if (!confirm('¿Eliminar esta licencia?')) return;
+    
+    const company = companies.find(c => c.id === currentCompanyId);
+    if (!company) return;
+    
+    company.licencias = company.licencias.filter(l => l.id !== licenciaId);
+    showToast('success', 'Eliminado', 'Licencia eliminada correctamente');
+    renderLicencias(currentCompanyId);
+}
+
+function closeITItemModal() {
+    document.getElementById('itItemModal').style.display = 'none';
 }
 
 // ============================================

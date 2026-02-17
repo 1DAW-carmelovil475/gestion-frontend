@@ -112,10 +112,17 @@ function renderCompanies() {
 
     table.innerHTML = paginated.map(c => `
         <tr>
+<<<<<<< HEAD
             <td onclick="viewCompany('${c.id}')"><strong>${c.nombre}</strong></td>
             <td>${c.cif || '—'}</td>
             <td>${c.email || '—'}</td>
             <td>${c.telefono || '—'}</td>
+=======
+            <td onclick="viewCompany(${c.id})"><strong>${c.name}</strong></td>
+            <td>${c.cif}</td>
+            <td>${c.email}</td>
+            <td>${c.phone}</td>
+>>>>>>> d676871281953cb0be7de57e3c94a9ec8e1a40f3
             <td>
                 <div class="services-tags">
                     ${(c.servicios || []).map(s => `<span class="service-tag">${s}</span>`).join('')}

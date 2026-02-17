@@ -112,17 +112,10 @@ function renderCompanies() {
 
     table.innerHTML = paginated.map(c => `
         <tr>
-<<<<<<< HEAD
             <td onclick="viewCompany('${c.id}')"><strong>${c.nombre}</strong></td>
             <td>${c.cif || '—'}</td>
             <td>${c.email || '—'}</td>
             <td>${c.telefono || '—'}</td>
-=======
-            <td onclick="viewCompany(${c.id})"><strong>${c.name}</strong></td>
-            <td>${c.cif}</td>
-            <td>${c.email}</td>
-            <td>${c.phone}</td>
->>>>>>> d676871281953cb0be7de57e3c94a9ec8e1a40f3
             <td>
                 <div class="services-tags">
                     ${(c.servicios || []).map(s => `<span class="service-tag">${s}</span>`).join('')}
@@ -308,6 +301,78 @@ function exportToExcel() {
 
     showToast('success', 'Exportado', `${companies.length} empresas exportadas`);
 }
+
+// ============================================
+// IMPORTAR EXCEL
+// ============================================
+
+function importExcel() {
+    document.getElementById('excelFileInput').click();
+}
+
+document.getElementById('excelFileInput').addEventListener('change', handleExcelImport);
+
+function handleExcelImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async function (e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            if (!jsonData.length) {
+                showToast('warning', 'Vacío', 'El archivo no contiene datos');
+                return;
+            }
+
+            showLoading(true);
+
+            for (const row of jsonData) {
+                const payload = {
+                    nombre: row['Nombre'] || '',
+                    cif: row['CIF'] || '',
+                    email: row['Email'] || null,
+                    telefono: row['Teléfono'] || null,
+                    direccion: row['Dirección'] || null,
+                    estado: row['Estado'] || 'Activo',
+                    servicios: row['Servicios']
+                        ? row['Servicios'].split(',').map(s => s.trim())
+                        : []
+                };
+
+                if (!payload.nombre || !payload.cif) continue;
+
+                await apiFetch('/api/empresas', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            showToast('success', 'Importado', `${jsonData.length} empresas importadas`);
+
+            await loadEmpresas();
+            renderCompanies();
+
+        } catch (err) {
+            console.error(err);
+            showToast('error', 'Error', 'No se pudo importar el archivo');
+        } finally {
+            showLoading(false);
+            event.target.value = '';
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
 
 
 // ============================================

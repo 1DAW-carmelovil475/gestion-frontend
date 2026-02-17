@@ -57,6 +57,12 @@
             <button id="exportBtn" class="btn-secondary" onclick="exportToExcel()">
                 <i class="fas fa-file-excel"></i> Exportar Excel
             </button>
+            <button class="btn-secondary" onclick="importExcel()">
+                <i class="fas fa-file-import"></i> Importar Excel
+            </button>
+
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none">
+
             <button id="addCompanyBtn" class="btn-primary">
                 <i class="fas fa-plus"></i> Nueva Empresa
             </button>

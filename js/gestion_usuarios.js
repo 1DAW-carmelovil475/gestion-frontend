@@ -1,7 +1,6 @@
 // ============================================
 // HOLA INFORMÁTICA — GESTIÓN FRONTEND
 // config.js debe cargarse antes que este archivo
-// xlsx se carga globalmente desde CDN en el HTML
 // ============================================
 
 let companies  = [];
@@ -11,7 +10,11 @@ let tickets    = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 let currentCompanyId = null;
+<<<<<<< HEAD
 let itSearchTerm = '';
+=======
+let previousSection = 'empresas'; // para el botón volver
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
 
 // ============================================
 // INICIALIZACIÓN
@@ -51,16 +54,41 @@ async function loadTickets()   { tickets   = await apiFetch('/api/tickets'); }
 // NAVEGACIÓN
 // ============================================
 function setupNavigation() {
+    // Top nav (desktop)
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function (e) {
             e.preventDefault();
             const sectionId = this.getAttribute('data-section');
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
+            navigateTo(sectionId);
         });
     });
+
+    // Bottom nav (mobile)
+    document.querySelectorAll('.bottom-nav-item').forEach(item => {
+        item.addEventListener('click', function () {
+            const sectionId = this.getAttribute('data-section');
+            navigateTo(sectionId);
+        });
+    });
+}
+
+function navigateTo(sectionId) {
+    // Actualizar nav links top
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    const activeLink = document.querySelector(`.nav-link[data-section="${sectionId}"]`);
+    if (activeLink) activeLink.classList.add('active');
+
+    // Actualizar bottom nav
+    document.querySelectorAll('.bottom-nav-item').forEach(l => l.classList.remove('active'));
+    const activeBottom = document.querySelector(`.bottom-nav-item[data-section="${sectionId}"]`);
+    if (activeBottom) activeBottom.classList.add('active');
+
+    // Mostrar sección
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(sectionId);
+    if (target) target.classList.add('active');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function setupFormTabs() {
@@ -81,8 +109,7 @@ function setupFormTabs() {
 // RENDERIZADO — EMPRESAS
 // ============================================
 function renderCompanies() {
-    const table       = document.getElementById('companyTable');
-    const searchTerm  = (document.getElementById('searchInput').value || '').toLowerCase();
+    const searchTerm    = (document.getElementById('searchInput').value || '').toLowerCase();
     const statusFilter  = document.getElementById('statusFilter').value;
     const serviceFilter = document.getElementById('serviceFilter').value;
 
@@ -101,32 +128,72 @@ function renderCompanies() {
     const start = (currentPage - 1) * itemsPerPage;
     const paginated = filtered.slice(start, start + itemsPerPage);
 
-    if (!paginated.length) {
-        table.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray)">
-            <i class="fas fa-search" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:10px"></i>
-            No se encontraron empresas</td></tr>`;
-        document.getElementById('pagination').innerHTML = '';
-        return;
+    const emptyHtml = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray)">
+        <i class="fas fa-search" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:10px"></i>
+        No se encontraron empresas</td></tr>`;
+
+    // — Tabla desktop —
+    const table = document.getElementById('companyTable');
+    if (table) {
+        if (!paginated.length) {
+            table.innerHTML = emptyHtml;
+        } else {
+            table.innerHTML = paginated.map(c => `
+                <tr>
+                    <td onclick="viewCompany('${c.id}')" style="cursor:pointer"><strong>${c.nombre}</strong></td>
+                    <td>${c.cif || '—'}</td>
+                    <td>${c.email || '—'}</td>
+                    <td>${c.telefono || '—'}</td>
+                    <td>
+                        <div class="services-tags">
+                            ${(c.servicios || []).map(s => `<span class="service-tag">${s}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td><span class="status ${(c.estado||'').replace(/ /g,'-')}">${c.estado || '—'}</span></td>
+                    <td>
+                        <button class="btn-action btn-view"   onclick="viewCompany('${c.id}')"   title="Ver IT"><i class="fas fa-server"></i></button>
+                        <button class="btn-action btn-edit"   onclick="editCompany('${c.id}')"   title="Editar"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteCompany('${c.id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`).join('');
+        }
     }
 
-    table.innerHTML = paginated.map(c => `
-        <tr>
-            <td onclick="viewCompany('${c.id}')"><strong>${c.nombre}</strong></td>
-            <td>${c.cif || '—'}</td>
-            <td>${c.email || '—'}</td>
-            <td>${c.telefono || '—'}</td>
-            <td>
-                <div class="services-tags">
-                    ${(c.servicios || []).map(s => `<span class="service-tag">${s}</span>`).join('')}
-                </div>
-            </td>
-            <td><span class="status ${(c.estado||'').replace(/ /g,'-')}">${c.estado || '—'}</span></td>
-            <td>
-                <button class="btn-action btn-view"   onclick="viewCompany('${c.id}')"   title="Ver IT"><i class="fas fa-server"></i></button>
-                <button class="btn-action btn-edit"   onclick="editCompany('${c.id}')"   title="Editar"><i class="fas fa-edit"></i></button>
-                <button class="btn-action btn-delete" onclick="deleteCompany('${c.id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>`).join('');
+    // — Cards móvil —
+    const cardsContainer = document.getElementById('companyCards');
+    if (cardsContainer) {
+        if (!paginated.length) {
+            cardsContainer.innerHTML = `<div style="text-align:center;padding:40px;color:var(--gray)">
+                <i class="fas fa-search" style="font-size:2.5rem;opacity:0.25;display:block;margin-bottom:12px"></i>
+                <p>No se encontraron empresas</p></div>`;
+        } else {
+            cardsContainer.innerHTML = paginated.map(c => `
+                <div class="company-card">
+                    <div class="company-card-header" onclick="viewCompany('${c.id}')">
+                        <div class="company-card-header-left">
+                            <div class="company-card-name">${c.nombre}</div>
+                            <div class="company-card-cif">${c.cif || '—'}</div>
+                        </div>
+                        <span class="status ${(c.estado||'').replace(/ /g,'-')}">${c.estado || '—'}</span>
+                    </div>
+                    <div class="company-card-body">
+                        <div class="company-card-info">
+                            ${c.email ? `<div class="company-card-info-item"><i class="fas fa-envelope"></i> ${c.email}</div>` : ''}
+                            ${c.telefono ? `<div class="company-card-info-item"><i class="fas fa-phone"></i> ${c.telefono}</div>` : ''}
+                        </div>
+                        ${(c.servicios||[]).length ? `
+                            <div class="services-tags" style="margin-bottom:12px">
+                                ${(c.servicios||[]).map(s => `<span class="service-tag">${s}</span>`).join('')}
+                            </div>` : ''}
+                        <div class="company-card-actions">
+                            <button class="btn-action btn-view" onclick="viewCompany('${c.id}')"><i class="fas fa-server"></i> Ver IT</button>
+                            <button class="btn-action btn-edit" onclick="editCompany('${c.id}')"><i class="fas fa-edit"></i> Editar</button>
+                            <button class="btn-action btn-delete" onclick="deleteCompany('${c.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+    }
 
     renderPagination(totalPages);
     updateStats();
@@ -149,11 +216,16 @@ function goToPage(page) { currentPage = page; renderCompanies(); }
 // ============================================
 function renderContracts() {
     const table = document.getElementById('contractsTable');
+    const cards = document.getElementById('contractsCards');
+    const emptyMsg = 'Sin contratos registrados';
+
     if (!contracts.length) {
-        table.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray)">Sin contratos registrados</td></tr>`;
+        if (table) table.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray)">${emptyMsg}</td></tr>`;
+        if (cards) cards.innerHTML = `<div style="text-align:center;padding:40px;color:var(--gray)">${emptyMsg}</div>`;
         updateContractStats();
         return;
     }
+<<<<<<< HEAD
     table.innerHTML = contracts.map(c => `
         <tr style="cursor:pointer" onclick="viewContractDetail('${c.id}')">
             <td><strong>${c.empresas?.nombre || '—'}</strong></td>
@@ -168,6 +240,46 @@ function renderContracts() {
                 </button>
             </td>
         </tr>`).join('');
+=======
+
+    if (table) {
+        table.innerHTML = contracts.map(c => `
+            <tr>
+                <td><strong>${c.empresas?.nombre || '—'}</strong></td>
+                <td>${c.tipo}</td>
+                <td>${formatDate(c.fecha_inicio)}</td>
+                <td>${formatDate(c.fecha_fin)}</td>
+                <td><strong>${parseFloat(c.valor || 0).toLocaleString('es-ES')}€</strong></td>
+                <td><span class="status ${(c.estado||'').replace(/ /g,'-')}">${c.estado}</span></td>
+                <td>
+                    <button class="btn-action btn-delete" onclick="deleteContract('${c.id}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`).join('');
+    }
+
+    if (cards) {
+        cards.innerHTML = contracts.map(c => `
+            <div class="data-card">
+                <div class="data-card-header">
+                    <div>
+                        <div class="data-card-title">${c.empresas?.nombre || '—'}</div>
+                        <div class="data-card-subtitle">${c.tipo}</div>
+                    </div>
+                    <span class="status ${(c.estado||'').replace(/ /g,'-')}">${c.estado}</span>
+                </div>
+                <div class="data-card-meta">
+                    <span><i class="fas fa-calendar-alt"></i> ${formatDate(c.fecha_inicio)} → ${formatDate(c.fecha_fin)}</span>
+                    <span><i class="fas fa-euro-sign"></i> ${parseFloat(c.valor||0).toLocaleString('es-ES')}€/año</span>
+                </div>
+                <div class="data-card-actions">
+                    <button class="btn-action btn-delete" onclick="deleteContract('${c.id}')"><i class="fas fa-trash"></i> Eliminar</button>
+                </div>
+            </div>`).join('');
+    }
+
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
     updateContractStats();
 }
 
@@ -176,11 +288,15 @@ function renderContracts() {
 // ============================================
 function renderInvoices() {
     const table = document.getElementById('invoicesTable');
+    const cards = document.getElementById('invoicesCards');
+
     if (!invoices.length) {
-        table.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--gray)">Sin facturas registradas</td></tr>`;
+        if (table) table.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--gray)">Sin facturas registradas</td></tr>`;
+        if (cards) cards.innerHTML = `<div style="text-align:center;padding:40px;color:var(--gray)">Sin facturas registradas</div>`;
         updateInvoiceStats();
         return;
     }
+<<<<<<< HEAD
     table.innerHTML = invoices.map(f => `
         <tr style="cursor:pointer" onclick="viewInvoiceDetail('${f.id}')">
             <td><strong>${f.numero}</strong></td>
@@ -194,6 +310,45 @@ function renderInvoices() {
                 </button>
             </td>
         </tr>`).join('');
+=======
+
+    if (table) {
+        table.innerHTML = invoices.map(f => `
+            <tr>
+                <td><strong>${f.numero}</strong></td>
+                <td>${f.empresas?.nombre || '—'}</td>
+                <td>${formatDate(f.fecha)}</td>
+                <td><strong>${parseFloat(f.importe || 0).toFixed(2)}€</strong></td>
+                <td><span class="status ${f.estado}">${f.estado}</span></td>
+                <td>
+                    <button class="btn-action btn-delete" onclick="deleteInvoice('${f.id}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`).join('');
+    }
+
+    if (cards) {
+        cards.innerHTML = invoices.map(f => `
+            <div class="data-card">
+                <div class="data-card-header">
+                    <div>
+                        <div class="data-card-title">${f.numero}</div>
+                        <div class="data-card-subtitle">${f.empresas?.nombre || '—'}</div>
+                    </div>
+                    <span class="status ${f.estado}">${f.estado}</span>
+                </div>
+                <div class="data-card-meta">
+                    <span><i class="fas fa-calendar-alt"></i> ${formatDate(f.fecha)}</span>
+                    <span><i class="fas fa-euro-sign"></i> ${parseFloat(f.importe||0).toFixed(2)}€</span>
+                </div>
+                <div class="data-card-actions">
+                    <button class="btn-action btn-delete" onclick="deleteInvoice('${f.id}')"><i class="fas fa-trash"></i> Eliminar</button>
+                </div>
+            </div>`).join('');
+    }
+
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
     updateInvoiceStats();
 }
 
@@ -202,11 +357,15 @@ function renderInvoices() {
 // ============================================
 function renderTickets() {
     const table = document.getElementById('ticketsTable');
+    const cards = document.getElementById('ticketsCards');
+
     if (!tickets.length) {
-        table.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray)">Sin tickets registrados</td></tr>`;
+        if (table) table.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray)">Sin tickets registrados</td></tr>`;
+        if (cards) cards.innerHTML = `<div style="text-align:center;padding:40px;color:var(--gray)">Sin tickets registrados</div>`;
         updateTicketStats();
         return;
     }
+<<<<<<< HEAD
     table.innerHTML = tickets.map(t => `
         <tr style="cursor:pointer" onclick="viewTicketDetail('${t.id}')">
             <td><strong>#${(t.id || '').substring(0,8)}</strong></td>
@@ -220,6 +379,46 @@ function renderTickets() {
                 <button class="btn-action btn-delete" onclick="deleteTicket('${t.id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
             </td>
         </tr>`).join('');
+=======
+
+    if (table) {
+        table.innerHTML = tickets.map(t => `
+            <tr>
+                <td><strong>#${(t.id || '').substring(0,8)}</strong></td>
+                <td>${t.empresas?.nombre || '—'}</td>
+                <td>${t.asunto}</td>
+                <td><span class="status Prioridad-${t.prioridad}">${t.prioridad}</span></td>
+                <td><span class="status ${(t.estado||'').replace(/ /g,'-')}">${t.estado}</span></td>
+                <td>${formatDate(t.created_at)}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="changeTicketStatus('${t.id}','${t.estado}')" title="Cambiar estado"><i class="fas fa-exchange-alt"></i></button>
+                    <button class="btn-action btn-delete" onclick="deleteTicket('${t.id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+    }
+
+    if (cards) {
+        cards.innerHTML = tickets.map(t => `
+            <div class="data-card">
+                <div class="data-card-header">
+                    <div>
+                        <div class="data-card-title">${t.asunto}</div>
+                        <div class="data-card-subtitle">${t.empresas?.nombre || '—'}</div>
+                    </div>
+                    <span class="status ${(t.estado||'').replace(/ /g,'-')}">${t.estado}</span>
+                </div>
+                <div class="data-card-meta">
+                    <span><i class="fas fa-flag"></i> <span class="status Prioridad-${t.prioridad}" style="padding:2px 8px;font-size:0.72rem">${t.prioridad}</span></span>
+                    <span><i class="fas fa-calendar-alt"></i> ${formatDate(t.created_at)}</span>
+                </div>
+                <div class="data-card-actions">
+                    <button class="btn-action btn-edit" onclick="changeTicketStatus('${t.id}','${t.estado}')"><i class="fas fa-exchange-alt"></i> Estado</button>
+                    <button class="btn-action btn-delete" onclick="deleteTicket('${t.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`).join('');
+    }
+
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
     updateTicketStats();
 }
 
@@ -430,33 +629,33 @@ function updateTicketStats() {
 }
 
 // ============================================
-// EXPORTAR EXCEL
+// EXPORTAR / IMPORTAR EXCEL
 // ============================================
 function exportToExcel() {
     if (!companies || companies.length === 0) {
         showToast('warning', 'Sin datos', 'No hay empresas para exportar');
         return;
     }
-
     const data = companies.map(c => ({
-        Nombre: c.nombre || '',
-        CIF: c.cif || '',
-        Email: c.email || '',
-        Teléfono: c.telefono || '',
-        Dirección: c.direccion || '',
+        Nombre: c.nombre || '', CIF: c.cif || '', Email: c.email || '',
+        Teléfono: c.telefono || '', Dirección: c.direccion || '',
         Estado: c.estado || '',
         Servicios: Array.isArray(c.servicios) ? c.servicios.join(', ') : ''
     }));
-
     const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
+    const workbook  = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Empresas");
     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+<<<<<<< HEAD
     const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+=======
+    const blob  = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `empresas_${new Date().toISOString().split('T')[0]}.xlsx`;
+<<<<<<< HEAD
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -467,6 +666,13 @@ function exportToExcel() {
 // ============================================
 // IMPORTAR EXCEL
 // ============================================
+=======
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('success', 'Exportado', `${companies.length} empresas exportadas`);
+}
+
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
 function importExcel() {
     document.getElementById('excelFileInput').click();
 }
@@ -481,33 +687,46 @@ function handleExcelImport(event) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
+<<<<<<< HEAD
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
+=======
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             if (!jsonData.length) { showToast('warning', 'Vacío', 'El archivo no contiene datos'); return; }
             showLoading(true);
             for (const row of jsonData) {
                 const payload = {
+<<<<<<< HEAD
                     nombre: row['Nombre'] || '',
                     cif: row['CIF'] || '',
                     email: row['Email'] || null,
                     telefono: row['Teléfono'] || null,
                     direccion: row['Dirección'] || null,
                     estado: row['Estado'] || 'Activo',
+=======
+                    nombre: row['Nombre'] || '', cif: row['CIF'] || '',
+                    email: row['Email'] || null, telefono: row['Teléfono'] || null,
+                    direccion: row['Dirección'] || null, estado: row['Estado'] || 'Activo',
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
                     servicios: row['Servicios'] ? row['Servicios'].split(',').map(s => s.trim()) : []
                 };
                 if (!payload.nombre || !payload.cif) continue;
                 await apiFetch('/api/empresas', { method: 'POST', body: JSON.stringify(payload) });
             }
             showToast('success', 'Importado', `${jsonData.length} empresas importadas`);
+<<<<<<< HEAD
             await loadEmpresas();
             renderCompanies();
+=======
+            await loadEmpresas(); renderCompanies();
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
         } catch (err) {
             console.error(err);
             showToast('error', 'Error', 'No se pudo importar el archivo');
         } finally {
-            showLoading(false);
-            event.target.value = '';
+            showLoading(false); event.target.value = '';
         }
     };
     reader.readAsArrayBuffer(file);
@@ -580,7 +799,7 @@ async function saveCompany() {
     try {
         if (id) {
             await apiFetch(`/api/empresas/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-            showToast('success', 'Actualizado', 'Empresa actualizada correctamente');
+            showToast('success', 'Actualizado', 'Empresa actualizada');
         } else {
             await apiFetch('/api/empresas', { method: 'POST', body: JSON.stringify(payload) });
             showToast('success', 'Creado', 'Empresa creada correctamente');
@@ -588,6 +807,10 @@ async function saveCompany() {
         closeCompanyModal();
         await loadEmpresas();
         renderCompanies();
+        // Si estamos en el detalle, refrescar
+        if (id && currentCompanyId === id) {
+            renderEmpresaDetalle(id);
+        }
     } catch (e) {
         showToast('error', 'Error', e.message);
     } finally {
@@ -610,6 +833,8 @@ async function deleteCompany(id) {
         showToast('success', 'Eliminado', 'Empresa eliminada');
         await loadEmpresas();
         renderCompanies();
+        // Si estamos viendo esa empresa, volver
+        if (currentCompanyId === id) volverAEmpresas();
     } catch (e) {
         showToast('error', 'Error', e.message);
     } finally {
@@ -657,9 +882,7 @@ function openContractModal() {
     document.getElementById('contractModal').style.display = 'flex';
 }
 
-function closeContractModal() {
-    document.getElementById('contractModal').style.display = 'none';
-}
+function closeContractModal() { document.getElementById('contractModal').style.display = 'none'; }
 
 async function saveContract() {
     const empresa_id   = document.getElementById('contractCompany').value;
@@ -667,29 +890,20 @@ async function saveContract() {
     const fecha_inicio = document.getElementById('contractStart').value;
     const fecha_fin    = document.getElementById('contractEnd').value;
     const valor        = parseFloat(document.getElementById('contractValue').value);
-
     if (!empresa_id || !tipo || !fecha_inicio || !fecha_fin || isNaN(valor)) {
         showToast('error', 'Error', 'Completa todos los campos obligatorios'); return;
     }
-
     showLoading(true);
     try {
-        await apiFetch('/api/contratos', {
-            method: 'POST',
-            body: JSON.stringify({
-                empresa_id, tipo, fecha_inicio, fecha_fin, valor, estado: 'Activo',
-                notas: document.getElementById('contractNotes').value || null,
-            })
-        });
+        await apiFetch('/api/contratos', { method: 'POST', body: JSON.stringify({
+            empresa_id, tipo, fecha_inicio, fecha_fin, valor, estado: 'Activo',
+            notas: document.getElementById('contractNotes').value || null,
+        })});
         showToast('success', 'Creado', 'Contrato creado correctamente');
         closeContractModal();
-        await loadContratos();
-        renderContracts();
-    } catch (e) {
-        showToast('error', 'Error', e.message);
-    } finally {
-        showLoading(false);
-    }
+        await loadContratos(); renderContracts();
+    } catch (e) { showToast('error', 'Error', e.message); }
+    finally { showLoading(false); }
 }
 
 async function deleteContract(id) {
@@ -698,8 +912,7 @@ async function deleteContract(id) {
     try {
         await apiFetch(`/api/contratos/${id}`, { method: 'DELETE' });
         showToast('success', 'Eliminado', 'Contrato eliminado');
-        await loadContratos();
-        renderContracts();
+        await loadContratos(); renderContracts();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
@@ -720,9 +933,7 @@ function openInvoiceModal() {
     document.getElementById('invoiceModal').style.display = 'flex';
 }
 
-function closeInvoiceModal() {
-    document.getElementById('invoiceModal').style.display = 'none';
-}
+function closeInvoiceModal() { document.getElementById('invoiceModal').style.display = 'none'; }
 
 async function saveInvoice() {
     const numero    = document.getElementById('invoiceNumber').value.trim();
@@ -730,24 +941,17 @@ async function saveInvoice() {
     const fecha     = document.getElementById('invoiceDate').value;
     const fecha_vencimiento = document.getElementById('invoiceDueDate').value;
     const importe   = parseFloat(document.getElementById('invoiceAmount').value);
-
     if (!numero || !empresa_id || !fecha || !fecha_vencimiento || isNaN(importe)) {
         showToast('error', 'Error', 'Completa todos los campos obligatorios'); return;
     }
-
     showLoading(true);
     try {
-        await apiFetch('/api/facturas', {
-            method: 'POST',
-            body: JSON.stringify({
-                numero, empresa_id, fecha, fecha_vencimiento, importe,
-                estado: document.getElementById('invoiceStatus').value,
-            })
-        });
+        await apiFetch('/api/facturas', { method: 'POST', body: JSON.stringify({
+            numero, empresa_id, fecha, fecha_vencimiento, importe,
+            estado: document.getElementById('invoiceStatus').value,
+        })});
         showToast('success', 'Creada', 'Factura creada correctamente');
-        closeInvoiceModal();
-        await loadFacturas();
-        renderInvoices();
+        closeInvoiceModal(); await loadFacturas(); renderInvoices();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
@@ -758,8 +962,7 @@ async function deleteInvoice(id) {
     try {
         await apiFetch(`/api/facturas/${id}`, { method: 'DELETE' });
         showToast('success', 'Eliminado', 'Factura eliminada');
-        await loadFacturas();
-        renderInvoices();
+        await loadFacturas(); renderInvoices();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
@@ -777,30 +980,22 @@ function openTicketModal() {
     document.getElementById('ticketModal').style.display = 'flex';
 }
 
-function closeTicketModal() {
-    document.getElementById('ticketModal').style.display = 'none';
-}
+function closeTicketModal() { document.getElementById('ticketModal').style.display = 'none'; }
 
 async function saveTicket() {
     const empresa_id = document.getElementById('ticketCompany').value;
     const asunto     = document.getElementById('ticketSubject').value.trim();
     if (!empresa_id || !asunto) { showToast('error', 'Error', 'Empresa y asunto son obligatorios'); return; }
-
     showLoading(true);
     try {
-        await apiFetch('/api/tickets', {
-            method: 'POST',
-            body: JSON.stringify({
-                empresa_id, asunto,
-                descripcion: document.getElementById('ticketDescription').value || null,
-                prioridad:   document.getElementById('ticketPriority').value,
-                estado:      document.getElementById('ticketStatus').value,
-            })
-        });
+        await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify({
+            empresa_id, asunto,
+            descripcion: document.getElementById('ticketDescription').value || null,
+            prioridad:   document.getElementById('ticketPriority').value,
+            estado:      document.getElementById('ticketStatus').value,
+        })});
         showToast('success', 'Creado', 'Ticket creado correctamente');
-        closeTicketModal();
-        await loadTickets();
-        renderTickets();
+        closeTicketModal(); await loadTickets(); renderTickets();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
@@ -813,8 +1008,7 @@ async function changeTicketStatus(id, currentStatus) {
     try {
         await apiFetch(`/api/tickets/${id}`, { method: 'PUT', body: JSON.stringify({ estado: next }) });
         showToast('success', 'Actualizado', `Estado → ${next}`);
-        await loadTickets();
-        renderTickets();
+        await loadTickets(); renderTickets();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
@@ -825,14 +1019,13 @@ async function deleteTicket(id) {
     try {
         await apiFetch(`/api/tickets/${id}`, { method: 'DELETE' });
         showToast('success', 'Eliminado', 'Ticket eliminado');
-        await loadTickets();
-        renderTickets();
+        await loadTickets(); renderTickets();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
 
 // ============================================
-// INFRAESTRUCTURA IT
+// EMPRESA DETALLE — PÁGINA COMPLETA (reemplaza modal IT)
 // ============================================
 function viewCompany(id) {
     currentCompanyId = id;
@@ -840,23 +1033,97 @@ function viewCompany(id) {
     const company = companies.find(c => c.id === id);
     if (!company) return;
 
-    document.getElementById('itModalCompanyName').textContent = `🖥️ ${company.nombre}`;
-    document.getElementById('itInfraModal').style.display = 'flex';
-    document.querySelectorAll('.it-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector('.it-tab[data-tab="equipos"]').classList.add('active');
+    // Guardar sección anterior para el botón volver
+    const activeSection = document.querySelector('.content-section.active');
+    if (activeSection && activeSection.id !== 'empresa-detalle') {
+        previousSection = activeSection.id;
+    }
+
+    renderEmpresaDetalle(id);
+    navigateToDetalle();
+}
+
+function renderEmpresaDetalle(id) {
+    const company = companies.find(c => c.id === id);
+    if (!company) return;
+
+    // Título
+    document.getElementById('empresaDetalleTitulo').innerHTML =
+        `<i class="fas fa-building"></i> ${company.nombre}`;
+
+    // Botón editar
+    document.getElementById('empresaDetalleEditBtn').onclick = () => editCompany(id);
+
+    // Info grid
+    const grid = document.getElementById('empresaInfoGrid');
+    const serviciosHtml = (company.servicios || []).length
+        ? `<div class="services-tags">${(company.servicios).map(s => `<span class="service-tag">${s}</span>`).join('')}</div>`
+        : '<em style="color:var(--gray);font-size:0.85rem">Sin servicios</em>';
+
+    grid.innerHTML = `
+        <div class="empresa-info-card">
+            <label>CIF</label>
+            <span>${company.cif || '—'}</span>
+        </div>
+        <div class="empresa-info-card">
+            <label>Email</label>
+            <span>${company.email || '—'}</span>
+        </div>
+        <div class="empresa-info-card">
+            <label>Teléfono</label>
+            <span>${company.telefono || '—'}</span>
+        </div>
+        <div class="empresa-info-card">
+            <label>Estado</label>
+            <span class="status ${(company.estado||'').replace(/ /g,'-')}">${company.estado || '—'}</span>
+        </div>
+        <div class="empresa-info-card">
+            <label>Dirección</label>
+            <span>${company.direccion || '—'}</span>
+        </div>
+        <div class="empresa-info-card">
+            <label>Servicios</label>
+            ${serviciosHtml}
+        </div>
+    `;
+
+    // Activar primera pestaña IT
+    document.querySelectorAll('#itTabsPage .it-tab').forEach(t => t.classList.remove('active'));
+    const firstTab = document.querySelector('#itTabsPage .it-tab[data-tab="equipos"]');
+    if (firstTab) firstTab.classList.add('active');
+
     renderEquipos(id);
 }
 
+<<<<<<< HEAD
 function closeITModal() {
     document.getElementById('itInfraModal').style.display = 'none';
     currentCompanyId = null;
     itSearchTerm = '';
+=======
+function navigateToDetalle() {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('empresa-detalle').classList.add('active');
+
+    // Desmarcar nav links
+    document.querySelectorAll('.nav-link, .bottom-nav-item').forEach(l => l.classList.remove('active'));
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
 }
 
+function volverAEmpresas() {
+    currentCompanyId = null;
+    navigateTo(previousSection || 'empresas');
+}
+
+// ============================================
+// INFRAESTRUCTURA IT — tabs de la página detalle
+// ============================================
 function setupITTabs() {
-    document.querySelectorAll('.it-tab').forEach(tab => {
+    document.querySelectorAll('#itTabsPage .it-tab').forEach(tab => {
         tab.addEventListener('click', function () {
-            document.querySelectorAll('.it-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#itTabsPage .it-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             itSearchTerm = '';
             if (!currentCompanyId) return;
@@ -866,6 +1133,7 @@ function setupITTabs() {
                 nas:        () => renderNAS(currentCompanyId),
                 redes:      () => renderRedes(currentCompanyId),
                 licencias:  () => renderLicencias(currentCompanyId),
+                otros:      () => renderOtros(currentCompanyId),
             };
             const fn = map[this.getAttribute('data-tab')];
             if (fn) fn();
@@ -923,9 +1191,12 @@ async function renderDispositivos(empresaId, categoria, icon, fields) {
 
     let items;
     try { items = await getDispositivos(empresaId, categoria); }
-    catch (e) { container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--danger)"><i class="fas fa-exclamation-circle"></i> ${e.message}</div>`; return; }
+    catch (e) {
+        container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--danger)"><i class="fas fa-exclamation-circle"></i> ${e.message}</div>`;
+        return;
+    }
 
-    const labelMap = { equipo: 'Equipo', servidor: 'Servidor', nas: 'NAS', red: 'Dispositivo de Red', licencia: 'Licencia' };
+    const labelMap = { equipo: 'Equipo', servidor: 'Servidor', nas: 'NAS', red: 'Dispositivo de Red', licencia: 'Licencia', otro: 'Elemento' };
     const label = labelMap[categoria] || categoria;
 
     // Filter by search term
@@ -943,7 +1214,7 @@ async function renderDispositivos(empresaId, categoria, icon, fields) {
         container.innerHTML = `
             <div style="text-align:center;padding:50px 20px;color:var(--gray)">
                 <i class="fas ${icon}" style="font-size:3rem;opacity:0.25;display:block;margin-bottom:16px"></i>
-                <p style="font-size:1.1rem;font-weight:500;margin-bottom:20px">No hay ${label}s registrados</p>
+                <p style="font-size:1.05rem;font-weight:500;margin-bottom:20px">No hay ${label}s registrados</p>
                 <button class="btn-primary" onclick="openAddDispositivoModal('${categoria}')">
                     <i class="fas fa-plus"></i> Añadir ${label}
                 </button>
@@ -952,12 +1223,17 @@ async function renderDispositivos(empresaId, categoria, icon, fields) {
     }
 
     let html = `
+<<<<<<< HEAD
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <h3 style="font-size:1.05rem;color:var(--dark);display:flex;align-items:center;gap:8px">
+=======
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <h3 style="font-size:1rem;color:var(--dark);display:flex;align-items:center;gap:8px">
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
                 <i class="fas ${icon}" style="color:var(--primary)"></i> ${label}s
-                <span style="background:#e0f2fe;color:#0369a1;padding:2px 10px;border-radius:20px;font-size:0.8rem;font-weight:600">${items.length}</span>
+                <span style="background:#e0f2fe;color:#0369a1;padding:2px 10px;border-radius:20px;font-size:0.78rem;font-weight:600">${items.length}</span>
             </h3>
-            <button class="btn-primary" onclick="openAddDispositivoModal('${categoria}')">
+            <button class="btn-primary btn-sm" onclick="openAddDispositivoModal('${categoria}')">
                 <i class="fas fa-plus"></i> Añadir
             </button>
         </div>
@@ -1029,10 +1305,22 @@ async function renderDispositivos(empresaId, categoria, icon, fields) {
         html += `
             <div class="it-item-card">
                 <div class="it-item-header">
+<<<<<<< HEAD
                     <h4><i class="fas ${icon}"></i> <span>${nombreDisplay}</span>${item.tipo ? ` <small style="font-weight:400;opacity:0.65;font-size:0.85rem">(${item.tipo})</small>` : ''}</h4>
                     <button class="btn-action btn-delete" onclick="deleteDispositivo('${item.id}','${categoria}')" title="Eliminar" style="margin:0">
                         <i class="fas fa-trash"></i>
                     </button>
+=======
+                    <h4><i class="fas ${icon}"></i> ${item.nombre}${item.tipo ? ` <small style="font-weight:400;opacity:0.65;font-size:0.82rem">(${item.tipo})</small>` : ''}</h4>
+                    <div style="display:flex;gap:4px;flex-shrink:0">
+                        <button class="btn-action btn-edit" onclick="openEditDispositivoModal('${item.id}','${categoria}')" title="Editar" style="margin:0;padding:7px 10px">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-action btn-delete" onclick="deleteDispositivo('${item.id}','${categoria}')" title="Eliminar" style="margin:0;padding:7px 10px">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+>>>>>>> 531fa8228d3d534728c81df18d484520b7fce413
                 </div>
                 <div class="it-item-body">${bodyHtml}</div>
             </div>`;
@@ -1092,6 +1380,119 @@ function renderServidores(id) { renderDispositivos(id, 'servidor', ICONOS.servid
 function renderNAS(id)        { renderDispositivos(id, 'nas',      ICONOS.nas,      CAMPOS.nas); }
 function renderRedes(id)      { renderDispositivos(id, 'red',      ICONOS.red,      CAMPOS.red); }
 function renderLicencias(id)  { renderDispositivos(id, 'licencia', ICONOS.licencia, CAMPOS.licencia); }
+function renderOtros(id)      { renderDispositivos(id, 'otro',     'fa-boxes',      []); }
+
+// ============================================
+// EDITAR DISPOSITIVO
+// ============================================
+async function openEditDispositivoModal(itemId, categoria) {
+    // Obtener todos los dispositivos de esta categoría y encontrar el que queremos
+    let allItems;
+    try {
+        allItems = await getDispositivos(currentCompanyId, categoria);
+    } catch (e) {
+        showToast('error', 'Error', 'No se pudo cargar el dispositivo');
+        return;
+    }
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) { showToast('error', 'Error', 'Dispositivo no encontrado'); return; }
+
+    const labelMap = { equipo:'Equipo', servidor:'Servidor', nas:'NAS', red:'Dispositivo de Red', licencia:'Licencia', otro:'Elemento' };
+    document.getElementById('itItemModalTitle').textContent = `Editar ${labelMap[categoria] || categoria}`;
+    document.getElementById('itItemModal').dataset.categoria = categoria;
+    document.getElementById('itItemModal').dataset.editId = itemId;
+
+    const sugerencias = (TIPO_SUGERENCIAS[categoria] || []).map(s => `<option value="${s}">`).join('');
+
+    const camposEspecificos = {
+        equipo: `
+            <div class="form-row">
+                <div class="form-group"><label>IP</label><input type="text" id="fi-ip" placeholder="192.168.1.10" value="${item.ip||''}"></div>
+                <div class="form-group"><label>AnyDesk ID</label><input type="text" id="fi-anydesk" placeholder="123456789" value="${item.anydesk_id||''}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Usuario</label><input type="text" id="fi-usuario" placeholder="admin" value="${item.usuario||''}"></div>
+                <div class="form-group"><label>Contraseña</label><input type="text" id="fi-password" placeholder="••••••••" value="${item.password||''}"></div>
+            </div>`,
+        servidor: `
+            <div class="form-row">
+                <div class="form-group"><label>IP</label><input type="text" id="fi-ip" placeholder="192.168.1.5" value="${item.ip||''}"></div>
+                <div class="form-group"><label>S.O.</label><input type="text" id="fi-so" placeholder="Windows Server 2022" value="${item.sistema_operativo||''}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Usuario</label><input type="text" id="fi-usuario" placeholder="admin" value="${item.usuario||''}"></div>
+                <div class="form-group"><label>Contraseña</label><input type="text" id="fi-password" placeholder="••••••••" value="${item.password||''}"></div>
+            </div>`,
+        nas: `
+            <div class="form-row">
+                <div class="form-group"><label>IP</label><input type="text" id="fi-ip" placeholder="192.168.1.20" value="${item.ip||''}"></div>
+                <div class="form-group"><label>Capacidad</label><input type="text" id="fi-capacidad" placeholder="4TB" value="${item.capacidad||''}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Usuario</label><input type="text" id="fi-usuario" placeholder="admin" value="${item.usuario||''}"></div>
+                <div class="form-group"><label>Contraseña</label><input type="text" id="fi-password" placeholder="••••••••" value="${item.password||''}"></div>
+            </div>`,
+        red: `
+            <div class="form-row">
+                <div class="form-group"><label>IP</label><input type="text" id="fi-ip" placeholder="192.168.1.1" value="${item.ip||''}"></div>
+                <div class="form-group"><label>Modelo</label><input type="text" id="fi-modelo" placeholder="Cisco RV340" value="${item.modelo||''}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Usuario</label><input type="text" id="fi-usuario" placeholder="admin" value="${item.usuario||''}"></div>
+                <div class="form-group"><label>Contraseña</label><input type="text" id="fi-password" placeholder="••••••••" value="${item.password||''}"></div>
+            </div>`,
+        licencia: `
+            <div class="form-row">
+                <div class="form-group"><label>Software</label><input type="text" id="fi-software" placeholder="Microsoft 365 Business" value="${item.software||''}"></div>
+                <div class="form-group"><label>Nº Usuarios</label><input type="number" id="fi-num-usuarios" placeholder="15" value="${item.num_usuarios||''}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Vencimiento</label><input type="date" id="fi-vencimiento" value="${item.vencimiento||''}"></div>
+                <div class="form-group"><label>Clave de Licencia</label><input type="text" id="fi-clave" placeholder="XXXXX-XXXXX-XXXXX" value="${item.clave_licencia||''}"></div>
+            </div>`,
+    };
+
+    // Campos extra existentes
+    const extraEntries = Object.entries(item.campos_extra || {});
+    const extraHtml = extraEntries.map(([k, v]) => `
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center">
+            <input type="text" class="extra-key" value="${k}" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:0.88rem">
+            <input type="text" class="extra-val" value="${v}" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:0.88rem">
+            <button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#b91c1c;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>`).join('');
+
+    const modalBody = document.querySelector('#itItemModal .modal-body');
+    modalBody.innerHTML = `
+        <form id="itItemForm" onsubmit="return false;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="fi-nombre" placeholder="Nombre del dispositivo" value="${item.nombre||''}" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <input type="text" id="fi-tipo" placeholder="Selecciona o escribe..." list="fi-tipo-list" value="${item.tipo||''}">
+                    <datalist id="fi-tipo-list">${sugerencias}</datalist>
+                </div>
+            </div>
+            ${camposEspecificos[categoria] || ''}
+            <div style="border-top:1px dashed #e2e8f0;margin:12px 0 14px;padding-top:14px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <label style="margin:0;font-weight:600;font-size:0.85rem;color:#475569">
+                        <i class="fas fa-plus-circle" style="color:var(--primary);margin-right:5px"></i>Campos personalizados
+                    </label>
+                    <button type="button" onclick="addExtraFieldRow()" style="background:none;border:1px solid #e2e8f0;color:var(--primary);cursor:pointer;font-weight:600;font-size:0.8rem;padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;font-family:inherit">
+                        <i class="fas fa-plus"></i> Añadir
+                    </button>
+                </div>
+                <div id="extraFieldsContainer">${extraHtml}</div>
+            </div>
+        </form>`;
+
+    document.getElementById('itItemModal').style.display = 'flex';
+}
 
 function togglePassword(elementId, password) {
     const el = document.getElementById(elementId);
@@ -1101,11 +1502,11 @@ function togglePassword(elementId, password) {
     if (el.classList.contains('password-hidden')) {
         el.textContent = password || '(vacío)';
         el.classList.replace('password-hidden', 'password-visible');
-        if (icon) { icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+        if (icon) icon.classList.replace('fa-eye', 'fa-eye-slash');
     } else {
         el.textContent = '••••••••';
         el.classList.replace('password-visible', 'password-hidden');
-        if (icon) { icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+        if (icon) icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
 
@@ -1118,9 +1519,10 @@ const TIPO_SUGERENCIAS = {
 };
 
 function openAddDispositivoModal(categoria) {
-    const labelMap = { equipo:'Equipo', servidor:'Servidor', nas:'NAS', red:'Dispositivo de Red', licencia:'Licencia' };
+    const labelMap = { equipo:'Equipo', servidor:'Servidor', nas:'NAS', red:'Dispositivo de Red', licencia:'Licencia', otro:'Elemento' };
     document.getElementById('itItemModalTitle').textContent = `Añadir ${labelMap[categoria] || categoria}`;
     document.getElementById('itItemModal').dataset.categoria = categoria;
+    delete document.getElementById('itItemModal').dataset.editId; // limpiar si venía de editar
 
     const sugerencias = (TIPO_SUGERENCIAS[categoria] || []).map(s => `<option value="${s}">`).join('');
 
@@ -1198,11 +1600,11 @@ function openAddDispositivoModal(categoria) {
             ${camposEspecificos[categoria] || ''}
             <div style="border-top:1px dashed #e2e8f0;margin:12px 0 14px;padding-top:14px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                    <label style="margin:0;font-weight:600;font-size:0.88rem;color:#475569">
+                    <label style="margin:0;font-weight:600;font-size:0.85rem;color:#475569">
                         <i class="fas fa-plus-circle" style="color:var(--primary);margin-right:5px"></i>Campos personalizados
                     </label>
-                    <button type="button" onclick="addExtraFieldRow()" style="background:none;border:1px solid #e2e8f0;color:var(--primary);cursor:pointer;font-weight:600;font-size:0.82rem;padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px">
-                        <i class="fas fa-plus"></i> Añadir campo
+                    <button type="button" onclick="addExtraFieldRow()" style="background:none;border:1px solid #e2e8f0;color:var(--primary);cursor:pointer;font-weight:600;font-size:0.8rem;padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;font-family:inherit">
+                        <i class="fas fa-plus"></i> Añadir
                     </button>
                 </div>
                 <div id="extraFieldsContainer"></div>
@@ -1217,20 +1619,19 @@ function addExtraFieldRow() {
     const div = document.createElement('div');
     div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center';
     div.innerHTML = `
-        <input type="text" class="extra-key" placeholder="Nombre del campo" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:0.9rem">
-        <input type="text" class="extra-val" placeholder="Valor" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:0.9rem">
+        <input type="text" class="extra-key" placeholder="Campo" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:0.88rem">
+        <input type="text" class="extra-val" placeholder="Valor" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:0.88rem">
         <button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;color:#b91c1c;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center">
             <i class="fas fa-times"></i>
         </button>`;
     container.appendChild(div);
 }
 
-function closeITItemModal() {
-    document.getElementById('itItemModal').style.display = 'none';
-}
+function closeITItemModal() { document.getElementById('itItemModal').style.display = 'none'; }
 
 async function saveITItem() {
     const categoria = document.getElementById('itItemModal').dataset.categoria;
+    const editId    = document.getElementById('itItemModal').dataset.editId || '';
     const nombre    = document.getElementById('fi-nombre')?.value?.trim();
     if (!nombre) { showToast('error', 'Error', 'El nombre es obligatorio'); return; }
 
@@ -1245,7 +1646,6 @@ async function saveITItem() {
     }
 
     const g = id => document.getElementById(id)?.value?.trim() || null;
-
     const campos_extra = {};
     document.querySelectorAll('#extraFieldsContainer > div').forEach(row => {
         const k = row.querySelector('.extra-key')?.value?.trim();
@@ -1254,8 +1654,7 @@ async function saveITItem() {
     });
 
     const payload = {
-        empresa_id: currentCompanyId,
-        categoria, nombre,
+        empresa_id: currentCompanyId, categoria, nombre,
         tipo:              g('fi-tipo'),
         ip:                g('fi-ip'),
         usuario:           g('fi-usuario'),
@@ -1274,14 +1673,26 @@ async function saveITItem() {
 
     showLoading(true);
     try {
-        await apiFetch('/api/dispositivos', { method: 'POST', body: JSON.stringify(payload) });
-        showToast('success', 'Guardado', 'Dispositivo añadido correctamente');
+        if (editId) {
+            await apiFetch(`/api/dispositivos/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            showToast('success', 'Actualizado', 'Dispositivo actualizado correctamente');
+        } else {
+            await apiFetch('/api/dispositivos', { method: 'POST', body: JSON.stringify(payload) });
+            showToast('success', 'Guardado', 'Dispositivo añadido correctamente');
+        }
         closeITItemModal();
-        const activeTab = document.querySelector('.it-tab.active')?.dataset?.tab;
-        const map = { equipos: renderEquipos, servidores: renderServidores, nas: renderNAS, redes: renderRedes, licencias: renderLicencias };
-        if (activeTab && map[activeTab]) map[activeTab](currentCompanyId);
+        refreshCurrentITTab();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
+}
+
+function refreshCurrentITTab() {
+    const activeTab = document.querySelector('#itTabsPage .it-tab.active')?.dataset?.tab;
+    const map = {
+        equipos: renderEquipos, servidores: renderServidores,
+        nas: renderNAS, redes: renderRedes, licencias: renderLicencias, otros: renderOtros,
+    };
+    if (activeTab && map[activeTab]) map[activeTab](currentCompanyId);
 }
 
 async function deleteDispositivo(id, categoria) {
@@ -1290,9 +1701,7 @@ async function deleteDispositivo(id, categoria) {
     try {
         await apiFetch(`/api/dispositivos/${id}`, { method: 'DELETE' });
         showToast('success', 'Eliminado', 'Dispositivo eliminado');
-        const activeTab = document.querySelector('.it-tab.active')?.dataset?.tab;
-        const map = { equipos: renderEquipos, servidores: renderServidores, nas: renderNAS, redes: renderRedes, licencias: renderLicencias };
-        if (activeTab && map[activeTab]) map[activeTab](currentCompanyId);
+        refreshCurrentITTab();
     } catch (e) { showToast('error', 'Error', e.message); }
     finally { showLoading(false); }
 }
@@ -1330,7 +1739,7 @@ function formatDate(str) {
 // ============================================
 // EVENT LISTENERS
 // ============================================
-document.getElementById('searchInput').addEventListener('input',  () => { currentPage = 1; renderCompanies(); });
+document.getElementById('searchInput').addEventListener('input',   () => { currentPage = 1; renderCompanies(); });
 document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; renderCompanies(); });
 document.getElementById('serviceFilter').addEventListener('change',() => { currentPage = 1; renderCompanies(); });
 

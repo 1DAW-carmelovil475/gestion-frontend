@@ -1,0 +1,847 @@
+/* Tickets.css — estilos específicos de la página de Tickets */
+
+/* ============================================================
+   PRIORIDAD BADGES
+   ============================================================ */
+.prioridad-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prioridad-Baja    { background: #d1fae5; color: #059669; }
+.prioridad-Media   { background: #dbeafe; color: #2563eb; }
+.prioridad-Alta    { background: #fef3c7; color: #d97706; }
+.prioridad-Urgente { background: #fee2e2; color: #dc2626; }
+
+/* ============================================================
+   ESTADO BADGES
+   ============================================================ */
+.estado-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.estado-Pendiente  { background: #fef3c7; color: #d97706; }
+.estado-En-curso   { background: #dbeafe; color: #2563eb; }
+.estado-Completado { background: #d1fae5; color: #059669; }
+.estado-Facturado  { background: #ede9fe; color: #7c3aed; }
+
+/* ============================================================
+   TICKET NÚMERO (en tabla y cards)
+   ============================================================ */
+.ticket-numero {
+  background: var(--primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.ticket-asunto-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket-asunto-text {
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.ticket-empresa-sub {
+  font-size: 0.75rem;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================================
+   AVATARES OPERARIOS (tabla)
+   ============================================================ */
+.avatares-operarios {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.avatar-operario {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border: 2px solid white;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+/* ============================================================
+   TICKET CARDS MOBILE
+   ============================================================ */
+.ticket-card-mobile {
+  background: white;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.ticket-card-mobile:hover {
+  box-shadow: 0 3px 10px rgba(0,71,179,0.12);
+  transform: translateY(-1px);
+}
+
+.ticket-card-mobile.prio-Urgente { border-left-color: #dc2626; }
+.ticket-card-mobile.prio-Alta    { border-left-color: #f59e0b; }
+.ticket-card-mobile.prio-Media   { border-left-color: #3b82f6; }
+.ticket-card-mobile.prio-Baja    { border-left-color: #22c55e; }
+
+.ticket-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ticket-card-asunto {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+.ticket-card-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--gray);
+  align-items: center;
+}
+
+.ticket-card-meta i {
+  color: var(--primary);
+  font-size: 0.72rem;
+}
+
+/* ============================================================
+   DETALLE TICKET — HEADER
+   ============================================================ */
+.detalle-ticket {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.detalle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detalle-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.detalle-titulo h2 {
+  font-size: 1.1rem;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detalle-acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.estado-select {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: white;
+  color: var(--dark);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ============================================================
+   DETALLE TICKET — BODY
+   ============================================================ */
+.detalle-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.detalle-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-card {
+  background: white;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.sidebar-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  color: var(--dark);
+  margin-bottom: 10px;
+  cursor: default;
+}
+
+.sidebar-card h4 i {
+  color: var(--primary);
+}
+
+/* Info rows */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.84rem;
+  gap: 8px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row-label {
+  color: var(--gray);
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.info-row-value {
+  font-weight: 500;
+  color: var(--dark);
+  text-align: right;
+  font-size: 0.84rem;
+}
+
+/* ============================================================
+   OPERARIOS EN DETALLE
+   ============================================================ */
+.operario-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  margin-bottom: 6px;
+}
+
+.operario-chip .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.operario-chip-nombre {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.btn-remove-operario {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.btn-remove-operario:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* ============================================================
+   OPERARIOS CHECKBOXES (modal asignar y modal nuevo ticket)
+   ============================================================ */
+.operarios-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.operario-check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: white;
+  user-select: none;
+}
+
+.operario-check-item:hover {
+  border-color: var(--primary);
+  background: #f0f5ff;
+}
+
+.operario-check-item.checked {
+  border-color: var(--primary);
+  background: #e8f0fe;
+}
+
+.operario-check-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.operario-check-nombre {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.operario-check-tick {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.operario-check-item.checked .operario-check-tick {
+  opacity: 1;
+}
+
+/* ============================================================
+   ARCHIVOS (sidebar detalle)
+   ============================================================ */
+.archivo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 6px;
+  background: white;
+}
+
+.archivo-item:hover {
+  border-color: var(--primary);
+  background: #f0f5ff;
+}
+
+.archivo-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.archivo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.archivo-nombre {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archivo-meta {
+  font-size: 0.72rem;
+  color: var(--gray);
+}
+
+.btn-delete-archivo {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.btn-delete-archivo:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* Preview archivos (antes de enviar comentario) */
+.archivos-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.archivo-preview-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--dark);
+}
+
+.archivo-preview-chip button {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.archivo-preview-chip button:hover {
+  color: #dc2626;
+}
+
+/* Archivos adjuntos en comentarios */
+.comentario-archivos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.comentario-archivo-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.78rem;
+  color: var(--dark);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.comentario-archivo-chip:hover {
+  border-color: var(--primary);
+  background: #f0f5ff;
+}
+
+/* ============================================================
+   HISTORIAL
+   ============================================================ */
+.historial-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.historial-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.historial-texto {
+  font-size: 0.82rem;
+  color: var(--dark);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.historial-fecha {
+  font-size: 0.73rem;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   TABS DETALLE (Notas / Comentarios)
+   ============================================================ */
+.detalle-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.detalle-tabs {
+  display: flex;
+  gap: 2px;
+  background: white;
+  border-radius: 10px 10px 0 0;
+  padding: 8px 8px 0;
+  border-bottom: 2px solid var(--border);
+}
+
+.detalle-tab {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--gray);
+  font-weight: 500;
+  font-size: 0.88rem;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.detalle-tab.active {
+  background: #f3f4f6;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  margin-bottom: -2px;
+}
+
+.tab-badge {
+  background: var(--primary);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+}
+
+/* Tab Panel */
+.tab-panel {
+  background: white;
+  border-radius: 0 0 10px 10px;
+  padding: 16px;
+  min-height: 360px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Notas textarea */
+.notas-textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 280px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #f9fafb;
+  color: var(--dark);
+}
+
+.notas-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0,71,179,0.08);
+}
+
+/* ============================================================
+   COMENTARIOS
+   ============================================================ */
+.comentarios-lista {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding-right: 2px;
+}
+
+.comentarios-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray);
+}
+
+.comentarios-empty i {
+  font-size: 2.5rem;
+  opacity: 0.2;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.comentarios-empty p {
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.comentarios-empty span {
+  font-size: 0.82rem;
+  color: var(--gray);
+}
+
+.comentario-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 9px;
+  border-left: 3px solid var(--primary);
+  margin-bottom: 10px;
+}
+
+.comentario-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.comentario-cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.comentario-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.comentario-autor {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--dark);
+}
+
+.comentario-fecha {
+  font-size: 0.75rem;
+  color: var(--gray);
+}
+
+.comentario-editado {
+  font-size: 0.72rem;
+  color: var(--gray);
+  font-style: italic;
+}
+
+.comentario-acciones {
+  margin-left: auto;
+}
+
+.btn-comentario-accion {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 5px;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.btn-comentario-delete {
+  color: var(--gray);
+}
+
+.btn-comentario-delete:hover {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.comentario-texto {
+  font-size: 0.88rem;
+  color: var(--dark);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Nuevo comentario */
+.comentario-nuevo {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.comentario-nuevo textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: none;
+  background: #f8fafc;
+  color: var(--dark);
+}
+
+.comentario-nuevo textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0,71,179,0.08);
+}
+
+.comentario-autor-avatar {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+/* ============================================================
+   MODAL TICKET — layout horizontal (2 columnas)
+   ============================================================ */
+.ticket-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ticket-modal-full {
+  grid-column: 1 / -1;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .detalle-body {
+    grid-template-columns: 1fr;
+  }
+
+  .detalle-sidebar {
+    order: 2;
+  }
+
+  .detalle-main {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .detalle-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detalle-titulo h2 {
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  .detalle-acciones {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .ticket-modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-modal-full {
+    grid-column: 1;
+  }
+
+  .tab-panel {
+    min-height: 280px;
+    padding: 12px;
+  }
+}

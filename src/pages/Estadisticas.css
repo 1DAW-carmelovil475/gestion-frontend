@@ -1,0 +1,296 @@
+/* Estadisticas Page */
+.estadisticas-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* Date Range */
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.date-range i {
+  color: var(--gray);
+}
+
+.date-range input {
+  border: none;
+  font-size: 0.9rem;
+  color: var(--dark);
+}
+
+.date-range input:focus {
+  outline: none;
+}
+
+.date-range span {
+  color: var(--gray);
+}
+
+/* Stats Tabs */
+.stats-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.stats-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  color: var(--gray);
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.stats-tab:hover {
+  background: var(--bg);
+}
+
+.stats-tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Stats Grid */
+.stats-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.stats-panel {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stats-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.stats-panel-header i {
+  color: var(--primary);
+}
+
+.stats-panel-body {
+  padding: 20px;
+}
+
+/* Donut Chart */
+.donut-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.donut-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.donut-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.donut-label {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--gray);
+}
+
+.donut-value {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+/* Operarios Grid */
+.operarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.operario-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.operario-stat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.operario-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.operario-stat-header h4 {
+  font-size: 1rem;
+  color: var(--dark);
+}
+
+.operario-role {
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+.operario-stat-body {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-mini {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+.stat-mini-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.stat-mini-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+/* Empresas List */
+.empresas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empresa-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.empresa-rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.empresa-info {
+  flex: 1;
+}
+
+.empresa-nombre {
+  display: block;
+  font-weight: 500;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+
+.empresa-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.empresa-stat {
+  font-size: 0.8rem;
+  color: var(--gray);
+}
+
+.empresa-total {
+  text-align: center;
+}
+
+.total-badge {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.total-label {
+  font-size: 0.75rem;
+  color: var(--gray);
+}
+
+/* Empty State */
+.stats-tab-content .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.stats-tab-content .empty-state i {
+  font-size: 3rem;
+  color: var(--border);
+  display: block;
+  margin-bottom: 16px;
+}
+
+.stats-tab-content .empty-state p {
+  color: var(--gray);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .date-range {
+    flex-wrap: wrap;
+  }
+  
+  .stats-tabs {
+    flex-wrap: wrap;
+  }
+}

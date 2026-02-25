@@ -76,6 +76,13 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
+// FIX 1: Tildes en nombres de archivo — solo elimina chars realmente prohibidos en rutas
+function sanitizarNombreArchivo(nombre) {
+  return nombre
+    .normalize('NFC')               // compone tildes (a + ́ → á)
+    .replace(/[/\\:*?"<>|]/g, '_') // solo reemplaza los chars inválidos en rutas de archivo
+}
+
 function PrioridadBadge({ p }) {
   const colors = { Baja: '#22c55e', Media: '#3b82f6', Alta: '#f59e0b', Urgente: '#ef4444' }
   return (
@@ -132,6 +139,8 @@ export default function Tickets() {
   const archivoInputRef = useRef(null)
   const notasTimer      = useRef(null)
   const notasGuardado   = useRef(null)
+  // FIX 2: ref directo al div contentEditable para limpiar sin querySelector
+  const editorRef       = useRef(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -202,14 +211,20 @@ export default function Tickets() {
 
   function onSearchChange(e) { setSearchTerm(e.target.value) }
 
+  // FIX 3: carga ticket Y comentarios en paralelo — así los comentarios aparecen al entrar
   async function abrirTicket(id) {
     setVistaDetalle(true)
     setActiveTab('comentarios')
     try {
-      const data = await getTicket(id)
+      const [data, comentariosData] = await Promise.all([
+        getTicket(id),
+        getTicketComentarios(id),
+      ])
       setTicketActual(data)
       setNotasValue(data.notas || '')
-      setComentarios(data.ticket_comentarios || [])
+      // Usamos la respuesta explícita de getTicketComentarios, no data.ticket_comentarios
+      // porque el join de Supabase puede no incluirlos según la query
+      setComentarios(comentariosData || data.ticket_comentarios || [])
     } catch (error) {
       showToast('error', 'Error', error.message)
       setVistaDetalle(false)
@@ -222,6 +237,7 @@ export default function Tickets() {
     setComentarios([])
     setActiveTab('comentarios')
     setComentarioText('')
+    if (editorRef.current) editorRef.current.innerHTML = ''
     loadData()
   }
 
@@ -314,8 +330,14 @@ export default function Tickets() {
     }
   }
 
+  // FIX 1: sanitiza nombre del archivo antes de subirlo (mantiene tildes y ñ)
   async function subirArchivos(e) {
-    const files = Array.from(e.target.files)
+    const files = Array.from(e.target.files).map(file => {
+      const nombreSanitizado = sanitizarNombreArchivo(file.name)
+      return nombreSanitizado !== file.name
+        ? new File([file], nombreSanitizado, { type: file.type })
+        : file
+    })
     if (!files.length || !ticketActual) return
     try {
       await uploadTicketArchivo(ticketActual.id, files)
@@ -361,9 +383,8 @@ export default function Tickets() {
     try {
       await createTicketComentario(ticketActual.id, comentarioText, [])
       setComentarioText('')
-      // Limpiar el editor rich text
-      const editor = document.querySelector('.editor-content')
-      if (editor) editor.innerHTML = ''
+      // FIX 2: limpia el editor usando ref directo, no querySelector
+      if (editorRef.current) editorRef.current.innerHTML = ''
       const data = await getTicketComentarios(ticketActual.id)
       setComentarios(data || [])
       showToast('success', 'Comentario añadido', '')
@@ -685,7 +706,6 @@ export default function Tickets() {
       archivo: 'paperclip', comentario: 'comment',
     }
 
-    // Historial filtrado y ordenado (reutilizable)
     const historialFiltrado = [...historial]
       .filter(h => h.tipo !== 'nota_interna')
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -981,24 +1001,26 @@ export default function Tickets() {
                             <div className="editor-sep"></div>
                             <button type="button" className="editor-btn" title="Limpiar formato" onMouseDown={e => { e.preventDefault(); document.execCommand('removeFormat') }}><i className="fas fa-remove-format"></i></button>
                           </div>
+                          {/* FIX: ref directo + Ctrl+Enter envía */}
                           <div
                             className="editor-content"
                             contentEditable
                             suppressContentEditableWarning
-                            data-placeholder="Escribe un comentario..."
+                            data-placeholder="Escribe un comentario... (Ctrl+Enter para enviar)"
+                            ref={editorRef}
                             onInput={e => setComentarioText(e.currentTarget.innerHTML)}
                             onKeyDown={e => {
-                              if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
-                                // Permitir Enter normal dentro del editor rich text
+                              if (e.key === 'Enter' && e.ctrlKey) {
+                                e.preventDefault()
+                                enviarComentario()
                               }
-                            }}
-                            ref={el => {
-                              if (el && comentarioText === '') el.innerHTML = ''
                             }}
                           />
                         </div>
                         <div className="comentario-nuevo-acciones">
-                          <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>Ctrl+Enter para enviar</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>
+                            <kbd>Ctrl</kbd>+<kbd>Enter</kbd> para enviar
+                          </span>
                           <button className="btn-primary" onClick={enviarComentario}>
                             <i className="fas fa-paper-plane"></i> Comentar
                           </button>

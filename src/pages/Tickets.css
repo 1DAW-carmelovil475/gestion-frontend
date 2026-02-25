@@ -96,6 +96,17 @@
 /* ============================================================
    TICKET CARDS MOBILE
    ============================================================ */
+
+/* ESTILOS GLOBALES PARA TICKETS PAGE */
+.tickets-page {
+  background: var(--bg);
+}
+
+/* Cuando estamos en vista detalle, fondo completamente blanco */
+.tickets-page.detalle-view-active {
+  background: white !important;
+}
+
 .ticket-card-mobile {
   background: white;
   border-radius: 10px;
@@ -157,27 +168,111 @@
 
 .detalle-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
   gap: 10px;
+  padding: 10px 20px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  position: absolute;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  height: 68px;
+  min-height: 68px;
+}
+
+.detalle-header-titulo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.detalle-header-asunto {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.detalle-header-empresa-inline {
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.detalle-header-sep {
+  color: #cbd5e1;
+  font-weight: 300;
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+.detalle-header-asunto-text {
+  color: var(--dark);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.detalle-header-empresa {
+  font-size: 0.78rem;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detalle-header-empresa i {
+  color: var(--primary);
+  font-size: 0.7rem;
 }
 
 .detalle-titulo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
   min-width: 0;
 }
 
 .detalle-titulo h2 {
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.main-content.detalle-ticket {
+  padding: 0;
+  margin-top: 0;
+}
+
+.detalle-ticket > .detalle-header {
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 0;
+}
+
+.detalle-ticket-body-wrapper {
+  padding: 0;
+  margin-top: 0;
 }
 
 .detalle-acciones {
@@ -185,13 +280,13 @@
   gap: 8px;
   align-items: center;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .estado-select {
-  padding: 7px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 7px;
   font-size: 0.88rem;
   background: white;
   color: var(--dark);
@@ -202,50 +297,118 @@
 /* ============================================================
    DETALLE TICKET — BODY
    ============================================================ */
+.main-content.detalle-ticket {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.detalle-ticket-body-wrapper {
+  padding: 0;
+  padding-top: 68px;
+  width: 100%;
+}
+
 .detalle-body {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 16px;
-  align-items: start;
+  gap: 0;
+  align-items: stretch;
+  min-height: calc(100vh - 124px);
+  height: calc(100vh - 124px);
 }
 
 /* ============================================================
-   SIDEBAR
+   SIDEBAR — con scroll interno completo
    ============================================================ */
 .detalle-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  background: white;
+  border-right: 1px solid var(--border);
+  padding: 0;
+  overflow-y: auto;
+  height: calc(100vh - 124px);
+  max-height: calc(100vh - 124px);
+  /* Scrollbar estilizada */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
+.detalle-sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.detalle-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detalle-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.detalle-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Cada sección de la sidebar */
 .sidebar-card {
   background: white;
-  border-radius: 10px;
-  padding: 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 0;
+  padding: 16px 20px;
+  box-shadow: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
+.sidebar-card:last-child {
+  border-bottom: none;
+}
+
+/* Título de sección */
 .sidebar-card h4 {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.9rem;
-  color: var(--dark);
-  margin-bottom: 10px;
-  cursor: default;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
 }
 
 .sidebar-card h4 i {
   color: var(--primary);
+  font-size: 0.82rem;
 }
 
-/* Info rows */
-.info-row {
+.sidebar-card-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sidebar-card-header h4 {
+  margin-bottom: 0;
+}
+
+.sidebar-empty {
+  font-size: 0.82rem;
+  color: var(--gray);
+  padding: 4px 0;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
   align-items: flex-start;
-  padding: 6px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f4f8;
   font-size: 0.84rem;
   gap: 8px;
 }
@@ -256,14 +419,13 @@
 
 .info-row-label {
   color: var(--gray);
-  flex-shrink: 0;
   font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .info-row-value {
   font-weight: 500;
   color: var(--dark);
-  text-align: right;
   font-size: 0.84rem;
 }
 
@@ -323,7 +485,7 @@
 }
 
 /* ============================================================
-   OPERARIOS CHECKBOXES (modal asignar y modal nuevo ticket)
+   OPERARIOS CHECKBOXES
    ============================================================ */
 .operarios-checkboxes {
   display: flex;
@@ -461,7 +623,6 @@
   color: white;
 }
 
-/* Preview archivos (antes de enviar comentario) */
 .archivos-preview {
   display: flex;
   flex-wrap: wrap;
@@ -494,7 +655,6 @@
   color: #dc2626;
 }
 
-/* Archivos adjuntos en comentarios */
 .comentario-archivos {
   display: flex;
   flex-wrap: wrap;
@@ -522,13 +682,12 @@
 }
 
 /* ============================================================
-   HISTORIAL
+   HISTORIAL — items (sidebar legacy, mantenido por compatibilidad)
    ============================================================ */
 .historial-item {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  margin-bottom: 8px;
 }
 
 .historial-icon {
@@ -556,43 +715,55 @@
 }
 
 /* ============================================================
-   TABS DETALLE (Notas / Comentarios)
+   TABS DETALLE (Notas / Comentarios / Historial)
    ============================================================ */
 .detalle-main {
   display: flex;
   flex-direction: column;
+  background: white;
+  padding: 0;
+  height: calc(100vh - 124px);
+  max-height: calc(100vh - 124px);
+  overflow: hidden;
 }
 
 .detalle-tabs {
   display: flex;
-  gap: 2px;
+  gap: 0;
   background: white;
-  border-radius: 10px 10px 0 0;
-  padding: 8px 8px 0;
+  border-radius: 0;
+  padding: 0 16px;
   border-bottom: 2px solid var(--border);
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 .detalle-tab {
-  padding: 10px 16px;
+  padding: 12px 18px;
   border: none;
   background: transparent;
   color: var(--gray);
   font-weight: 500;
   font-size: 0.88rem;
-  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
   transition: all 0.18s;
   display: flex;
   align-items: center;
   gap: 7px;
   cursor: pointer;
   font-family: inherit;
+  border-radius: 0;
+}
+
+.detalle-tab:hover {
+  color: var(--primary);
 }
 
 .detalle-tab.active {
-  background: #f3f4f6;
   color: var(--primary);
-  border-bottom: 2px solid var(--primary);
-  margin-bottom: -2px;
+  border-bottom-color: var(--primary);
+  background: transparent;
 }
 
 .tab-badge {
@@ -603,30 +774,59 @@
   font-size: 0.68rem;
 }
 
-/* Tab Panel */
+/* Tab Panel base */
 .tab-panel {
   background: white;
-  border-radius: 0 0 10px 10px;
-  padding: 16px;
-  min-height: 360px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 0;
+  padding: 12px;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
-/* Notas textarea */
+/* ============================================================
+   TAB NOTAS — textarea ocupa todo el espacio disponible
+   ============================================================ */
+.tab-panel-notas {
+  overflow: hidden;
+}
+
+.notas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
 .notas-textarea {
   flex: 1;
   width: 100%;
-  min-height: 280px;
-  padding: 12px;
+  padding: 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 0.9rem;
   font-family: inherit;
-  resize: vertical;
-  background: #f9fafb;
+  resize: none;
+  background: #fafbfc;
   color: var(--dark);
+  overflow-y: auto;
+  line-height: 1.6;
+  box-sizing: border-box;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.notas-textarea::-webkit-scrollbar {
+  width: 5px;
+}
+
+.notas-textarea::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 .notas-textarea:focus {
@@ -637,13 +837,30 @@
 }
 
 /* ============================================================
-   COMENTARIOS
+   TAB COMENTARIOS — lista con scroll + formulario fijo abajo
    ============================================================ */
+.tab-panel-comentarios {
+  overflow: hidden;
+}
+
+/* Lista de comentarios: crece y hace scroll */
 .comentarios-lista {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: 12px;
-  padding-right: 2px;
+  min-height: 0;
+  padding-right: 4px;
+  margin-bottom: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.comentarios-lista::-webkit-scrollbar {
+  width: 5px;
+}
+
+.comentarios-lista::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 .comentarios-empty {
@@ -672,23 +889,24 @@
 
 .comentario-item {
   display: flex;
-  gap: 10px;
-  padding: 10px 12px;
-  background: #f8fafc;
-  border-radius: 9px;
-  border-left: 3px solid var(--primary);
-  margin-bottom: 10px;
+  gap: 12px;
+  padding: 14px 8px;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.comentario-item:last-child {
+  border-bottom: none;
 }
 
 .comentario-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -702,13 +920,13 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 
 .comentario-autor {
-  font-weight: 600;
-  font-size: 0.85rem;
+  font-weight: 700;
+  font-size: 0.88rem;
   color: var(--dark);
 }
 
@@ -725,20 +943,23 @@
 
 .comentario-acciones {
   margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.comentario-item:hover .comentario-acciones {
+  opacity: 1;
 }
 
 .btn-comentario-accion {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 3px 5px;
+  padding: 4px 6px;
   border-radius: 5px;
   transition: all 0.15s;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-family: inherit;
-}
-
-.btn-comentario-delete {
   color: var(--gray);
 }
 
@@ -748,46 +969,490 @@
 }
 
 .comentario-texto {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   color: var(--dark);
-  line-height: 1.5;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+  background: #f7f9fc;
+  border-radius: 0 12px 12px 12px;
+  padding: 12px 16px;
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-/* Nuevo comentario */
+/* ── Formulario nuevo comentario — FIJO AL FONDO, nunca se corta ── */
 .comentario-nuevo {
   border-top: 1px solid var(--border);
-  padding-top: 14px;
-  margin-top: 4px;
+  padding-top: 10px;
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-shrink: 0;
 }
 
-.comentario-nuevo textarea {
+.comentario-nuevo-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+.comentario-nuevo-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.comentario-nuevo-nombre {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 3px;
+}
+
+.comentario-nuevo-textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border: 1.5px solid #dde3ee;
   border-radius: 8px;
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   resize: none;
-  background: #f8fafc;
+  height: 60px;
+  background: #f7f9fc;
   color: var(--dark);
+  transition: all 0.18s;
+  box-sizing: border-box;
+  line-height: 1.4;
 }
 
-.comentario-nuevo textarea:focus {
+.comentario-nuevo-textarea:focus {
   outline: none;
   border-color: var(--primary);
-  background: white;
-  box-shadow: 0 0 0 3px rgba(0,71,179,0.08);
+  background: #fafbff;
+  box-shadow: 0 0 0 3px rgba(0,71,179,0.07);
 }
 
-.comentario-autor-avatar {
-  flex-shrink: 0;
-  padding-top: 2px;
+.comentario-nuevo-textarea::placeholder {
+  color: #aab4c8;
+  font-size: 0.86rem;
+}
+
+/* Fila acciones */
+.comentario-nuevo-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.btn-clip {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 5px 7px;
+  font-size: 1.05rem;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-clip:hover {
+  color: var(--primary);
+  background: #f0f4fb;
 }
 
 /* ============================================================
-   MODAL TICKET — layout horizontal (2 columnas)
+   HISTORIAL ACORDEÓN EN SIDEBAR
+   ============================================================ */
+.sidebar-card-historial {
+  padding: 0;
+  border-bottom: none;
+}
+
+.historial-accordion-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  border-top: 1px solid var(--border);
+}
+
+.historial-accordion-btn:hover {
+  background: #f7f9fc;
+}
+
+.historial-accordion-btn.open {
+  background: #f0f5ff;
+}
+
+.historial-accordion-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.historial-accordion-left i {
+  color: var(--primary);
+  font-size: 0.82rem;
+}
+
+.historial-accordion-count {
+  background: var(--primary);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.historial-chevron {
+  font-size: 0.75rem;
+  color: var(--gray);
+  transition: color 0.2s;
+}
+
+.historial-accordion-btn.open .historial-chevron {
+  color: var(--primary);
+}
+
+.historial-accordion-body {
+  padding: 0 14px 16px;
+  animation: acordeonOpen 0.2s ease;
+}
+
+@keyframes acordeonOpen {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Timeline compacta para sidebar */
+.sidebar-timeline .historial-timeline-content {
+  padding-bottom: 14px;
+}
+
+.sidebar-timeline .historial-timeline-desc {
+  font-size: 0.82rem;
+}
+
+.sidebar-timeline .historial-timeline-badge {
+  font-size: 0.65rem;
+  padding: 1px 7px;
+  margin-bottom: 4px;
+}
+
+.sidebar-timeline .historial-timeline-meta {
+  gap: 8px;
+}
+
+.sidebar-timeline .historial-timeline-autor {
+  font-size: 0.72rem;
+}
+
+.sidebar-timeline .historial-timeline-fecha {
+  font-size: 0.7rem;
+}
+
+/* ============================================================
+   TAB HISTORIAL — timeline
+   ============================================================ */
+.tab-panel-historial {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.tab-panel-historial::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tab-panel-historial::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.historial-timeline {
+  padding: 8px 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.historial-timeline-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.historial-timeline-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.historial-timeline-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+  transition: transform 0.15s;
+}
+
+.historial-timeline-item:hover .historial-timeline-dot {
+  transform: scale(1.1);
+}
+
+.historial-timeline-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 18px;
+  background: linear-gradient(to bottom, #e2e8f0, #e2e8f0);
+  margin: 3px 0;
+}
+
+.historial-timeline-content {
+  flex: 1;
+  padding-bottom: 20px;
+  min-width: 0;
+}
+
+.historial-timeline-item.last .historial-timeline-content {
+  padding-bottom: 0;
+}
+
+.historial-timeline-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border: 1px solid;
+  margin-bottom: 6px;
+}
+
+.historial-timeline-desc {
+  font-size: 0.88rem;
+  color: var(--dark);
+  line-height: 1.5;
+  margin: 0 0 6px;
+  word-break: break-word;
+}
+
+.historial-timeline-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.historial-timeline-autor {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.historial-mini-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.historial-timeline-fecha {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--gray);
+}
+
+.historial-timeline-fecha i {
+  font-size: 0.68rem;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   EDITOR ENRIQUECIDO COMENTARIOS
+   ============================================================ */
+.editor-rich {
+  border: 1.5px solid #dde3ee;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f7f9fc;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  margin-bottom: 0;
+}
+
+.editor-rich:focus-within {
+  border-color: var(--primary);
+  background: #fafbff;
+  box-shadow: 0 0 0 3px rgba(0,71,179,0.07);
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  background: white;
+  border-bottom: 1px solid #e8edf5;
+  flex-wrap: wrap;
+}
+
+.editor-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  color: #64748b;
+  transition: all 0.13s;
+  flex-shrink: 0;
+}
+
+.editor-btn:hover {
+  background: #f0f5ff;
+  color: var(--primary);
+}
+
+.editor-btn:active {
+  background: #dbeafe;
+  color: var(--primary);
+}
+
+.editor-sep {
+  width: 1px;
+  height: 18px;
+  background: #e2e8f0;
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.editor-content {
+  min-height: 80px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  color: var(--dark);
+  line-height: 1.6;
+  outline: none;
+  word-break: break-word;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.editor-content:empty::before {
+  content: attr(data-placeholder);
+  color: #aab4c8;
+  pointer-events: none;
+}
+
+.editor-content b, .editor-content strong { font-weight: 700; }
+.editor-content i, .editor-content em { font-style: italic; }
+.editor-content u { text-decoration: underline; }
+.editor-content s { text-decoration: line-through; }
+.editor-content ul { padding-left: 20px; margin: 4px 0; list-style: disc; }
+.editor-content ol { padding-left: 20px; margin: 4px 0; list-style: decimal; }
+.editor-content blockquote {
+  border-left: 3px solid var(--primary);
+  margin: 6px 0;
+  padding: 4px 10px;
+  color: #64748b;
+  background: #f0f5ff;
+  border-radius: 0 5px 5px 0;
+  font-style: italic;
+}
+.editor-content pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+/* Estilos también en los comentarios ya publicados */
+.comentario-texto b, .comentario-texto strong { font-weight: 700; }
+.comentario-texto i, .comentario-texto em { font-style: italic; }
+.comentario-texto u { text-decoration: underline; }
+.comentario-texto s { text-decoration: line-through; }
+.comentario-texto ul { padding-left: 20px; margin: 4px 0; list-style: disc; }
+.comentario-texto ol { padding-left: 20px; margin: 4px 0; list-style: decimal; }
+.comentario-texto blockquote {
+  border-left: 3px solid var(--primary);
+  margin: 6px 0;
+  padding: 4px 10px;
+  color: #64748b;
+  background: #e8f0fe;
+  border-radius: 0 5px 5px 0;
+  font-style: italic;
+}
+.comentario-texto pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+/* ============================================================
+   MODAL TICKET
    ============================================================ */
 .ticket-modal-grid {
   display: grid;
@@ -800,31 +1465,85 @@
 }
 
 /* ============================================================
+   EVITAR SCROLL EN LA VISTA DETALLE
+   ============================================================ */
+.detalle-view-active {
+  overflow: hidden;
+  height: 100vh;
+  background: white;
+}
+
+.detalle-view-active .main-content {
+  overflow: hidden;
+  height: calc(100vh - 56px);
+  background: white;
+}
+
+.tickets-page.detalle-view-active {
+  background: white;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
   .detalle-body {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: auto;
   }
 
   .detalle-sidebar {
-    order: 2;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .detalle-main {
-    order: 1;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .tab-panel {
+    overflow: visible;
+    height: auto;
+    min-height: 300px;
+  }
+
+  .tab-panel-comentarios {
+    overflow: visible;
+  }
+
+  .tab-panel-historial {
+    overflow: visible;
+    min-height: 300px;
+  }
+
+  .comentarios-lista {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .notas-textarea {
+    min-height: 300px;
+    height: 300px;
   }
 }
 
 @media (max-width: 768px) {
   .detalle-header {
-    flex-direction: column;
-    align-items: flex-start;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    position: static;
   }
 
-  .detalle-titulo h2 {
-    font-size: 1rem;
-    white-space: normal;
+  .detalle-ticket-body-wrapper {
+    padding-top: 0;
   }
 
   .detalle-acciones {
@@ -840,8 +1559,27 @@
     grid-column: 1;
   }
 
-  .tab-panel {
-    min-height: 280px;
-    padding: 12px;
+  .notas-textarea {
+    min-height: 250px;
+  }
+
+  .comentario-nuevo-textarea {
+    min-height: 80px;
+    height: 80px;
+  }
+
+  .detalle-tabs {
+    overflow-x: auto;
+    padding: 0 8px;
+  }
+
+  .detalle-tab {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .historial-timeline-content {
+    padding-bottom: 16px;
   }
 }

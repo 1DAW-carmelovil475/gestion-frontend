@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
   getTickets, getTicket, createTicket, updateTicket, deleteTicket,
   getEmpresas, getOperarios, getDispositivos,
@@ -9,6 +10,7 @@ import {
   uploadTicketArchivo, deleteArchivo, getArchivoUrl,
   updateTicketNotas
 } from '../services/api'
+import ChatNavLink from '../components/ChatNavLink'
 import './Tickets.css'
 
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
@@ -89,7 +91,9 @@ function EstadoBadge({ e }) {
 
 export default function Tickets() {
   const { user, logout, isAdmin } = useAuth()
+  const { totalUnread } = useChatNotifications()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [tickets, setTickets]         = useState([])
   const [allTickets, setAllTickets]   = useState([])

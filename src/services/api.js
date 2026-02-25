@@ -1,28 +1,8 @@
+import { tryRefreshToken } from './auth-helpers'
+
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
   : 'https://TU_BACKEND_URL_AQUI'
-
-const SUPABASE_URL      = 'https://tectctwdrrmlzujakzyq.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlY3RjdHdkcnJtbHp1amFrenlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMTQ5NDQsImV4cCI6MjA4Njg5MDk0NH0.s_IsL2yJKgb33j-8VvvOxEuCzFH4WjFv_s5MqhVBTjI'
-
-// ── Refresca el token silenciosamente ─────────────────────────────────────
-async function tryRefreshToken() {
-  const refreshToken = sessionStorage.getItem('hola_refresh')
-  if (!refreshToken) return null
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (!data.access_token) return null
-    sessionStorage.setItem('hola_token', data.access_token)
-    if (data.refresh_token) sessionStorage.setItem('hola_refresh', data.refresh_token)
-    return data.access_token
-  } catch { return null }
-}
 
 export async function apiFetch(path, options = {}, _isRetry = false) {
   const token = sessionStorage.getItem('hola_token')
@@ -48,10 +28,10 @@ export async function apiFetch(path, options = {}, _isRetry = false) {
   if (res.status === 401 && !_isRetry) {
     const newToken = await tryRefreshToken()
     if (newToken) {
-      // Reintentar la petición original con el token nuevo
+      // Reintentar con el token nuevo
       return apiFetch(path, options, true)
     }
-    // No se pudo refrescar → solo hacer logout si había token (sesión real expirada)
+    // Solo redirigir si había token activo (sesión real expirada)
     if (token) {
       sessionStorage.clear()
       window.location.href = '/login'
@@ -101,9 +81,7 @@ export async function getTicketComentarios(ticketId) { return apiFetch(`/api/v2/
 export async function createTicketComentario(ticketId, contenido, files = []) {
   const formData = new FormData()
   formData.append('contenido', contenido)
-  if (files.length > 0) {
-    formData.append('file_names', JSON.stringify(files.map(f => f.name)))
-  }
+  if (files.length > 0) formData.append('file_names', JSON.stringify(files.map(f => f.name)))
   files.forEach(f => formData.append('files', f, f.name))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/tickets/${ticketId}/comentarios`, {
@@ -128,9 +106,7 @@ export async function getArchivoUrl(archivoId) { return apiFetch(`/api/v2/archiv
 
 export async function uploadTicketArchivo(ticketId, files) {
   const formData = new FormData()
-  if (files.length > 0) {
-    formData.append('file_names', JSON.stringify(files.map(f => f.name)))
-  }
+  if (files.length > 0) formData.append('file_names', JSON.stringify(files.map(f => f.name)))
   files.forEach(f => formData.append('files', f, f.name))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/tickets/${ticketId}/archivos`, {
@@ -150,9 +126,9 @@ export async function updateUsuario(id, data)  { return apiFetch(`/api/usuarios/
 export async function deleteUsuario(id)        { return apiFetch(`/api/usuarios/${id}`, { method: 'DELETE' }) }
 
 // ── Estadísticas ──────────────────────────────────────────────────────────
-export async function getEstadisticasResumen()             { return apiFetch('/api/v2/estadisticas/resumen') }
-export async function getEstadisticasOperarios(p = {})     { return apiFetch(`/api/v2/estadisticas/operarios?${new URLSearchParams(p)}`) }
-export async function getEstadisticasEmpresas(p = {})      { return apiFetch(`/api/v2/estadisticas/empresas?${new URLSearchParams(p)}`) }
+export async function getEstadisticasResumen()         { return apiFetch('/api/v2/estadisticas/resumen') }
+export async function getEstadisticasOperarios(p = {}) { return apiFetch(`/api/v2/estadisticas/operarios?${new URLSearchParams(p)}`) }
+export async function getEstadisticasEmpresas(p = {})  { return apiFetch(`/api/v2/estadisticas/empresas?${new URLSearchParams(p)}`) }
 
 // ── Chat ──────────────────────────────────────────────────────────────────
 export async function getChatCanales() { return apiFetch('/api/v2/chat/canales') }
@@ -160,11 +136,9 @@ export async function getChatCanales() { return apiFetch('/api/v2/chat/canales')
 export async function createChatCanal(data) {
   return apiFetch('/api/v2/chat/canales', { method: 'POST', body: JSON.stringify(data) })
 }
-
 export async function updateChatCanal(id, data) {
   return apiFetch(`/api/v2/chat/canales/${id}`, { method: 'PUT', body: JSON.stringify(data) })
 }
-
 export async function deleteChatCanal(id) { return apiFetch(`/api/v2/chat/canales/${id}`, { method: 'DELETE' }) }
 
 export async function getChatMensajes(canalId, limit = 100) {
@@ -175,9 +149,7 @@ export async function sendChatMensaje(canalId, contenido, ticketRefId = null, fi
   const formData = new FormData()
   formData.append('contenido', contenido)
   if (ticketRefId) formData.append('ticket_ref_id', ticketRefId)
-  if (files.length > 0) {
-    formData.append('file_names', JSON.stringify(files.map(f => f.name)))
-  }
+  if (files.length > 0) formData.append('file_names', JSON.stringify(files.map(f => f.name)))
   files.forEach(f => formData.append('files', f, f.name))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/chat/canales/${canalId}/mensajes`, {
@@ -190,25 +162,15 @@ export async function sendChatMensaje(canalId, contenido, ticketRefId = null, fi
 export async function deleteChatMensaje(mensajeId) {
   return apiFetch(`/api/v2/chat/mensajes/${mensajeId}`, { method: 'DELETE' })
 }
-
 export async function editChatMensaje(mensajeId, contenido) {
-  return apiFetch(`/api/v2/chat/mensajes/${mensajeId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ contenido })
-  })
+  return apiFetch(`/api/v2/chat/mensajes/${mensajeId}`, { method: 'PATCH', body: JSON.stringify({ contenido }) })
 }
-
 export async function pinChatMensaje(mensajeId, anclado) {
-  return apiFetch(`/api/v2/chat/mensajes/${mensajeId}/pin`, {
-    method: 'PATCH',
-    body: JSON.stringify({ anclado })
-  })
+  return apiFetch(`/api/v2/chat/mensajes/${mensajeId}/pin`, { method: 'PATCH', body: JSON.stringify({ anclado }) })
 }
-
 export async function addChatMiembros(canalId, miembros) {
   return apiFetch(`/api/v2/chat/canales/${canalId}/miembros`, { method: 'POST', body: JSON.stringify({ miembros }) })
 }
-
 export async function getChatArchivoUrl(archivoId) {
   return apiFetch(`/api/v2/chat/archivos/${archivoId}/url`)
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -91,14 +91,13 @@ export default function Tickets() {
   const { user, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
 
-  // Listas
-  const [tickets, setTickets]     = useState([])
-  const [empresas, setEmpresas]   = useState([])
-  const [operarios, setOperarios] = useState([])
-  const [stats, setStats]         = useState({})
-  const [loading, setLoading]     = useState(true)
+  const [tickets, setTickets]         = useState([])
+  const [allTickets, setAllTickets]   = useState([])
+  const [empresas, setEmpresas]       = useState([])
+  const [operarios, setOperarios]     = useState([])
+  const [stats, setStats]             = useState({})
+  const [loading, setLoading]         = useState(true)
 
-  // Filtros
   const [estadoFilter, setEstadoFilter]       = useState('all')
   const [prioridadFilter, setPrioridadFilter] = useState('all')
   const [operarioFilter, setOperarioFilter]   = useState('all')
@@ -108,54 +107,41 @@ export default function Tickets() {
   const [filtroHasta, setFiltroHasta]         = useState('')
   const searchTimer = useRef(null)
 
-  // Vista detalle
-  const [vistaDetalle, setVistaDetalle]   = useState(false)
-  const [ticketActual, setTicketActual]   = useState(null)
-  const [comentarios, setComentarios]     = useState([])
-  const [activeTab, setActiveTab]         = useState('notas')
-  const [notasValue, setNotasValue]       = useState('')
-  const [historialVisible, setHistorialVisible] = useState(false)
+  const [vistaDetalle, setVistaDetalle]         = useState(false)
+  const [ticketActual, setTicketActual]         = useState(null)
+  const [comentarios, setComentarios]           = useState([])
+  const [activeTab, setActiveTab]               = useState('comentarios')
+  const [notasValue, setNotasValue]             = useState('')
 
-  // Modal ticket
-  const [showTicketModal, setShowTicketModal] = useState(false)
-  const [editingTicket, setEditingTicket]     = useState(null)
-  const [modalEmprId, setModalEmprId]         = useState('')
-  const [modalDispositivos, setModalDispositivos] = useState([])
+  const [showTicketModal, setShowTicketModal]         = useState(false)
+  const [editingTicket, setEditingTicket]             = useState(null)
+  const [modalEmprId, setModalEmprId]                 = useState('')
+  const [modalDispositivos, setModalDispositivos]     = useState([])
   const [modalOperariosCheck, setModalOperariosCheck] = useState([])
 
-  // Modal asignar operarios (en detalle)
   const [showAsignarModal, setShowAsignarModal]           = useState(false)
   const [asignarOperariosCheck, setAsignarOperariosCheck] = useState([])
+  const [historialAbierto, setHistorialAbierto]           = useState(false)
 
-  // Comentarios
   const [comentarioText, setComentarioText] = useState('')
-  const [pendingComFiles, setPendingComFiles] = useState([])
 
-  // Archivos del ticket
   const archivoInputRef = useRef(null)
-  const comArchivoInputRef = useRef(null)
+  const notasTimer      = useRef(null)
+  const notasGuardado   = useRef(null)
 
-  // Notas autosave timer
-  const notasTimer = useRef(null)
-  const notasGuardado = useRef(null)
-
-  // ============================================================
-  useEffect(() => {
-    loadData()
-  }, [])
+  useEffect(() => { loadData() }, [])
 
   useEffect(() => {
-    if (!loading) loadTickets()
-  }, [estadoFilter, prioridadFilter, operarioFilter, empresaFilter, filtroDesde, filtroHasta])
+    if (!loading && allTickets.length > 0) applyFilters()
+  }, [estadoFilter, prioridadFilter, operarioFilter, empresaFilter, filtroDesde, filtroHasta, searchTerm, allTickets])
 
   async function loadData() {
     setLoading(true)
     try {
       const [ticketsData, empresasData, operariosData] = await Promise.all([
-        getTickets(),
-        getEmpresas(),
-        getOperarios(),
+        getTickets(), getEmpresas(), getOperarios(),
       ])
+      setAllTickets(ticketsData || [])
       setTickets(ticketsData || [])
       setEmpresas(empresasData || [])
       setOperarios(operariosData || [])
@@ -178,39 +164,43 @@ export default function Tickets() {
     })
   }
 
-  async function loadTickets() {
-    const params = {}
-    if (estadoFilter    !== 'all') params.estado       = estadoFilter
-    if (prioridadFilter !== 'all') params.prioridad    = prioridadFilter
-    if (operarioFilter  !== 'all') params.operario_id  = operarioFilter
-    if (empresaFilter   !== 'all') params.empresa_id   = empresaFilter
-    if (searchTerm)  params.search = searchTerm
-    if (filtroDesde) params.desde  = filtroDesde
-    if (filtroHasta) params.hasta  = filtroHasta
-
-    try {
-      let data = await getTickets(params)
-      if (estadoFilter === 'abiertos') data = data.filter(t => t.estado === 'Pendiente' || t.estado === 'En curso')
-      setTickets(data || [])
-      calcStats(data || [])
-    } catch (error) {
-      showToast('error', 'Error', error.message)
+  function applyFilters() {
+    let filtered = [...allTickets]
+    if (searchTerm && searchTerm.trim() !== '') {
+      const search = searchTerm.toLowerCase()
+      filtered = filtered.filter(t =>
+        t.asunto?.toLowerCase().includes(search) ||
+        t.descripcion?.toLowerCase().includes(search) ||
+        t.numero?.toString().includes(search) ||
+        t.empresas?.nombre?.toLowerCase().includes(search)
+      )
     }
+    if (estadoFilter !== 'all') {
+      if (estadoFilter === 'abiertos') {
+        filtered = filtered.filter(t => t.estado === 'Pendiente' || t.estado === 'En curso')
+      } else {
+        filtered = filtered.filter(t => t.estado === estadoFilter)
+      }
+    }
+    if (prioridadFilter !== 'all') filtered = filtered.filter(t => t.prioridad === prioridadFilter)
+    if (operarioFilter !== 'all') {
+      filtered = filtered.filter(t => (t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter))
+    }
+    if (empresaFilter !== 'all') filtered = filtered.filter(t => t.empresa_id === empresaFilter)
+    if (filtroDesde) filtered = filtered.filter(t => new Date(t.created_at) >= new Date(filtroDesde))
+    if (filtroHasta) {
+      const hasta = new Date(filtroHasta)
+      hasta.setHours(23, 59, 59, 999)
+      filtered = filtered.filter(t => new Date(t.created_at) <= hasta)
+    }
+    setTickets(filtered)
   }
 
-  function onSearchChange(e) {
-    setSearchTerm(e.target.value)
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(loadTickets, 400)
-  }
+  function onSearchChange(e) { setSearchTerm(e.target.value) }
 
-  // ============================================================
-  // ABRIR TICKET DETALLE
-  // ============================================================
   async function abrirTicket(id) {
     setVistaDetalle(true)
-    setActiveTab('notas')
-    setHistorialVisible(false)
+    setActiveTab('comentarios')
     try {
       const data = await getTicket(id)
       setTicketActual(data)
@@ -226,15 +216,11 @@ export default function Tickets() {
     setVistaDetalle(false)
     setTicketActual(null)
     setComentarios([])
-    setActiveTab('notas')
-    setPendingComFiles([])
+    setActiveTab('comentarios')
     setComentarioText('')
-    loadTickets()
+    loadData()
   }
 
-  // ============================================================
-  // NOTAS AUTOSAVE
-  // ============================================================
   function onNotasChange(e) {
     const val = e.target.value
     setNotasValue(val)
@@ -255,9 +241,6 @@ export default function Tickets() {
     }, 1200)
   }
 
-  // ============================================================
-  // TABS DETALLE
-  // ============================================================
   async function switchTab(tab) {
     setActiveTab(tab)
     if (tab === 'comentarios' && ticketActual) {
@@ -270,9 +253,6 @@ export default function Tickets() {
     }
   }
 
-  // ============================================================
-  // CAMBIAR ESTADO
-  // ============================================================
   async function cambiarEstado(nuevoEstado) {
     if (!ticketActual) return
     try {
@@ -282,19 +262,25 @@ export default function Tickets() {
       setTicketActual(updated)
     } catch (error) {
       showToast('error', 'Error', error.message)
-      // Restaurar valor anterior en el select
     }
   }
 
-  // ============================================================
-  // OPERARIOS
-  // ============================================================
   function abrirModalAsignar() {
     const asignadosIds = (ticketActual?.ticket_asignaciones || []).map(a => a.user_id)
-    setAsignarOperariosCheck(
-      operarios.map(op => ({ ...op, checked: asignadosIds.includes(op.id) }))
-    )
+    setAsignarOperariosCheck(operarios.map(op => ({ ...op, checked: asignadosIds.includes(op.id) })))
     setShowAsignarModal(true)
+  }
+
+  function toggleAsignarOperario(i) {
+    const updated = [...asignarOperariosCheck]
+    updated[i] = { ...updated[i], checked: !updated[i].checked }
+    setAsignarOperariosCheck(updated)
+  }
+
+  function toggleModalOperario(i) {
+    const updated = [...modalOperariosCheck]
+    updated[i] = { ...updated[i], checked: !updated[i].checked }
+    setModalOperariosCheck(updated)
   }
 
   async function guardarAsignaciones() {
@@ -324,9 +310,6 @@ export default function Tickets() {
     }
   }
 
-  // ============================================================
-  // ARCHIVOS DEL TICKET
-  // ============================================================
   async function subirArchivos(e) {
     const files = Array.from(e.target.files)
     if (!files.length || !ticketActual) return
@@ -337,8 +320,9 @@ export default function Tickets() {
       showToast('success', 'Archivos subidos', `${files.length} archivo(s) añadido(s)`)
     } catch (error) {
       showToast('error', 'Error al subir archivos', error.message)
+    } finally {
+      e.target.value = ''
     }
-    e.target.value = ''
   }
 
   async function eliminarArchivo(archivoId) {
@@ -364,21 +348,20 @@ export default function Tickets() {
     }
   }
 
-  // ============================================================
-  // COMENTARIOS
-  // ============================================================
   async function enviarComentario() {
     if (!ticketActual) return
-    if (!comentarioText.trim() && !pendingComFiles.length) {
-      showToast('warning', 'Aviso', 'Escribe algo o adjunta un archivo'); return
+    const textoLimpio = comentarioText.replace(/<[^>]*>/g, '').trim()
+    if (!textoLimpio) {
+      showToast('warning', 'Aviso', 'Escribe algo para comentar'); return
     }
     try {
-      await createTicketComentario(ticketActual.id, comentarioText, pendingComFiles)
+      await createTicketComentario(ticketActual.id, comentarioText, [])
       setComentarioText('')
-      setPendingComFiles([])
+      // Limpiar el editor rich text
+      const editor = document.querySelector('.editor-content')
+      if (editor) editor.innerHTML = ''
       const data = await getTicketComentarios(ticketActual.id)
       setComentarios(data || [])
-      // Badge
       showToast('success', 'Comentario añadido', '')
     } catch (error) {
       showToast('error', 'Error', error.message)
@@ -397,9 +380,6 @@ export default function Tickets() {
     }
   }
 
-  // ============================================================
-  // MODAL TICKET (NUEVO / EDITAR)
-  // ============================================================
   async function abrirModalNuevoTicket() {
     setEditingTicket(null)
     setModalEmprId('')
@@ -413,7 +393,6 @@ export default function Tickets() {
     setModalEmprId(t.empresa_id || '')
     const asignadosIds = (t.ticket_asignaciones || []).map(a => a.user_id)
     setModalOperariosCheck(operarios.map(op => ({ ...op, checked: asignadosIds.includes(op.id) })))
-    // Cargar dispositivos de la empresa
     if (t.empresa_id) {
       try {
         const dispositivos = await getDispositivos(t.empresa_id)
@@ -435,8 +414,7 @@ export default function Tickets() {
 
   async function saveTicket(e) {
     e.preventDefault()
-    const formData = new FormData(e.target)
-
+    const formData       = new FormData(e.target)
     const empresa_id     = formData.get('empresa_id')
     const dispositivo_id = formData.get('dispositivo_id') || null
     const asunto         = formData.get('asunto')?.trim()
@@ -444,23 +422,17 @@ export default function Tickets() {
     const prioridad      = formData.get('prioridad')
     const estado         = formData.get('estado')
 
-    if (!empresa_id || !asunto) {
-      showToast('error', 'Error', 'Empresa y asunto son obligatorios'); return
-    }
+    if (!empresa_id || !asunto) { showToast('error', 'Error', 'Empresa y asunto son obligatorios'); return }
 
     const operariosSeleccionados = modalOperariosCheck.filter(o => o.checked).map(o => o.id)
-
     const btn = e.target.querySelector('button[type="submit"]')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...' }
 
     try {
       if (editingTicket) {
         await updateTicket(editingTicket.id, { asunto, descripcion, prioridad, estado, dispositivo_id })
-        if (operariosSeleccionados.length > 0) {
-          await assignOperarios(editingTicket.id, operariosSeleccionados)
-        }
+        if (operariosSeleccionados.length > 0) await assignOperarios(editingTicket.id, operariosSeleccionados)
         showToast('success', 'Ticket actualizado', '')
-        // Si estamos en el detalle, refrescar
         if (ticketActual?.id === editingTicket.id) {
           const updated = await getTicket(editingTicket.id)
           setTicketActual(updated)
@@ -470,7 +442,7 @@ export default function Tickets() {
         showToast('success', 'Ticket creado', asunto)
       }
       setShowTicketModal(false)
-      await loadTickets()
+      await loadData()
     } catch (error) {
       showToast('error', 'Error', error.message)
     } finally {
@@ -478,7 +450,6 @@ export default function Tickets() {
     }
   }
 
-  // Eliminar ticket
   async function eliminarTicket() {
     if (!ticketActual) return
     if (!confirm(`¿Eliminar el ticket #${ticketActual.numero}? Esta acción no se puede deshacer.`)) return
@@ -496,15 +467,12 @@ export default function Tickets() {
     try {
       await deleteTicket(id)
       showToast('success', 'Ticket eliminado', '')
-      await loadTickets()
+      await loadData()
     } catch (error) {
       showToast('error', 'Error', error.message)
     }
   }
 
-  // ============================================================
-  // TOAST
-  // ============================================================
   function showToast(type, title, message) {
     const container = document.getElementById('toastContainer')
     if (!container) return
@@ -524,15 +492,9 @@ export default function Tickets() {
   }
 
   function handleLogout() {
-    if (confirm('¿Cerrar sesión?')) {
-      logout()
-      navigate('/login')
-    }
+    if (confirm('¿Cerrar sesión?')) { logout(); navigate('/login') }
   }
 
-  // ============================================================
-  // LOADING
-  // ============================================================
   if (loading) {
     return (
       <div className="loading-screen">
@@ -542,88 +504,87 @@ export default function Tickets() {
     )
   }
 
-  // ============================================================
-  // TOPBAR (reutilizable)
-  // ============================================================
-  function Topbar({ detalleActive = false }) {
+  function Topbar() {
     return (
-      <header className="topbar">
-        <div className="logo">
-          <img src="/img/logoHola.png" alt="Logo" />
-          <span className="logo-text">Hola Informática</span>
-        </div>
-        <nav className="top-nav">
-          <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
-          <Link to="/tickets" className="nav-link active"><i className="fas fa-headset"></i> Tickets</Link>
-          {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
-          <Link to="/chat" className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
-        </nav>
-        <div className="user-area">
-          <div className="user-info">
-            <i className="fas fa-user-circle"></i>
-            <span>{user?.nombre || user?.email}</span>
+      <>
+        <header className="topbar">
+          <div className="logo">
+            <img src="/img/logoHola.png" alt="Logo" />
+            <span className="logo-text">Hola Informática</span>
           </div>
-          <button className="btn-logout" onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i><span>Salir</span>
-          </button>
-        </div>
-      </header>
+          <nav className="top-nav">
+            <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
+            {isAdmin() && <Link to="/" className="nav-link"><i className="fas fa-users"></i> Usuarios</Link>}
+            <Link to="/tickets" className="nav-link active"><i className="fas fa-headset"></i> Tickets</Link>
+            {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
+            <Link to="/chat" className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
+          </nav>
+          <div className="user-area">
+            <div className="user-info">
+              <i className="fas fa-user-circle"></i>
+              <span>{user?.nombre || user?.email}</span>
+            </div>
+            <button className="btn-logout" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt"></i><span>Salir</span>
+            </button>
+          </div>
+        </header>
+        <nav className="bottom-nav">
+          <Link to="/" className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
+          {isAdmin() && <Link to="/" className="bottom-nav-item"><i className="fas fa-users"></i><span>Usuarios</span></Link>}
+          <Link to="/tickets" className="bottom-nav-item active"><i className="fas fa-headset"></i><span>Tickets</span></Link>
+          {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
+          <Link to="/chat" className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+        </nav>
+      </>
     )
   }
 
-  // ============================================================
-  // MODAL TICKET
-  // ============================================================
   function TicketModal() {
     return (
-      <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowTicketModal(false)}>
+      <div
+        className="modal"
+        style={{ display: 'flex' }}
+        onClick={e => e.target.classList.contains('modal') && setShowTicketModal(false)}
+      >
         <div className="modal-content">
           <div className="modal-header">
-            <h2 id="ticketModalTitle">
-              <i className="fas fa-ticket-alt"></i> {editingTicket ? `Editar Ticket #${editingTicket.numero}` : 'Nuevo Ticket'}
+            <h2>
+              <i className="fas fa-ticket-alt"></i>{' '}
+              {editingTicket ? `Editar Ticket #${editingTicket.numero}` : 'Nuevo Ticket'}
             </h2>
-            <button className="modal-close" onClick={() => setShowTicketModal(false)}><i className="fas fa-times"></i></button>
+            <button className="modal-close" onClick={() => setShowTicketModal(false)}>
+              <i className="fas fa-times"></i>
+            </button>
           </div>
           <form onSubmit={saveTicket}>
             <div className="modal-body">
               <div className="form-group">
                 <label>Empresa *</label>
-                <select
-                  name="empresa_id"
-                  value={modalEmprId}
-                  onChange={e => onModalEmpresaChange(e.target.value)}
-                  id="ticketEmpresa"
-                  required
-                >
+                <select name="empresa_id" value={modalEmprId} onChange={e => onModalEmpresaChange(e.target.value)} required>
                   <option value="">Seleccionar empresa...</option>
-                  {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                  {empresas.map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
                 </select>
               </div>
-
               <div className="form-group">
                 <label>Dispositivo</label>
-                <select name="dispositivo_id" id="ticketDispositivo" defaultValue={editingTicket?.dispositivo_id || ''}>
+                <select name="dispositivo_id" defaultValue={editingTicket?.dispositivo_id || ''}>
                   <option value="">Sin dispositivo</option>
-                  {modalDispositivos.map(d => (
-                    <option key={d.id} value={d.id}>[{d.tipo || d.categoria}] {d.nombre}</option>
-                  ))}
+                  {modalDispositivos.map(d => (<option key={d.id} value={d.id}>[{d.tipo || d.categoria}] {d.nombre}</option>))}
                 </select>
               </div>
-
               <div className="form-group">
                 <label>Asunto *</label>
-                <input type="text" name="asunto" id="ticketAsunto" defaultValue={editingTicket?.asunto} required placeholder="Describe brevemente el problema..." />
+                <input type="text" name="asunto" defaultValue={editingTicket?.asunto} required placeholder="Describe brevemente el problema..." />
               </div>
-
               <div className="form-group">
                 <label>Descripción</label>
-                <textarea name="descripcion" id="ticketDescripcion" defaultValue={editingTicket?.descripcion} rows={3} placeholder="Detalles adicionales..." />
+                <textarea name="descripcion" defaultValue={editingTicket?.descripcion} rows={3} placeholder="Detalles adicionales..." />
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Prioridad</label>
-                  <select name="prioridad" id="ticketPrioridad" defaultValue={editingTicket?.prioridad || 'Media'}>
+                  <select name="prioridad" defaultValue={editingTicket?.prioridad || 'Media'}>
                     <option value="Baja">Baja</option>
                     <option value="Media">Media</option>
                     <option value="Alta">Alta</option>
@@ -632,7 +593,7 @@ export default function Tickets() {
                 </div>
                 <div className="form-group">
                   <label>Estado</label>
-                  <select name="estado" id="ticketEstado" defaultValue={editingTicket?.estado || 'Pendiente'}>
+                  <select name="estado" defaultValue={editingTicket?.estado || 'Pendiente'}>
                     <option value="Pendiente">Pendiente</option>
                     <option value="En curso">En curso</option>
                     <option value="Completado">Completado</option>
@@ -640,34 +601,19 @@ export default function Tickets() {
                   </select>
                 </div>
               </div>
-
-              {/* Operarios checkboxes */}
               <div className="form-group">
                 <label>Asignar operarios</label>
-                <div className="operarios-checkboxes" id="operariosCheckboxes">
+                <div className="operarios-checkboxes">
                   {modalOperariosCheck.length === 0
                     ? <p style={{ color: 'var(--gray)', fontSize: '0.88rem' }}>No hay operarios disponibles.</p>
                     : modalOperariosCheck.map((op, i) => (
-                      <div
-                        key={op.id}
-                        className={`operario-check-item ${op.checked ? 'checked' : ''}`}
-                        data-user-id={op.id}
-                        onClick={() => {
-                          const updated = [...modalOperariosCheck]
-                          updated[i] = { ...updated[i], checked: !updated[i].checked }
-                          setModalOperariosCheck(updated)
-                        }}
-                      >
-                        <div className="operario-check-avatar" style={{ background: getAvatarColor(op.id) }}>
-                          {getInitials(op.nombre)}
+                        <div key={op.id} className={`operario-check-item ${op.checked ? 'checked' : ''}`} onClick={() => toggleModalOperario(i)}>
+                          <div className="operario-check-avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
+                          <span className="operario-check-nombre">{op.nombre}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>{op.rol}</span>
+                          <div className="operario-check-tick">{op.checked ? <i className="fas fa-check"></i> : ''}</div>
                         </div>
-                        <span className="operario-check-nombre">{op.nombre}</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>{op.rol}</span>
-                        <div className="operario-check-tick">
-                          {op.checked ? <i className="fas fa-check"></i> : ''}
-                        </div>
-                      </div>
-                    ))
+                      ))
                   }
                 </div>
               </div>
@@ -682,8 +628,41 @@ export default function Tickets() {
     )
   }
 
+  function AsignarModal() {
+    return (
+      <div
+        className="modal"
+        style={{ display: 'flex' }}
+        onClick={e => e.target.classList.contains('modal') && setShowAsignarModal(false)}
+      >
+        <div className="modal-content">
+          <div className="modal-header">
+            <h2><i className="fas fa-user-plus"></i> Asignar Operarios</h2>
+            <button className="modal-close" onClick={() => setShowAsignarModal(false)}><i className="fas fa-times"></i></button>
+          </div>
+          <div className="modal-body">
+            <div className="operarios-checkboxes">
+              {asignarOperariosCheck.map((op, i) => (
+                <div key={op.id} className={`operario-check-item ${op.checked ? 'checked' : ''}`} onClick={() => toggleAsignarOperario(i)}>
+                  <div className="operario-check-avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
+                  <span className="operario-check-nombre">{op.nombre}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>{op.rol}</span>
+                  <div className="operario-check-tick">{op.checked ? <i className="fas fa-check"></i> : ''}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="modal-buttons">
+            <button className="btn-primary" onClick={guardarAsignaciones}><i className="fas fa-save"></i> Guardar</button>
+            <button className="btn-secondary" onClick={() => setShowAsignarModal(false)}>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ============================================================
-  // VISTA: DETALLE TICKET
+  // VISTA DETALLE
   // ============================================================
   if (vistaDetalle && ticketActual) {
     const asignados     = ticketActual.ticket_asignaciones || []
@@ -702,32 +681,37 @@ export default function Tickets() {
       archivo: 'paperclip', comentario: 'comment',
     }
 
+    // Historial filtrado y ordenado (reutilizable)
+    const historialFiltrado = [...historial]
+      .filter(h => h.tipo !== 'nota_interna')
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
     return (
-      <div className="tickets-page">
+      <div className="tickets-page detalle-view-active">
         <div className="toast-container" id="toastContainer"></div>
+
         <input type="file" ref={archivoInputRef} multiple style={{ display: 'none' }} onChange={subirArchivos} />
-        <input type="file" ref={comArchivoInputRef} multiple style={{ display: 'none' }}
-          onChange={e => { setPendingComFiles([...pendingComFiles, ...Array.from(e.target.files)]); e.target.value = '' }} />
 
         <Topbar />
 
-        <main className="main-content detalle-ticket" id="vistaDetalle">
-          {/* Header */}
+        <main className="main-content detalle-ticket">
+
           <div className="detalle-header">
-            <button className="btn-back" onClick={volverALista}>
-              <i className="fas fa-arrow-left"></i> Volver
+            <button className="btn-back" onClick={volverALista} style={{ padding: '6px 12px', fontSize: '0.85rem', flexShrink: 0 }}>
+              <i className="fas fa-arrow-left"></i> Tickets
             </button>
-            <div className="detalle-titulo">
-              <span className="ticket-numero">#{ticketActual.numero}</span>
-              <h2 id="detalleAsunto">{ticketActual.asunto}</h2>
+            <span className="ticket-numero" style={{ flexShrink: 0 }}>#{ticketActual.numero}</span>
+            <div className="detalle-header-titulo">
+              <h2 className="detalle-header-asunto">
+                {ticketActual.empresas?.nombre && (
+                  <span className="detalle-header-empresa-inline">{ticketActual.empresas.nombre}</span>
+                )}
+                {ticketActual.empresas?.nombre && <span className="detalle-header-sep">—</span>}
+                <span className="detalle-header-asunto-text">{ticketActual.asunto}</span>
+              </h2>
             </div>
             <div className="detalle-acciones">
-              <select
-                id="detalleEstadoSelect"
-                value={ticketActual.estado}
-                onChange={e => cambiarEstado(e.target.value)}
-                className="estado-select"
-              >
+              <select value={ticketActual.estado} onChange={e => cambiarEstado(e.target.value)} className="estado-select">
                 <option value="Pendiente">Pendiente</option>
                 <option value="En curso">En curso</option>
                 <option value="Completado">Completado</option>
@@ -737,30 +721,25 @@ export default function Tickets() {
                 <i className="fas fa-edit"></i> Editar
               </button>
               {isAdmin() && (
-                <button id="btnEliminarTicket" className="btn-action btn-delete" onClick={eliminarTicket}>
+                <button className="btn-action btn-delete" onClick={eliminarTicket}
+                  style={{ background: '#fee2e2', color: '#dc2626', width: '34px', height: '34px' }}>
                   <i className="fas fa-trash"></i>
                 </button>
               )}
             </div>
           </div>
 
-          <div className="detalle-body">
-            {/* Sidebar derecha */}
-            <aside className="detalle-sidebar">
+          <div className="detalle-ticket-body-wrapper">
+            <div className="detalle-body">
 
-              {/* Info */}
-              <div className="sidebar-card">
-                <h4><i className="fas fa-info-circle"></i> Información</h4>
-                <div id="detalleInfoRows">
+              {/* SIDEBAR */}
+              <aside className="detalle-sidebar">
+
+                <div className="sidebar-card">
+                  <h4><i className="fas fa-info-circle"></i> Información</h4>
                   <div className="info-row"><span className="info-row-label">Empresa</span><span className="info-row-value">{ticketActual.empresas?.nombre || '—'}</span></div>
-                  <div className="info-row">
-                    <span className="info-row-label">Prioridad</span>
-                    <span className="info-row-value"><PrioridadBadge p={ticketActual.prioridad} /></span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-row-label">Estado</span>
-                    <span className="info-row-value"><EstadoBadge e={ticketActual.estado} /></span>
-                  </div>
+                  <div className="info-row"><span className="info-row-label">Prioridad</span><span className="info-row-value"><PrioridadBadge p={ticketActual.prioridad} /></span></div>
+                  <div className="info-row"><span className="info-row-label">Estado</span><span className="info-row-value"><EstadoBadge e={ticketActual.estado} /></span></div>
                   {ticketActual.dispositivos && (
                     <div className="info-row">
                       <span className="info-row-label">Equipo</span>
@@ -770,367 +749,315 @@ export default function Tickets() {
                   <div className="info-row">
                     <span className="info-row-label">⏱ Tiempo</span>
                     <span className="info-row-value">
-                      {estadoCerrado
-                        ? <strong style={{ color: 'var(--gray)' }}>{formatHoras(ticketActual.horas_transcurridas || 0)} <i className="fas fa-lock" style={{ fontSize: '0.75rem', opacity: 0.5 }}></i></strong>
-                        : <strong style={{ color: 'var(--primary)' }}>{formatHoras(ticketActual.horas_transcurridas || 0)}</strong>
-                      }
+                      {estadoCerrado ? (
+                        <strong style={{ color: 'var(--gray)' }}>{formatHoras(ticketActual.horas_transcurridas || 0)}<i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i></strong>
+                      ) : (
+                        <strong style={{ color: 'var(--primary)' }}>{formatHoras(ticketActual.horas_transcurridas || 0)}</strong>
+                      )}
                     </span>
                   </div>
                   {ticketActual.descripcion && (
                     <div className="info-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                       <span className="info-row-label">Descripción</span>
-                      <span className="info-row-value" style={{ whiteSpace: 'pre-wrap', marginTop: '4px' }}>{ticketActual.descripcion}</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--dark)', marginTop: '4px', whiteSpace: 'pre-wrap' }}>{ticketActual.descripcion}</span>
                     </div>
                   )}
                   <div className="info-row"><span className="info-row-label">Creado</span><span className="info-row-value">{formatFecha(ticketActual.created_at)}</span></div>
-                  {ticketActual.started_at   && <div className="info-row"><span className="info-row-label">Iniciado</span><span className="info-row-value">{formatFecha(ticketActual.started_at)}</span></div>}
+                  {ticketActual.started_at && <div className="info-row"><span className="info-row-label">Iniciado</span><span className="info-row-value">{formatFecha(ticketActual.started_at)}</span></div>}
                   {ticketActual.completed_at && <div className="info-row"><span className="info-row-label">Completado</span><span className="info-row-value">{formatFecha(ticketActual.completed_at)}</span></div>}
-                  {ticketActual.invoiced_at  && <div className="info-row"><span className="info-row-label">Facturado</span><span className="info-row-value">{formatFecha(ticketActual.invoiced_at)}</span></div>}
+                  {ticketActual.invoiced_at && <div className="info-row"><span className="info-row-label">Facturado</span><span className="info-row-value">{formatFecha(ticketActual.invoiced_at)}</span></div>}
                 </div>
-              </div>
 
-              {/* Operarios */}
-              <div className="sidebar-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <h4 style={{ margin: 0 }}><i className="fas fa-users"></i> Operarios</h4>
-                  <button className="btn-primary btn-sm" onClick={abrirModalAsignar}>
-                    <i className="fas fa-user-plus"></i>
+                <div className="sidebar-card">
+                  <div className="sidebar-card-header">
+                    <h4><i className="fas fa-users"></i> Operarios</h4>
+                    <button className="btn-primary btn-sm" onClick={abrirModalAsignar}><i className="fas fa-user-plus"></i></button>
+                  </div>
+                  <div>
+                    {asignados.length === 0
+                      ? <p className="sidebar-empty">Sin operarios asignados</p>
+                      : asignados.map(a => {
+                          const nombre = a.profiles?.nombre || 'Desconocido'
+                          const esMio  = a.user_id === user?.id
+                          return (
+                            <div className="operario-chip" key={a.user_id}>
+                              <div className="avatar" style={{ background: getAvatarColor(a.user_id) }}>{getInitials(nombre)}</div>
+                              <span className="operario-chip-nombre">{nombre}</span>
+                              {(isAdmin() || esMio) && (
+                                <button className="btn-remove-operario" onClick={() => quitarOperario(a.user_id)} title="Quitar">
+                                  <i className="fas fa-times"></i>
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })
+                    }
+                  </div>
+                </div>
+
+                <div className="sidebar-card">
+                  <div className="sidebar-card-header">
+                    <h4><i className="fas fa-paperclip"></i> Archivos del ticket</h4>
+                    <button className="btn-primary btn-sm" onClick={() => archivoInputRef.current?.click()}><i className="fas fa-upload"></i></button>
+                  </div>
+                  <div>
+                    {archivos.length === 0
+                      ? <p className="sidebar-empty">Sin archivos adjuntos</p>
+                      : archivos.map(a => (
+                          <div className="archivo-item" key={a.id} onClick={() => descargarArchivo(a.id, a.nombre_original)}>
+                            <span className="archivo-icon">{iconoArchivo(a.mime_type)}</span>
+                            <div className="archivo-info">
+                              <div className="archivo-nombre">{a.nombre_original}</div>
+                              <div className="archivo-meta">{formatBytes(a.tamanio)} · {formatFechaCorta(a.created_at)}</div>
+                            </div>
+                            {(isAdmin() || a.subido_by === user?.id) && (
+                              <button className="btn-delete-archivo" onClick={e => { e.stopPropagation(); eliminarArchivo(a.id) }} title="Eliminar">
+                                <i className="fas fa-times"></i>
+                              </button>
+                            )}
+                          </div>
+                        ))
+                    }
+                  </div>
+                </div>
+
+                {/* HISTORIAL — acordeón desplegable */}
+                <div className="sidebar-card sidebar-card-historial">
+                  <button
+                    className={`historial-accordion-btn ${historialAbierto ? 'open' : ''}`}
+                    onClick={() => setHistorialAbierto(v => !v)}
+                  >
+                    <span className="historial-accordion-left">
+                      <i className="fas fa-history"></i>
+                      <span>Historial</span>
+                      {historialFiltrado.length > 0 && (
+                        <span className="historial-accordion-count">{historialFiltrado.length}</span>
+                      )}
+                    </span>
+                    <i className={`fas fa-chevron-${historialAbierto ? 'up' : 'down'} historial-chevron`}></i>
                   </button>
-                </div>
-                <div id="detalleOperarios">
-                  {asignados.length === 0
-                    ? <div style={{ color: 'var(--gray)', fontSize: '0.82rem', padding: '8px 0' }}>Sin operarios asignados</div>
-                    : asignados.map(a => {
-                      const nombre = a.profiles?.nombre || 'Desconocido'
-                      const esMio  = a.user_id === user?.id
-                      return (
-                        <div className="operario-chip" key={a.user_id}>
-                          <div className="avatar" style={{ background: getAvatarColor(a.user_id) }}>{getInitials(nombre)}</div>
-                          <span className="operario-chip-nombre">{nombre}</span>
-                          {(isAdmin() || esMio) && (
-                            <button className="btn-remove-operario" onClick={() => quitarOperario(a.user_id)} title="Quitar">
-                              <i className="fas fa-times"></i>
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
 
-              {/* Archivos */}
-              <div className="sidebar-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <h4 style={{ margin: 0 }}><i className="fas fa-paperclip"></i> Archivos</h4>
-                  <button className="btn-primary btn-sm" onClick={() => archivoInputRef.current?.click()}>
-                    <i className="fas fa-upload"></i>
-                  </button>
-                </div>
-                <div id="detalleArchivos">
-                  {archivos.length === 0
-                    ? <div style={{ color: 'var(--gray)', fontSize: '0.82rem', padding: '8px 0' }}>Sin archivos adjuntos</div>
-                    : archivos.map(a => (
-                      <div className="archivo-item" key={a.id} onClick={() => descargarArchivo(a.id, a.nombre_original)}>
-                        <span className="archivo-icon">{iconoArchivo(a.mime_type)}</span>
-                        <div className="archivo-info">
-                          <div className="archivo-nombre">{a.nombre_original}</div>
-                          <div className="archivo-meta">{formatBytes(a.tamanio)} · {formatFechaCorta(a.created_at)}</div>
-                        </div>
-                        {(isAdmin() || a.subido_by === user?.id) && (
-                          <button className="btn-delete-archivo" onClick={e => { e.stopPropagation(); eliminarArchivo(a.id) }} title="Eliminar">
-                            <i className="fas fa-times"></i>
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Historial */}
-              <div className="sidebar-card">
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                  onClick={() => setHistorialVisible(!historialVisible)}
-                >
-                  <h4 style={{ margin: 0 }}><i className="fas fa-history"></i> Historial</h4>
-                  <i id="historialChevron" className={`fas ${historialVisible ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
-                </div>
-                {historialVisible && (
-                  <div id="detalleHistorial" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                    {historial.length === 0
-                      ? <div style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>Sin historial</div>
-                      : [...historial]
-                          .filter(h => h.tipo !== 'nota_interna')
-                          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-                          .map(h => {
-                            const color = colorMap[h.tipo] || '#94a3b8'
-                            const icon  = historialIconos[h.tipo] || 'circle'
+                  {historialAbierto && (
+                    <div className="historial-accordion-body">
+                      {historialFiltrado.length === 0 ? (
+                        <p className="sidebar-empty" style={{ marginTop: '10px' }}>Sin historial aún</p>
+                      ) : (
+                        <div className="historial-timeline sidebar-timeline">
+                          {historialFiltrado.map((h, idx) => {
+                            const color  = colorMap[h.tipo] || '#94a3b8'
+                            const icon   = historialIconos[h.tipo] || 'circle'
+                            const isLast = idx === historialFiltrado.length - 1
                             return (
-                              <div className="historial-item" key={h.id}>
-                                <div className="historial-icon" style={{ background: `${color}20`, color }}>
-                                  <i className={`fas fa-${icon}`}></i>
+                              <div className={`historial-timeline-item ${isLast ? 'last' : ''}`} key={h.id}>
+                                <div className="historial-timeline-line">
+                                  <div className="historial-timeline-dot" style={{ background: color, boxShadow: `0 0 0 3px ${color}22` }}>
+                                    <i className={`fas fa-${icon}`} style={{ color: 'white', fontSize: '0.55rem' }}></i>
+                                  </div>
+                                  {!isLast && <div className="historial-timeline-connector"></div>}
                                 </div>
-                                <div className="historial-texto">
-                                  {h.descripcion}
-                                  <div className="historial-fecha">
-                                    {h.profiles?.nombre ? `${h.profiles.nombre} · ` : ''}{formatFecha(h.created_at)}
+                                <div className="historial-timeline-content">
+                                  <div className="historial-timeline-badge" style={{ background: `${color}15`, color, borderColor: `${color}30` }}>
+                                    {h.tipo ? h.tipo.charAt(0).toUpperCase() + h.tipo.slice(1).replace('_', ' ') : 'Evento'}
+                                  </div>
+                                  <p className="historial-timeline-desc">{h.descripcion}</p>
+                                  <div className="historial-timeline-meta">
+                                    {h.profiles?.nombre && (
+                                      <span className="historial-timeline-autor">
+                                        <div className="historial-mini-avatar" style={{ background: getAvatarColor(h.profiles.nombre) }}>
+                                          {getInitials(h.profiles.nombre)}
+                                        </div>
+                                        {h.profiles.nombre}
+                                      </span>
+                                    )}
+                                    <span className="historial-timeline-fecha">
+                                      <i className="fas fa-clock"></i> {formatFecha(h.created_at)}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
                             )
                           })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+              </aside>
+
+              <div className="detalle-main">
+                <div className="detalle-tabs">
+                  <button className={`detalle-tab ${activeTab === 'comentarios' ? 'active' : ''}`} onClick={() => switchTab('comentarios')}>
+                    <i className="fas fa-comments"></i> Comentarios
+                    {comentarios.length > 0 && <span className="tab-badge">{comentarios.length}</span>}
+                  </button>
+                  <button className={`detalle-tab ${activeTab === 'notas' ? 'active' : ''}`} onClick={() => switchTab('notas')}>
+                    <i className="fas fa-sticky-note"></i> Notas privadas
+                  </button>
+                </div>
+
+                {activeTab === 'notas' && (
+                  <div className="tab-panel tab-panel-notas">
+                    <div className="notas-header">
+                      <span style={{ fontSize: '0.8rem', color: 'var(--gray)' }}>Solo visibles para el equipo. Se guardan automáticamente.</span>
+                      <span ref={notasGuardado} style={{ fontSize: '0.8rem', color: 'var(--primary)' }}></span>
+                    </div>
+                    <textarea className="notas-textarea" placeholder="Escribe notas privadas aquí..." value={notasValue} onChange={onNotasChange} />
                   </div>
                 )}
-              </div>
-            </aside>
 
-            {/* Panel principal: Notas + Comentarios */}
-            <div className="detalle-main">
-              <div className="detalle-tabs">
-                <button
-                  className={`detalle-tab ${activeTab === 'notas' ? 'active' : ''}`}
-                  onClick={() => switchTab('notas')}
-                >
-                  <i className="fas fa-sticky-note"></i> Notas privadas
-                </button>
-                <button
-                  className={`detalle-tab ${activeTab === 'comentarios' ? 'active' : ''}`}
-                  onClick={() => switchTab('comentarios')}
-                >
-                  <i className="fas fa-comments"></i> Comentarios
-                  {comentarios.length > 0 && (
-                    <span id="comentariosBadge" className="tab-badge">{comentarios.length}</span>
-                  )}
-                </button>
-              </div>
-
-              {/* TAB: NOTAS */}
-              {activeTab === 'notas' && (
-                <div className="tab-panel" id="panelNotas" style={{ display: 'flex' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--gray)' }}>Solo visibles para el equipo. Se guardan automáticamente.</span>
-                    <span id="notasIndicador" ref={notasGuardado} style={{ fontSize: '0.8rem', color: 'var(--primary)' }}></span>
-                  </div>
-                  <textarea
-                    id="detalleNotas"
-                    className="notas-textarea"
-                    placeholder="Escribe notas privadas aquí..."
-                    value={notasValue}
-                    onChange={onNotasChange}
-                  />
-                </div>
-              )}
-
-              {/* TAB: COMENTARIOS */}
-              {activeTab === 'comentarios' && (
-                <div className="tab-panel" id="panelComentarios" style={{ display: 'flex' }}>
-                  <div className="comentarios-lista" id="comentariosLista">
-                    {comentarios.length === 0 ? (
-                      <div className="comentarios-empty">
-                        <i className="fas fa-comments"></i>
-                        <p>Sin comentarios aún</p>
-                        <span>Sé el primero en añadir un comentario a este ticket</span>
-                      </div>
-                    ) : (
-                      comentarios.map(c => {
-                        const nombre = c.profiles?.nombre || 'Desconocido'
-                        const esMio  = c.user_id === user?.id
-                        const archivosC = c.ticket_comentarios_archivos || []
-                        return (
-                          <div className="comentario-item" key={c.id} id={`comentario-${c.id}`}>
-                            <div className="comentario-avatar" style={{ background: getAvatarColor(c.user_id) }}>
-                              {getInitials(nombre)}
-                            </div>
-                            <div className="comentario-cuerpo">
-                              <div className="comentario-meta">
-                                <span className="comentario-autor">{nombre}</span>
-                                <span className="comentario-fecha">{formatFecha(c.created_at)}</span>
-                                {c.editado && <span className="comentario-editado">(editado)</span>}
-                                {(esMio || isAdmin()) && (
-                                  <div className="comentario-acciones">
-                                    <button onClick={() => eliminarComentario(c.id)} title="Eliminar" className="btn-comentario-accion btn-comentario-delete">
-                                      <i className="fas fa-trash"></i>
-                                    </button>
+                {activeTab === 'comentarios' && (
+                  <div className="tab-panel tab-panel-comentarios">
+                    <div className="comentarios-lista">
+                      {comentarios.length === 0 ? (
+                        <div className="comentarios-empty">
+                          <i className="fas fa-comments"></i>
+                          <p>Sin comentarios aún</p>
+                          <span>Sé el primero en añadir un comentario a este ticket</span>
+                        </div>
+                      ) : (
+                        comentarios.map(c => {
+                          const nombre    = c.profiles?.nombre || 'Desconocido'
+                          const esMio     = c.user_id === user?.id
+                          const archivosC = c.ticket_comentarios_archivos || []
+                          return (
+                            <div className="comentario-item" key={c.id}>
+                              <div className="comentario-avatar" style={{ background: getAvatarColor(c.user_id) }}>{getInitials(nombre)}</div>
+                              <div className="comentario-cuerpo">
+                                <div className="comentario-meta">
+                                  <span className="comentario-autor">{nombre}</span>
+                                  <span className="comentario-fecha">{formatFecha(c.created_at)}</span>
+                                  {c.editado && <span className="comentario-editado">(editado)</span>}
+                                  {(esMio || isAdmin()) && (
+                                    <div className="comentario-acciones">
+                                      <button className="btn-comentario-accion btn-comentario-delete" onClick={() => eliminarComentario(c.id)} title="Eliminar">
+                                        <i className="fas fa-trash"></i>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="comentario-texto" dangerouslySetInnerHTML={{ __html: c.contenido }}></div>
+                                {archivosC.length > 0 && (
+                                  <div className="comentario-archivos">
+                                    {archivosC.map(a => (
+                                      <div key={a.id} className="comentario-archivo-chip" onClick={() => descargarArchivo(a.id, a.nombre_original)}>
+                                        {iconoArchivo(a.mime_type)}
+                                        <span>{a.nombre_original}</span>
+                                        <small>{formatBytes(a.tamanio)}</small>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
-                              <div className="comentario-texto">{escHtml(c.contenido)}</div>
-                              {archivosC.length > 0 && (
-                                <div className="comentario-archivos">
-                                  {archivosC.map(a => (
-                                    <div key={a.id} className="comentario-archivo-chip"
-                                      onClick={() => descargarArchivo(a.id, a.nombre_original)}
-                                      title={a.nombre_original}>
-                                      {iconoArchivo(a.mime_type)}
-                                      <span>{a.nombre_original}</span>
-                                      <small>{formatBytes(a.tamanio)}</small>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
                             </div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
+                          )
+                        })
+                      )}
+                    </div>
 
-                  {/* Nuevo comentario */}
-                  <div className="comentario-nuevo">
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div className="comentario-autor-avatar">
-                        <div id="comentarioAutorAvatar" className="avatar" style={{ background: getAvatarColor(user?.id) }}>
-                          {getInitials(user?.nombre)}
-                        </div>
+                    {/* Nuevo comentario — editor enriquecido */}
+                    <div className="comentario-nuevo">
+                      <div className="comentario-nuevo-avatar" style={{ background: getAvatarColor(user?.id) }}>
+                        {getInitials(user?.nombre || user?.email)}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <textarea
-                          id="nuevoComentarioTexto"
-                          placeholder="Escribe un comentario... (Enter para enviar, Shift+Enter para nueva línea)"
-                          value={comentarioText}
-                          onChange={e => setComentarioText(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComentario() } }}
-                          rows={3}
-                        />
-
-                        {pendingComFiles.length > 0 && (
-                          <div id="comentarioArchivosPreview" className="archivos-preview" style={{ display: 'flex' }}>
-                            {pendingComFiles.map((f, i) => (
-                              <div className="archivo-preview-chip" key={i}>
-                                {iconoArchivo(f.type)}
-                                <span>{f.name}</span>
-                                <small>{formatBytes(f.size)}</small>
-                                <button onClick={() => setPendingComFiles(pendingComFiles.filter((_, j) => j !== i))} title="Quitar">
-                                  <i className="fas fa-times"></i>
-                                </button>
-                              </div>
-                            ))}
+                      <div className="comentario-nuevo-body">
+                        <div className="comentario-nuevo-nombre">{user?.nombre || user?.email}</div>
+                        <div className="editor-rich">
+                          <div className="editor-toolbar">
+                            <button type="button" className="editor-btn" title="Negrita" onMouseDown={e => { e.preventDefault(); document.execCommand('bold') }}><i className="fas fa-bold"></i></button>
+                            <button type="button" className="editor-btn" title="Cursiva" onMouseDown={e => { e.preventDefault(); document.execCommand('italic') }}><i className="fas fa-italic"></i></button>
+                            <button type="button" className="editor-btn" title="Subrayado" onMouseDown={e => { e.preventDefault(); document.execCommand('underline') }}><i className="fas fa-underline"></i></button>
+                            <button type="button" className="editor-btn" title="Tachado" onMouseDown={e => { e.preventDefault(); document.execCommand('strikeThrough') }}><i className="fas fa-strikethrough"></i></button>
+                            <div className="editor-sep"></div>
+                            <button type="button" className="editor-btn" title="Lista con viñetas" onMouseDown={e => { e.preventDefault(); document.execCommand('insertUnorderedList') }}><i className="fas fa-list-ul"></i></button>
+                            <button type="button" className="editor-btn" title="Lista numerada" onMouseDown={e => { e.preventDefault(); document.execCommand('insertOrderedList') }}><i className="fas fa-list-ol"></i></button>
+                            <div className="editor-sep"></div>
+                            <button type="button" className="editor-btn" title="Cita" onMouseDown={e => { e.preventDefault(); document.execCommand('formatBlock', false, 'blockquote') }}><i className="fas fa-quote-right"></i></button>
+                            <button type="button" className="editor-btn" title="Código" onMouseDown={e => { e.preventDefault(); document.execCommand('formatBlock', false, 'pre') }}><i className="fas fa-code"></i></button>
+                            <div className="editor-sep"></div>
+                            <button type="button" className="editor-btn" title="Limpiar formato" onMouseDown={e => { e.preventDefault(); document.execCommand('removeFormat') }}><i className="fas fa-remove-format"></i></button>
                           </div>
-                        )}
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
-                          <button className="btn-secondary btn-sm" onClick={() => comArchivoInputRef.current?.click()}>
-                            <i className="fas fa-paperclip"></i> Adjuntar
-                          </button>
+                          <div
+                            className="editor-content"
+                            contentEditable
+                            suppressContentEditableWarning
+                            data-placeholder="Escribe un comentario..."
+                            onInput={e => setComentarioText(e.currentTarget.innerHTML)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                                // Permitir Enter normal dentro del editor rich text
+                              }
+                            }}
+                            ref={el => {
+                              if (el && comentarioText === '') el.innerHTML = ''
+                            }}
+                          />
+                        </div>
+                        <div className="comentario-nuevo-acciones">
+                          <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>Ctrl+Enter para enviar</span>
                           <button className="btn-primary" onClick={enviarComentario}>
                             <i className="fas fa-paper-plane"></i> Comentar
                           </button>
                         </div>
                       </div>
                     </div>
+
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* ── PESTAÑA HISTORIAL eliminada — ahora es acordeón en sidebar ── */}
+
+              </div>
             </div>
           </div>
+
         </main>
 
-        {/* Modal asignar operarios */}
-        {showAsignarModal && (
-          <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowAsignarModal(false)}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h2><i className="fas fa-user-plus"></i> Asignar Operarios</h2>
-                <button className="modal-close" onClick={() => setShowAsignarModal(false)}><i className="fas fa-times"></i></button>
-              </div>
-              <div className="modal-body">
-                <div className="operarios-checkboxes" id="asignarOperariosLista">
-                  {asignarOperariosCheck.map((op, i) => (
-                    <div
-                      key={op.id}
-                      className={`operario-check-item ${op.checked ? 'checked' : ''}`}
-                      onClick={() => {
-                        const updated = [...asignarOperariosCheck]
-                        updated[i] = { ...updated[i], checked: !updated[i].checked }
-                        setAsignarOperariosCheck(updated)
-                      }}
-                    >
-                      <div className="operario-check-avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
-                      <span className="operario-check-nombre">{op.nombre}</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>{op.rol}</span>
-                      <div className="operario-check-tick">{op.checked ? <i className="fas fa-check"></i> : ''}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="modal-buttons">
-                <button className="btn-primary" onClick={guardarAsignaciones}><i className="fas fa-save"></i> Guardar</button>
-                <button className="btn-secondary" onClick={() => setShowAsignarModal(false)}>Cancelar</button>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {showAsignarModal && <AsignarModal />}
         {showTicketModal && <TicketModal />}
       </div>
     )
   }
 
   // ============================================================
-  // VISTA: LISTA TICKETS
+  // VISTA LISTA
   // ============================================================
   return (
     <div className="tickets-page">
       <div className="toast-container" id="toastContainer"></div>
-
       <Topbar />
-
-      <nav className="bottom-nav">
-        <Link to="/" className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
-        <Link to="/tickets" className="bottom-nav-item active"><i className="fas fa-headset"></i><span>Tickets</span></Link>
-        {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
-        <Link to="/chat" className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
-      </nav>
-
-      <main className="main-content" id="vistaLista">
+      <main className="main-content">
         <div className="section-header">
           <div>
             <h1><i className="fas fa-headset"></i> Tickets</h1>
-            <p>
-              <span id="totalFiltrado">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
-            </p>
+            <p><span>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span></p>
           </div>
-          <button className="btn-primary" onClick={abrirModalNuevoTicket}>
-            <i className="fas fa-plus"></i> Nuevo Ticket
-          </button>
+          <button className="btn-primary" onClick={abrirModalNuevoTicket}><i className="fas fa-plus"></i> Nuevo Ticket</button>
         </div>
 
-        {/* Stats rápidas */}
         <div className="stats">
           {[
-            { id: 'statTotal',       label: 'Total',      val: stats.total || 0,       icon: 'fa-ticket-alt',       bg: '#dbeafe', col: '#2563eb', click: () => setEstadoFilter('all') },
-            { id: 'statPendientes',  label: 'Pendientes', val: stats.pendientes || 0,  icon: 'fa-clock',            bg: '#fef3c7', col: '#d97706', click: () => setEstadoFilter('Pendiente') },
-            { id: 'statEnCurso',     label: 'En curso',   val: stats.en_curso || 0,    icon: 'fa-spinner',          bg: '#dbeafe', col: '#2563eb', click: () => setEstadoFilter('En curso') },
-            { id: 'statCompletados', label: 'Completados',val: stats.completados || 0, icon: 'fa-check-circle',     bg: '#dcfce7', col: '#16a34a', click: () => setEstadoFilter('Completado') },
-            { id: 'statFacturados',  label: 'Facturados', val: stats.facturados || 0,  icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => setEstadoFilter('Facturado') },
-            { id: 'statUrgentes',    label: 'Urgentes',   val: stats.urgentes || 0,    icon: 'fa-exclamation-circle', bg: '#fee2e2', col: '#dc2626', click: () => setPrioridadFilter('Urgente') },
+            { id: 'statTotal',       label: 'Total',       val: stats.total || 0,       icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('all'); setPrioridadFilter('all') } },
+            { id: 'statPendientes',  label: 'Pendientes',  val: stats.pendientes || 0,  icon: 'fa-clock',               bg: '#fef3c7', col: '#d97706', click: () => { setEstadoFilter('Pendiente'); setPrioridadFilter('all') } },
+            { id: 'statEnCurso',     label: 'En curso',    val: stats.en_curso || 0,    icon: 'fa-spinner',             bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('En curso'); setPrioridadFilter('all') } },
+            { id: 'statCompletados', label: 'Completados', val: stats.completados || 0, icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', click: () => { setEstadoFilter('Completado'); setPrioridadFilter('all') } },
+            { id: 'statFacturados',  label: 'Facturados',  val: stats.facturados || 0,  icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => { setEstadoFilter('Facturado'); setPrioridadFilter('all') } },
+            { id: 'statUrgentes',    label: 'Urgentes',    val: stats.urgentes || 0,    icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => { setEstadoFilter('all'); setPrioridadFilter('Urgente') } },
           ].map(s => (
             <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer' }}>
-              <div className="stat-icon" style={{ background: s.bg, color: s.col }}>
-                <i className={`fas ${s.icon}`}></i>
-              </div>
-              <div className="stat-info">
-                <h3 id={s.id}>{s.val}</h3>
-                <p>{s.label}</p>
-              </div>
+              <div className="stat-icon" style={{ background: s.bg, color: s.col }}><i className={`fas ${s.icon}`}></i></div>
+              <div className="stat-info"><h3>{s.val}</h3><p>{s.label}</p></div>
             </div>
           ))}
         </div>
 
-        {/* Filtros */}
         <div className="filters">
           <div className="search-box">
             <i className="fas fa-search"></i>
-            <input
-              id="searchTicket"
-              type="text"
-              placeholder="Buscar tickets..."
-              value={searchTerm}
-              onChange={onSearchChange}
-            />
+            <input type="text" placeholder="Buscar tickets..." value={searchTerm} onChange={onSearchChange} />
           </div>
           <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            <select id="filtroEstado" value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
+            <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
               <option value="all">Todos los estados</option>
               <option value="abiertos">Abiertos</option>
               <option value="Pendiente">Pendiente</option>
@@ -1138,23 +1065,23 @@ export default function Tickets() {
               <option value="Completado">Completado</option>
               <option value="Facturado">Facturado</option>
             </select>
-            <select id="filtroPrioridad" value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
+            <select value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
               <option value="all">Prioridad</option>
               <option value="Baja">Baja</option>
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
               <option value="Urgente">Urgente</option>
             </select>
-            <select id="filtroOperario" value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
+            <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
               <option value="all">Operario</option>
               {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
             </select>
-            <select id="filtroEmpresa" value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
+            <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
               <option value="all">Empresa</option>
               {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
-            <input type="date" id="filtroDesde" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
-            <input type="date" id="filtroHasta" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+            <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
+            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
             {(filtroDesde || filtroHasta) && (
               <button className="btn-secondary btn-sm" onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}>
                 <i className="fas fa-undo"></i>
@@ -1163,7 +1090,6 @@ export default function Tickets() {
           </div>
         </div>
 
-        {/* Tabla desktop */}
         <div className="table-container desktop-only">
           <table>
             <thead>
@@ -1172,7 +1098,7 @@ export default function Tickets() {
                 <th>Prioridad</th><th>Estado</th><th>Tiempo</th><th>Fecha</th><th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="ticketsTableBody">
+            <tbody>
               {tickets.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="empty-state">
@@ -1182,7 +1108,7 @@ export default function Tickets() {
                 </tr>
               ) : (
                 tickets.map(t => {
-                  const asignados = t.ticket_asignaciones || []
+                  const asignados     = t.ticket_asignaciones || []
                   const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado'
                   return (
                     <tr key={t.id} onClick={() => abrirTicket(t.id)} style={{ cursor: 'pointer' }}>
@@ -1203,31 +1129,27 @@ export default function Tickets() {
                           {asignados.length === 0
                             ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span>
                             : asignados.map(a => {
-                              const nombre = a.profiles?.nombre || '?'
-                              return (
-                                <div key={a.user_id} className="avatar-operario"
-                                  style={{ background: getAvatarColor(a.user_id) }} title={nombre}>
-                                  {getInitials(nombre)}
-                                </div>
-                              )
-                            })}
+                                const nombre = a.profiles?.nombre || '?'
+                                return (
+                                  <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={nombre}>
+                                    {getInitials(nombre)}
+                                  </div>
+                                )
+                              })
+                          }
                         </div>
                       </td>
                       <td><PrioridadBadge p={t.prioridad} /></td>
                       <td><EstadoBadge e={t.estado} /></td>
                       <td style={{ fontWeight: 600, color: estadoCerrado ? 'var(--gray)' : 'var(--primary)', fontSize: '0.82rem' }}>
                         {formatHoras(t.horas_transcurridas || 0)}
-                        {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }} title="Tiempo cerrado"></i>}
+                        {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>}
                       </td>
                       <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                       <td onClick={e => e.stopPropagation()}>
-                        <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar">
-                          <i className="fas fa-edit"></i>
-                        </button>
+                        <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
                         {isAdmin() && (
-                          <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar">
-                            <i className="fas fa-trash"></i>
-                          </button>
+                          <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar"><i className="fas fa-trash"></i></button>
                         )}
                       </td>
                     </tr>
@@ -1238,14 +1160,13 @@ export default function Tickets() {
           </table>
         </div>
 
-        {/* Cards mobile */}
-        <div className="mobile-only" id="ticketsCardsList">
+        <div className="mobile-only">
           {tickets.length === 0 ? (
             <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets</div>
           ) : (
             tickets.map(t => {
-              const asignados = t.ticket_asignaciones || []
-              const nombresOps = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
+              const asignados     = t.ticket_asignaciones || []
+              const nombresOps    = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
               const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado'
               return (
                 <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
@@ -1270,8 +1191,8 @@ export default function Tickets() {
             })
           )}
         </div>
-      </main>
 
+      </main>
       {showTicketModal && <TicketModal />}
     </div>
   )

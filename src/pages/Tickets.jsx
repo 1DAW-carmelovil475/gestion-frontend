@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
   getTickets, getTicket, createTicket, updateTicket, deleteTicket,
   getEmpresas, getOperarios, getDispositivos,
@@ -9,6 +10,7 @@ import {
   uploadTicketArchivo, deleteArchivo, getArchivoUrl,
   updateTicketNotas
 } from '../services/api'
+import ChatNavLink from '../components/ChatNavLink'
 import './Tickets.css'
 
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
@@ -89,7 +91,9 @@ function EstadoBadge({ e }) {
 
 export default function Tickets() {
   const { user, logout, isAdmin } = useAuth()
+  const { totalUnread } = useChatNotifications()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Listas
   const [tickets, setTickets]     = useState([])
@@ -138,6 +142,16 @@ export default function Tickets() {
   // Notas autosave timer
   const notasTimer = useRef(null)
   const notasGuardado = useRef(null)
+
+  // ── Abrir ticket directo desde ?abrirId= (viene del chat) ────────────────
+  useEffect(() => {
+    const abrirId = searchParams.get('abrirId')
+    if (abrirId && !loading) {
+      // Limpiar param de la URL para que no se re-dispare
+      setSearchParams({}, { replace: true })
+      abrirTicket(abrirId)
+    }
+  }, [searchParams, loading])
 
   // ============================================================
   useEffect(() => {
@@ -282,7 +296,6 @@ export default function Tickets() {
       setTicketActual(updated)
     } catch (error) {
       showToast('error', 'Error', error.message)
-      // Restaurar valor anterior en el select
     }
   }
 
@@ -378,7 +391,6 @@ export default function Tickets() {
       setPendingComFiles([])
       const data = await getTicketComentarios(ticketActual.id)
       setComentarios(data || [])
-      // Badge
       showToast('success', 'Comentario añadido', '')
     } catch (error) {
       showToast('error', 'Error', error.message)
@@ -413,7 +425,6 @@ export default function Tickets() {
     setModalEmprId(t.empresa_id || '')
     const asignadosIds = (t.ticket_asignaciones || []).map(a => a.user_id)
     setModalOperariosCheck(operarios.map(op => ({ ...op, checked: asignadosIds.includes(op.id) })))
-    // Cargar dispositivos de la empresa
     if (t.empresa_id) {
       try {
         const dispositivos = await getDispositivos(t.empresa_id)
@@ -460,7 +471,6 @@ export default function Tickets() {
           await assignOperarios(editingTicket.id, operariosSeleccionados)
         }
         showToast('success', 'Ticket actualizado', '')
-        // Si estamos en el detalle, refrescar
         if (ticketActual?.id === editingTicket.id) {
           const updated = await getTicket(editingTicket.id)
           setTicketActual(updated)
@@ -478,7 +488,6 @@ export default function Tickets() {
     }
   }
 
-  // Eliminar ticket
   async function eliminarTicket() {
     if (!ticketActual) return
     if (!confirm(`¿Eliminar el ticket #${ticketActual.numero}? Esta acción no se puede deshacer.`)) return
@@ -543,9 +552,9 @@ export default function Tickets() {
   }
 
   // ============================================================
-  // TOPBAR (reutilizable)
+  // TOPBAR
   // ============================================================
-  function Topbar({ detalleActive = false }) {
+  function Topbar() {
     return (
       <header className="topbar">
         <div className="logo">
@@ -556,7 +565,7 @@ export default function Tickets() {
           <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
           <Link to="/tickets" className="nav-link active"><i className="fas fa-headset"></i> Tickets</Link>
           {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
-          <Link to="/chat" className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
+          <ChatNavLink />
         </nav>
         <div className="user-area">
           <div className="user-info">
@@ -592,7 +601,6 @@ export default function Tickets() {
                   name="empresa_id"
                   value={modalEmprId}
                   onChange={e => onModalEmpresaChange(e.target.value)}
-                  id="ticketEmpresa"
                   required
                 >
                   <option value="">Seleccionar empresa...</option>
@@ -602,7 +610,7 @@ export default function Tickets() {
 
               <div className="form-group">
                 <label>Dispositivo</label>
-                <select name="dispositivo_id" id="ticketDispositivo" defaultValue={editingTicket?.dispositivo_id || ''}>
+                <select name="dispositivo_id" defaultValue={editingTicket?.dispositivo_id || ''}>
                   <option value="">Sin dispositivo</option>
                   {modalDispositivos.map(d => (
                     <option key={d.id} value={d.id}>[{d.tipo || d.categoria}] {d.nombre}</option>
@@ -612,18 +620,18 @@ export default function Tickets() {
 
               <div className="form-group">
                 <label>Asunto *</label>
-                <input type="text" name="asunto" id="ticketAsunto" defaultValue={editingTicket?.asunto} required placeholder="Describe brevemente el problema..." />
+                <input type="text" name="asunto" defaultValue={editingTicket?.asunto} required placeholder="Describe brevemente el problema..." />
               </div>
 
               <div className="form-group">
                 <label>Descripción</label>
-                <textarea name="descripcion" id="ticketDescripcion" defaultValue={editingTicket?.descripcion} rows={3} placeholder="Detalles adicionales..." />
+                <textarea name="descripcion" defaultValue={editingTicket?.descripcion} rows={3} placeholder="Detalles adicionales..." />
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>Prioridad</label>
-                  <select name="prioridad" id="ticketPrioridad" defaultValue={editingTicket?.prioridad || 'Media'}>
+                  <select name="prioridad" defaultValue={editingTicket?.prioridad || 'Media'}>
                     <option value="Baja">Baja</option>
                     <option value="Media">Media</option>
                     <option value="Alta">Alta</option>
@@ -632,7 +640,7 @@ export default function Tickets() {
                 </div>
                 <div className="form-group">
                   <label>Estado</label>
-                  <select name="estado" id="ticketEstado" defaultValue={editingTicket?.estado || 'Pendiente'}>
+                  <select name="estado" defaultValue={editingTicket?.estado || 'Pendiente'}>
                     <option value="Pendiente">Pendiente</option>
                     <option value="En curso">En curso</option>
                     <option value="Completado">Completado</option>
@@ -641,17 +649,15 @@ export default function Tickets() {
                 </div>
               </div>
 
-              {/* Operarios checkboxes */}
               <div className="form-group">
                 <label>Asignar operarios</label>
-                <div className="operarios-checkboxes" id="operariosCheckboxes">
+                <div className="operarios-checkboxes">
                   {modalOperariosCheck.length === 0
                     ? <p style={{ color: 'var(--gray)', fontSize: '0.88rem' }}>No hay operarios disponibles.</p>
                     : modalOperariosCheck.map((op, i) => (
                       <div
                         key={op.id}
                         className={`operario-check-item ${op.checked ? 'checked' : ''}`}
-                        data-user-id={op.id}
                         onClick={() => {
                           const updated = [...modalOperariosCheck]
                           updated[i] = { ...updated[i], checked: !updated[i].checked }
@@ -712,18 +718,16 @@ export default function Tickets() {
         <Topbar />
 
         <main className="main-content detalle-ticket" id="vistaDetalle">
-          {/* Header */}
           <div className="detalle-header">
             <button className="btn-back" onClick={volverALista}>
               <i className="fas fa-arrow-left"></i> Volver
             </button>
             <div className="detalle-titulo">
               <span className="ticket-numero">#{ticketActual.numero}</span>
-              <h2 id="detalleAsunto">{ticketActual.asunto}</h2>
+              <h2>{ticketActual.asunto}</h2>
             </div>
             <div className="detalle-acciones">
               <select
-                id="detalleEstadoSelect"
                 value={ticketActual.estado}
                 onChange={e => cambiarEstado(e.target.value)}
                 className="estado-select"
@@ -737,7 +741,7 @@ export default function Tickets() {
                 <i className="fas fa-edit"></i> Editar
               </button>
               {isAdmin() && (
-                <button id="btnEliminarTicket" className="btn-action btn-delete" onClick={eliminarTicket}>
+                <button className="btn-action btn-delete" onClick={eliminarTicket}>
                   <i className="fas fa-trash"></i>
                 </button>
               )}
@@ -745,13 +749,10 @@ export default function Tickets() {
           </div>
 
           <div className="detalle-body">
-            {/* Sidebar derecha */}
             <aside className="detalle-sidebar">
-
-              {/* Info */}
               <div className="sidebar-card">
                 <h4><i className="fas fa-info-circle"></i> Información</h4>
-                <div id="detalleInfoRows">
+                <div>
                   <div className="info-row"><span className="info-row-label">Empresa</span><span className="info-row-value">{ticketActual.empresas?.nombre || '—'}</span></div>
                   <div className="info-row">
                     <span className="info-row-label">Prioridad</span>
@@ -789,7 +790,6 @@ export default function Tickets() {
                 </div>
               </div>
 
-              {/* Operarios */}
               <div className="sidebar-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <h4 style={{ margin: 0 }}><i className="fas fa-users"></i> Operarios</h4>
@@ -797,7 +797,7 @@ export default function Tickets() {
                     <i className="fas fa-user-plus"></i>
                   </button>
                 </div>
-                <div id="detalleOperarios">
+                <div>
                   {asignados.length === 0
                     ? <div style={{ color: 'var(--gray)', fontSize: '0.82rem', padding: '8px 0' }}>Sin operarios asignados</div>
                     : asignados.map(a => {
@@ -818,7 +818,6 @@ export default function Tickets() {
                 </div>
               </div>
 
-              {/* Archivos */}
               <div className="sidebar-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <h4 style={{ margin: 0 }}><i className="fas fa-paperclip"></i> Archivos</h4>
@@ -826,7 +825,7 @@ export default function Tickets() {
                     <i className="fas fa-upload"></i>
                   </button>
                 </div>
-                <div id="detalleArchivos">
+                <div>
                   {archivos.length === 0
                     ? <div style={{ color: 'var(--gray)', fontSize: '0.82rem', padding: '8px 0' }}>Sin archivos adjuntos</div>
                     : archivos.map(a => (
@@ -846,17 +845,16 @@ export default function Tickets() {
                 </div>
               </div>
 
-              {/* Historial */}
               <div className="sidebar-card">
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                   onClick={() => setHistorialVisible(!historialVisible)}
                 >
                   <h4 style={{ margin: 0 }}><i className="fas fa-history"></i> Historial</h4>
-                  <i id="historialChevron" className={`fas ${historialVisible ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                  <i className={`fas ${historialVisible ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
                 </div>
                 {historialVisible && (
-                  <div id="detalleHistorial" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
                     {historial.length === 0
                       ? <div style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>Sin historial</div>
                       : [...historial]
@@ -884,7 +882,6 @@ export default function Tickets() {
               </div>
             </aside>
 
-            {/* Panel principal: Notas + Comentarios */}
             <div className="detalle-main">
               <div className="detalle-tabs">
                 <button
@@ -899,20 +896,18 @@ export default function Tickets() {
                 >
                   <i className="fas fa-comments"></i> Comentarios
                   {comentarios.length > 0 && (
-                    <span id="comentariosBadge" className="tab-badge">{comentarios.length}</span>
+                    <span className="tab-badge">{comentarios.length}</span>
                   )}
                 </button>
               </div>
 
-              {/* TAB: NOTAS */}
               {activeTab === 'notas' && (
-                <div className="tab-panel" id="panelNotas" style={{ display: 'flex' }}>
+                <div className="tab-panel" style={{ display: 'flex' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--gray)' }}>Solo visibles para el equipo. Se guardan automáticamente.</span>
-                    <span id="notasIndicador" ref={notasGuardado} style={{ fontSize: '0.8rem', color: 'var(--primary)' }}></span>
+                    <span ref={notasGuardado} style={{ fontSize: '0.8rem', color: 'var(--primary)' }}></span>
                   </div>
                   <textarea
-                    id="detalleNotas"
                     className="notas-textarea"
                     placeholder="Escribe notas privadas aquí..."
                     value={notasValue}
@@ -921,10 +916,9 @@ export default function Tickets() {
                 </div>
               )}
 
-              {/* TAB: COMENTARIOS */}
               {activeTab === 'comentarios' && (
-                <div className="tab-panel" id="panelComentarios" style={{ display: 'flex' }}>
-                  <div className="comentarios-lista" id="comentariosLista">
+                <div className="tab-panel" style={{ display: 'flex' }}>
+                  <div className="comentarios-lista">
                     {comentarios.length === 0 ? (
                       <div className="comentarios-empty">
                         <i className="fas fa-comments"></i>
@@ -937,7 +931,7 @@ export default function Tickets() {
                         const esMio  = c.user_id === user?.id
                         const archivosC = c.ticket_comentarios_archivos || []
                         return (
-                          <div className="comentario-item" key={c.id} id={`comentario-${c.id}`}>
+                          <div className="comentario-item" key={c.id}>
                             <div className="comentario-avatar" style={{ background: getAvatarColor(c.user_id) }}>
                               {getInitials(nombre)}
                             </div>
@@ -948,7 +942,7 @@ export default function Tickets() {
                                 {c.editado && <span className="comentario-editado">(editado)</span>}
                                 {(esMio || isAdmin()) && (
                                   <div className="comentario-acciones">
-                                    <button onClick={() => eliminarComentario(c.id)} title="Eliminar" className="btn-comentario-accion btn-comentario-delete">
+                                    <button onClick={() => eliminarComentario(c.id)} className="btn-comentario-accion btn-comentario-delete">
                                       <i className="fas fa-trash"></i>
                                     </button>
                                   </div>
@@ -975,17 +969,15 @@ export default function Tickets() {
                     )}
                   </div>
 
-                  {/* Nuevo comentario */}
                   <div className="comentario-nuevo">
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                       <div className="comentario-autor-avatar">
-                        <div id="comentarioAutorAvatar" className="avatar" style={{ background: getAvatarColor(user?.id) }}>
+                        <div className="avatar" style={{ background: getAvatarColor(user?.id) }}>
                           {getInitials(user?.nombre)}
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
                         <textarea
-                          id="nuevoComentarioTexto"
                           placeholder="Escribe un comentario... (Enter para enviar, Shift+Enter para nueva línea)"
                           value={comentarioText}
                           onChange={e => setComentarioText(e.target.value)}
@@ -994,13 +986,13 @@ export default function Tickets() {
                         />
 
                         {pendingComFiles.length > 0 && (
-                          <div id="comentarioArchivosPreview" className="archivos-preview" style={{ display: 'flex' }}>
+                          <div className="archivos-preview" style={{ display: 'flex' }}>
                             {pendingComFiles.map((f, i) => (
                               <div className="archivo-preview-chip" key={i}>
                                 {iconoArchivo(f.type)}
                                 <span>{f.name}</span>
                                 <small>{formatBytes(f.size)}</small>
-                                <button onClick={() => setPendingComFiles(pendingComFiles.filter((_, j) => j !== i))} title="Quitar">
+                                <button onClick={() => setPendingComFiles(pendingComFiles.filter((_, j) => j !== i))}>
                                   <i className="fas fa-times"></i>
                                 </button>
                               </div>
@@ -1025,7 +1017,6 @@ export default function Tickets() {
           </div>
         </main>
 
-        {/* Modal asignar operarios */}
         {showAsignarModal && (
           <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowAsignarModal(false)}>
             <div className="modal-content">
@@ -1034,7 +1025,7 @@ export default function Tickets() {
                 <button className="modal-close" onClick={() => setShowAsignarModal(false)}><i className="fas fa-times"></i></button>
               </div>
               <div className="modal-body">
-                <div className="operarios-checkboxes" id="asignarOperariosLista">
+                <div className="operarios-checkboxes">
                   {asignarOperariosCheck.map((op, i) => (
                     <div
                       key={op.id}
@@ -1079,50 +1070,45 @@ export default function Tickets() {
         <Link to="/" className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
         <Link to="/tickets" className="bottom-nav-item active"><i className="fas fa-headset"></i><span>Tickets</span></Link>
         {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
-        <Link to="/chat" className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+        <ChatNavLink className="bottom-nav-item" />
       </nav>
 
-      <main className="main-content" id="vistaLista">
+      <main className="main-content">
         <div className="section-header">
           <div>
             <h1><i className="fas fa-headset"></i> Tickets</h1>
-            <p>
-              <span id="totalFiltrado">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
-            </p>
+            <p>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</p>
           </div>
           <button className="btn-primary" onClick={abrirModalNuevoTicket}>
             <i className="fas fa-plus"></i> Nuevo Ticket
           </button>
         </div>
 
-        {/* Stats rápidas */}
         <div className="stats">
           {[
-            { id: 'statTotal',       label: 'Total',      val: stats.total || 0,       icon: 'fa-ticket-alt',       bg: '#dbeafe', col: '#2563eb', click: () => setEstadoFilter('all') },
-            { id: 'statPendientes',  label: 'Pendientes', val: stats.pendientes || 0,  icon: 'fa-clock',            bg: '#fef3c7', col: '#d97706', click: () => setEstadoFilter('Pendiente') },
-            { id: 'statEnCurso',     label: 'En curso',   val: stats.en_curso || 0,    icon: 'fa-spinner',          bg: '#dbeafe', col: '#2563eb', click: () => setEstadoFilter('En curso') },
-            { id: 'statCompletados', label: 'Completados',val: stats.completados || 0, icon: 'fa-check-circle',     bg: '#dcfce7', col: '#16a34a', click: () => setEstadoFilter('Completado') },
-            { id: 'statFacturados',  label: 'Facturados', val: stats.facturados || 0,  icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => setEstadoFilter('Facturado') },
-            { id: 'statUrgentes',    label: 'Urgentes',   val: stats.urgentes || 0,    icon: 'fa-exclamation-circle', bg: '#fee2e2', col: '#dc2626', click: () => setPrioridadFilter('Urgente') },
+            { label: 'Total',       val: stats.total || 0,       icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', click: () => setEstadoFilter('all') },
+            { label: 'Pendientes',  val: stats.pendientes || 0,  icon: 'fa-clock',               bg: '#fef3c7', col: '#d97706', click: () => setEstadoFilter('Pendiente') },
+            { label: 'En curso',    val: stats.en_curso || 0,    icon: 'fa-spinner',             bg: '#dbeafe', col: '#2563eb', click: () => setEstadoFilter('En curso') },
+            { label: 'Completados', val: stats.completados || 0, icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', click: () => setEstadoFilter('Completado') },
+            { label: 'Facturados',  val: stats.facturados || 0,  icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => setEstadoFilter('Facturado') },
+            { label: 'Urgentes',    val: stats.urgentes || 0,    icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => setPrioridadFilter('Urgente') },
           ].map(s => (
-            <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer' }}>
+            <div className="stat-card" key={s.label} onClick={s.click} style={{ cursor: 'pointer' }}>
               <div className="stat-icon" style={{ background: s.bg, color: s.col }}>
                 <i className={`fas ${s.icon}`}></i>
               </div>
               <div className="stat-info">
-                <h3 id={s.id}>{s.val}</h3>
+                <h3>{s.val}</h3>
                 <p>{s.label}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Filtros */}
         <div className="filters">
           <div className="search-box">
             <i className="fas fa-search"></i>
             <input
-              id="searchTicket"
               type="text"
               placeholder="Buscar tickets..."
               value={searchTerm}
@@ -1130,7 +1116,7 @@ export default function Tickets() {
             />
           </div>
           <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            <select id="filtroEstado" value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
+            <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
               <option value="all">Todos los estados</option>
               <option value="abiertos">Abiertos</option>
               <option value="Pendiente">Pendiente</option>
@@ -1138,23 +1124,23 @@ export default function Tickets() {
               <option value="Completado">Completado</option>
               <option value="Facturado">Facturado</option>
             </select>
-            <select id="filtroPrioridad" value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
+            <select value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
               <option value="all">Prioridad</option>
               <option value="Baja">Baja</option>
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
               <option value="Urgente">Urgente</option>
             </select>
-            <select id="filtroOperario" value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
+            <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
               <option value="all">Operario</option>
               {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
             </select>
-            <select id="filtroEmpresa" value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
+            <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
               <option value="all">Empresa</option>
               {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
-            <input type="date" id="filtroDesde" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
-            <input type="date" id="filtroHasta" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+            <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
+            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
             {(filtroDesde || filtroHasta) && (
               <button className="btn-secondary btn-sm" onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}>
                 <i className="fas fa-undo"></i>
@@ -1163,7 +1149,6 @@ export default function Tickets() {
           </div>
         </div>
 
-        {/* Tabla desktop */}
         <div className="table-container desktop-only">
           <table>
             <thead>
@@ -1172,7 +1157,7 @@ export default function Tickets() {
                 <th>Prioridad</th><th>Estado</th><th>Tiempo</th><th>Fecha</th><th>Acciones</th>
               </tr>
             </thead>
-            <tbody id="ticketsTableBody">
+            <tbody>
               {tickets.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="empty-state">
@@ -1217,15 +1202,15 @@ export default function Tickets() {
                       <td><EstadoBadge e={t.estado} /></td>
                       <td style={{ fontWeight: 600, color: estadoCerrado ? 'var(--gray)' : 'var(--primary)', fontSize: '0.82rem' }}>
                         {formatHoras(t.horas_transcurridas || 0)}
-                        {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }} title="Tiempo cerrado"></i>}
+                        {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>}
                       </td>
                       <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                       <td onClick={e => e.stopPropagation()}>
-                        <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar">
+                        <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)}>
                           <i className="fas fa-edit"></i>
                         </button>
                         {isAdmin() && (
-                          <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar">
+                          <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)}>
                             <i className="fas fa-trash"></i>
                           </button>
                         )}
@@ -1238,8 +1223,7 @@ export default function Tickets() {
           </table>
         </div>
 
-        {/* Cards mobile */}
-        <div className="mobile-only" id="ticketsCardsList">
+        <div className="mobile-only">
           {tickets.length === 0 ? (
             <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets</div>
           ) : (

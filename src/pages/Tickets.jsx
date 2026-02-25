@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
@@ -21,6 +21,7 @@ function getAvatarColor(str) {
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
+
 
 function getInitials(nombre) {
   if (!nombre) return '?'
@@ -101,6 +102,7 @@ export default function Tickets() {
   const { totalUnread } = useChatNotifications()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
 
   const [tickets, setTickets]         = useState([])
   const [allTickets, setAllTickets]   = useState([])
@@ -147,6 +149,13 @@ export default function Tickets() {
   useEffect(() => {
     if (!loading && allTickets.length > 0) applyFilters()
   }, [estadoFilter, prioridadFilter, operarioFilter, empresaFilter, filtroDesde, filtroHasta, searchTerm, allTickets])
+
+  useEffect(() => {
+    if (!loading && location.state?.abrirTicketId) {
+      abrirTicket(location.state.abrirTicketId)
+      window.history.replaceState({}, document.title)
+    }
+  }, [loading])
 
   async function loadData() {
     setLoading(true)

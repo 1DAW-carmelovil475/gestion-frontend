@@ -35,20 +35,6 @@ export async function apiFetch(path, options = {}) {
   return data
 }
 
-// ── FIX: evitar corrupción de nombres con tildes/caracteres especiales ────────
-// El navegador puede corromper el filename al hacer FormData.append('files', file).
-// Solución: crear un nuevo File con el nombre explícitamente en UTF-8.
-// Rename file to ASCII slug to avoid latin-1 encoding issues in multipart.
-// The original filename is sent as a separate field (file_names JSON array).
-function safeFile(file, index = 0) {
-  try {
-    const ext = file.name.includes('.') ? '.' + file.name.split('.').pop() : ''
-    return new File([file], `upload_${index}${ext}`, { type: file.type, lastModified: file.lastModified })
-  } catch {
-    return file
-  }
-}
-
 // ── Empresas ──────────────────────────────────────────────────────────────────
 export async function getEmpresas()           { return apiFetch('/api/empresas') }
 export async function createEmpresa(data)     { return apiFetch('/api/empresas', { method: 'POST', body: JSON.stringify(data) }) }
@@ -79,10 +65,11 @@ export async function getTicketComentarios(ticketId) { return apiFetch(`/api/v2/
 export async function createTicketComentario(ticketId, contenido, files = []) {
   const formData = new FormData()
   formData.append('contenido', contenido)
+  // Enviar nombres reales por separado para que el backend los restaure
   if (files.length > 0) {
     formData.append('file_names', JSON.stringify(files.map(f => f.name)))
   }
-  files.forEach((f, i) => formData.append('files', safeFile(f, i)))
+  files.forEach(f => formData.append('files', f, f.name))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/tickets/${ticketId}/comentarios`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,
@@ -109,7 +96,7 @@ export async function uploadTicketArchivo(ticketId, files) {
   if (files.length > 0) {
     formData.append('file_names', JSON.stringify(files.map(f => f.name)))
   }
-  files.forEach((f, i) => formData.append('files', safeFile(f, i)))
+  files.forEach(f => formData.append('files', f, f.name))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/tickets/${ticketId}/archivos`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,
@@ -153,11 +140,10 @@ export async function sendChatMensaje(canalId, contenido, ticketRefId = null, fi
   const formData = new FormData()
   formData.append('contenido', contenido)
   if (ticketRefId) formData.append('ticket_ref_id', ticketRefId)
-  // Send real filenames as JSON so backend can restore UTF-8 names with tildes
   if (files.length > 0) {
     formData.append('file_names', JSON.stringify(files.map(f => f.name)))
   }
-  files.forEach((f, i) => formData.append('files', safeFile(f, i)))
+  files.forEach(f => formData.append('files', f, f.name))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/chat/canales/${canalId}/mensajes`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,

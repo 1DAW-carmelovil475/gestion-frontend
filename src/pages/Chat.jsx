@@ -54,7 +54,6 @@ const ESTADO_COLORS = {
   'Facturado':  { bg: '#ede9fe', color: '#7c3aed' },
 }
 
-// Prefijo especial para mensajes de invitación DM
 const DM_INVITE_PREFIX = '__DM_INVITE__:'
 const DM_ACCEPTED_PREFIX = '__DM_ACCEPTED__:'
 const DM_REJECTED_PREFIX = '__DM_REJECTED__:'
@@ -145,7 +144,6 @@ function CanalContextMenu({ x, y, canal, prefs, isAdmin, onClose, onPin, onMute,
     const r = ref.current.getBoundingClientRect()
     setPos({ top: r.bottom > window.innerHeight ? y - r.height : y, left: r.right > window.innerWidth ? x - r.width : x })
   }, [x, y])
-
   return (
     <div ref={ref} className="context-menu canal-ctx-menu" style={{ top: pos.top, left: pos.left }} onClick={e => e.stopPropagation()}>
       <button onClick={() => { onPin(canal.id, !cp.pinned); onClose() }}>
@@ -182,8 +180,10 @@ function TicketPicker({ tickets, onSelect, onClose }) {
   const ref = useRef(null)
   useEffect(() => {
     function h(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
+    const timeout = setTimeout(() => {
+      document.addEventListener('mousedown', h)
+    }, 100)
+    return () => { clearTimeout(timeout); document.removeEventListener('mousedown', h) }
   }, [onClose])
   const filtered = tickets.filter(t => String(t.numero).includes(q) || t.asunto?.toLowerCase().includes(q.toLowerCase())).slice(0, 25)
   return (
@@ -191,7 +191,7 @@ function TicketPicker({ tickets, onSelect, onClose }) {
       <div className="ticket-picker-header">
         <i className="fas fa-search"></i>
         <input autoFocus type="text" placeholder="Buscar por #ID o nombre del ticket..." value={q} onChange={e => setQ(e.target.value)} />
-        <button onClick={onClose}><i className="fas fa-times"></i></button>
+        <button onMouseDown={e => { e.preventDefault(); onClose() }}><i className="fas fa-times"></i></button>
       </div>
       <div className="ticket-picker-list">
         {filtered.length === 0
@@ -199,7 +199,7 @@ function TicketPicker({ tickets, onSelect, onClose }) {
           : filtered.map(t => {
             const ec = ESTADO_COLORS[t.estado] || { bg: '#f0f0f0', color: '#666' }
             return (
-              <div key={t.id} className="ticket-picker-item" onClick={() => onSelect(t)}>
+              <div key={t.id} className="ticket-picker-item" onMouseDown={e => { e.preventDefault(); onSelect(t) }}>
                 <span className="tp-num">#{t.numero}</span>
                 <span className="tp-asunto">{t.asunto}</span>
                 <span className="tp-estado" style={{ background: ec.bg, color: ec.color }}>{t.estado}</span>
@@ -251,6 +251,9 @@ export default function Chat() {
   const { dmUnread, channelUnread, channelActivity, markRead, setActiveCanalId, prefs, updatePref } = useChatNotifications()
   const navigate = useNavigate()
 
+  // FIX: clave de localStorage por usuario
+  const CANAL_KEY = `chat_canal_activo_${user?.id || 'u'}`
+
   const [canales,      setCanales]      = useState([])
   const [operarios,    setOperarios]    = useState([])
   const [allTickets,   setAllTickets]   = useState([])
@@ -259,13 +262,11 @@ export default function Chat() {
   const [mensajes,     setMensajes]     = useState([])
   const [mensajeText,  setMensajeText]  = useState('')
   const [pendingFiles, setPendingFiles] = useState([])
+  const [pendingImages, setPendingImages] = useState([])
   const [ticketRef,    setTicketRef]    = useState(null)
   const [showHidden,   setShowHidden]   = useState(false)
   const [customOrder,  setCustomOrder]  = useState({ canales: [], directos: [] })
 
-  // ── Estado de invitaciones DM pendientes ─────────────────────────────────
-  // pendingInvites: { canalId: { nombreRemitente, opId } } → invites que YO recibí y aún no respondí
-  // sentInvites: { canalId: true } → invites que YO envié y están pendientes
   const [pendingInvites, setPendingInvites] = useState({})
   const [sentInvites,    setSentInvites]    = useState({})
   const sentInvitesRef = useRef({})
@@ -292,6 +293,7 @@ export default function Chat() {
   const mensajesEndRef  = useRef(null)
   const fileInputRef    = useRef(null)
   const textareaRef     = useRef(null)
+  const editorRef       = useRef(null)
   const pollingRef      = useRef(null)
   const canalActualRef  = useRef(null)
   const mensajesRef     = useRef([])
@@ -300,7 +302,6 @@ export default function Chat() {
   useEffect(() => { canalActualRef.current = canalActual }, [canalActual])
   useEffect(() => { mensajesRef.current = mensajes }, [mensajes])
 
-  // Cargar orden personalizado
   useEffect(() => {
     if (!user) return
     try {
@@ -316,8 +317,7 @@ export default function Chat() {
 
   useEffect(() => { loadData() }, [])
 
-  // ── Polling de canales: detecta nuevos DMs creados por otros usuarios ──────
-  // Se ejecuta independientemente del canal activo, cada 8s
+  // ── Polling de canales ─────────────────────────────────────────────────────
   const canalesIdsRef = useRef('')
   useEffect(() => {
     if (!user) return
@@ -325,7 +325,6 @@ export default function Chat() {
       try {
         const data = await getChatCanales().catch(() => null)
         if (!data) return
-        // Comparar IDs para ver si hay canales nuevos o eliminados
         const newIds = data.map(c => c.id).sort().join(',')
         if (newIds !== canalesIdsRef.current) {
           canalesIdsRef.current = newIds
@@ -333,17 +332,16 @@ export default function Chat() {
         }
       } catch {}
     }
-    // No ejecutar inmediatamente (loadData ya lo hace), esperar 8s
     const t = setInterval(pollCanales, 8000)
     return () => clearInterval(t)
   }, [user?.id]) // eslint-disable-line
 
-  // Restaurar canal activo desde sessionStorage SOLO en la carga inicial
+  // ── FIX: Restaurar canal activo desde localStorage (persiste entre visitas) ─
   const restoredRef = useRef(false)
   useEffect(() => {
     if (!canales.length || restoredRef.current) return
     restoredRef.current = true
-    const savedId = sessionStorage.getItem('chat_canal_activo')
+    const savedId = localStorage.getItem(CANAL_KEY)
     if (savedId) {
       const canal = canales.find(c => c.id === savedId)
       if (canal) { setCanalActual(canal); shouldScrollRef.current = true }
@@ -352,7 +350,8 @@ export default function Chat() {
 
   useEffect(() => {
     if (!canalActual) return
-    sessionStorage.setItem('chat_canal_activo', canalActual.id)
+    // FIX: guardar en localStorage para que persista al salir y volver
+    localStorage.setItem(CANAL_KEY, canalActual.id)
     setActiveCanalId(canalActual.id)
     loadMensajes(canalActual.id)
   }, [canalActual?.id])
@@ -370,8 +369,8 @@ export default function Chat() {
         markRead(canal.id, msgs[msgs.length - 1].id)
       }
       setActiveCanalId(null)
-      // Limpiar para no restaurar el canal al volver a entrar en la página
-      sessionStorage.removeItem('chat_canal_activo')
+      // FIX: NO eliminamos la clave al salir — así se restaura al volver
+      // localStorage.removeItem(CANAL_KEY)  ← eliminado intencionalmente
     }
   }, []) // eslint-disable-line
 
@@ -401,28 +400,21 @@ export default function Chat() {
     return () => clearInterval(pollingRef.current)
   }, [canalActual?.id])
 
-  // ── Polling de invitaciones DM pendientes ─────────────────────────────────
-  // Detecta invites recibidos/enviados pendientes (tanto para admins como workers)
+  // ── Polling de invitaciones DM ─────────────────────────────────────────────
   useEffect(() => {
     if (!user) return
-
     const checkInvites = async () => {
       try {
         const dms = canales.filter(c => c.tipo === 'directo')
         const newPending = {}
         const newSent    = {}
-
         for (const canal of dms) {
           try {
             const msgs = await getChatMensajes(canal.id, 30)
             if (!msgs?.length) continue
-
-            // Buscar de más reciente a más antiguo
             for (let i = msgs.length - 1; i >= 0; i--) {
               const m = msgs[i]
-
               if (m.contenido?.startsWith(DM_INVITE_PREFIX)) {
-                // ¿Ya fue respondida?
                 const hasResponse = msgs.slice(i + 1).some(
                   r => r.contenido?.startsWith(DM_ACCEPTED_PREFIX) || r.contenido?.startsWith(DM_REJECTED_PREFIX)
                 )
@@ -431,40 +423,30 @@ export default function Chat() {
                   try {
                     const parsed = JSON.parse(payload)
                     if (m.user_id !== user.id) {
-                      // YO soy el destinatario → invite pendiente para mí
                       newPending[canal.id] = { nombreRemitente: parsed.remitente, remitenteId: m.user_id, canalId: canal.id }
                     } else {
-                      // YO soy el remitente → esperando respuesta
                       newSent[canal.id] = { nombreDestinatario: parsed.destinatario }
                     }
                   } catch {}
                 }
                 break
               }
-
-              if (m.contenido?.startsWith(DM_ACCEPTED_PREFIX) || m.contenido?.startsWith(DM_REJECTED_PREFIX)) {
-                break // Ya respondida
-              }
+              if (m.contenido?.startsWith(DM_ACCEPTED_PREFIX) || m.contenido?.startsWith(DM_REJECTED_PREFIX)) break
             }
           } catch {}
         }
-
-        // ── Detectar rechazos: si yo tenía un sentInvite y el canal ya no existe → fue rechazado
         const prevSent = sentInvitesRef.current
         const canalIds = new Set(canales.map(c => c.id))
         for (const [canalId, info] of Object.entries(prevSent)) {
-          // El canal ya no está en mi lista Y tampoco está en newSent (no es que esté pendiente aún)
           if (!canalIds.has(canalId) && !newSent[canalId]) {
             showToast('warning', 'Chat rechazado', `${info.nombreDestinatario} rechazó tu solicitud de chat`)
           }
         }
-
         sentInvitesRef.current = newSent
         setPendingInvites(newPending)
         setSentInvites(newSent)
       } catch {}
     }
-
     checkInvites()
     const t = setInterval(checkInvites, 6000)
     return () => clearInterval(t)
@@ -494,7 +476,6 @@ export default function Chat() {
     } catch (err) { showToast('error', 'Error', err.message) }
   }
 
-  // ── Ordenar lista con customOrder ─────────────────────────────────────────
   function sortList(list, section) {
     const order = customOrder[section] || []
     if (!order.length) return list
@@ -508,7 +489,6 @@ export default function Chat() {
     setCustomOrder(o); saveOrder(o)
   }
 
-  // ── Listas derivadas ──────────────────────────────────────────────────────
   const allCanalesRaw  = canales.filter(c => c.tipo === 'canal')
   const allDirectosRaw = canales.filter(c => c.tipo === 'directo')
 
@@ -520,11 +500,9 @@ export default function Chat() {
   const unPinnedCanales  = canalesVisible.filter(c => !prefs[c.id]?.pinned)
   const unPinnedDirectos = directosVisible.filter(c => !prefs[c.id]?.pinned)
 
-  // Drag
   const dragCanales  = useDragSort(unPinnedCanales,  (nl) => handleReorder('canales',  nl))
   const dragDirectos = useDragSort(unPinnedDirectos, (nl) => handleReorder('directos', nl))
 
-  // ── Pref actions ──────────────────────────────────────────────────────────
   function handlePin(id, v)   { updatePref(id, { pinned: v }) }
   function handleMute(id, v)  { updatePref(id, { muted: v }) }
   function handleHide(id)     {
@@ -533,7 +511,6 @@ export default function Chat() {
   }
   function handleUnhide(id)   { updatePref(id, { hidden: false }) }
 
-  // ── Canal actions ─────────────────────────────────────────────────────────
   function handleLogout() {
     if (confirm('¿Cerrar sesión?')) { logout(); navigate('/login') }
   }
@@ -564,27 +541,20 @@ export default function Chat() {
     finally { setEditLoading(false) }
   }
 
-  // ── Crear DM: admins crean directo, workers envían invitación ─────────────
   async function crearDirecto(opId) {
     const operario = operarios.find(o => o.id === opId)
-
     if (isAdmin()) {
-      // Admin: crea el canal directamente, sin pedir confirmación
       try {
         await createChatCanal({ nombre: `directo-${opId}`, descripcion: null, tipo: 'directo', miembros: [opId] })
         showToast('success', 'Creado', 'Conversación iniciada'); setShowDirectoModal(false); loadData()
       } catch (err) { showToast('error', 'Error', err.message) }
     } else {
-      // Worker: crear el canal y enviar mensaje de invitación
       try {
         const canal = await createChatCanal({ nombre: `directo-${opId}`, descripcion: null, tipo: 'directo', miembros: [opId] })
         const nombreRemitente     = user?.nombre || user?.email || 'Alguien'
         const nombreDestinatario  = operario?.nombre || operario?.email || 'Alguien'
-
-        // Enviar mensaje especial de invitación
         const payload = JSON.stringify({ remitente: nombreRemitente, destinatario: nombreDestinatario })
         await sendChatMensaje(canal.id || canal, `${DM_INVITE_PREFIX}${payload}`, null, [])
-
         showToast('success', 'Petición enviada', `Esperando que ${nombreDestinatario} acepte`)
         setShowDirectoModal(false)
         loadData()
@@ -592,23 +562,19 @@ export default function Chat() {
     }
   }
 
-  // ── Aceptar invitación DM ─────────────────────────────────────────────────
   async function aceptarInvitacion(canalId, nombreRemitente) {
     try {
       const nombrePropio = user?.nombre || user?.email || 'Alguien'
       await sendChatMensaje(canalId, `${DM_ACCEPTED_PREFIX}${nombrePropio} aceptó el chat`, null, [])
       setPendingInvites(prev => { const n = { ...prev }; delete n[canalId]; return n })
-      // Abrir el canal
       const canal = canales.find(c => c.id === canalId)
       if (canal) setCanalActual(canal)
       showToast('success', 'Chat aceptado', `Ahora puedes chatear con ${nombreRemitente}`)
     } catch (err) { showToast('error', 'Error', err.message) }
   }
 
-  // ── Rechazar invitación DM ────────────────────────────────────────────────
   async function rechazarInvitacion(canalId, nombreRemitente) {
     try {
-      // Eliminar el canal del servidor directamente → desaparece para todos sin dejar mensajes
       await deleteChatCanal(canalId)
       setPendingInvites(prev => { const n = { ...prev }; delete n[canalId]; return n })
       setCanales(prev => prev.filter(c => c.id !== canalId))
@@ -621,28 +587,18 @@ export default function Chat() {
     if (!canal) return
     const isDm  = canal.tipo === 'directo'
     const nombre = isDm ? getDmNombre(canal, user?.id) : canal.nombre
-
     if (!isDm && !isAdmin()) return
     if (isDm && !isAdmin() && !confirm(`¿Eliminar el chat con "${nombre}"?\n\nTodos los miembros verán un aviso de que eliminaste el chat.`)) return
     if (!isDm && !confirm(`¿Eliminar el canal "${nombre}"?`)) return
-
     try {
       if (isDm) {
         const nombreUsuario = user?.nombre || user?.email || 'Alguien'
-        await sendChatMensaje(
-          canal.id,
-          `${SISTEMA_PREFIX}${nombreUsuario} eliminó el chat de mensajes directos`,
-          null,
-          []
-        )
+        await sendChatMensaje(canal.id, `${SISTEMA_PREFIX}${nombreUsuario} eliminó el chat de mensajes directos`, null, [])
         if (isAdmin()) {
           await deleteChatCanal(canal.id)
-          // Eliminar de la lista local y limpiar estado
           setCanales(prev => prev.filter(c => c.id !== canal.id))
           if (canalActual?.id === canal.id) { setCanalActual(null); setActiveCanalId(null) }
         } else {
-          // ── CAMBIO: Worker elimina → eliminar del estado local DIRECTAMENTE,
-          //    sin marcarlo como oculto. No recarga ni queda en "ocultos".
           setCanales(prev => prev.filter(c => c.id !== canal.id))
           if (canalActual?.id === canal.id) { setCanalActual(null); setActiveCanalId(null) }
         }
@@ -655,15 +611,26 @@ export default function Chat() {
     } catch (err) { showToast('error', 'Error', err.message) }
   }
 
-  // ── Mensajes ──────────────────────────────────────────────────────────────
   async function enviarMensaje() {
-    if (!canalActual || (!mensajeText.trim() && !pendingFiles.length && !ticketRef)) return
+    const htmlContent = editorRef.current?.innerHTML || ''
+    const textoPlano  = editorRef.current?.innerText?.trim() || ''
+    const allFiles    = [
+      ...pendingFiles,
+      ...pendingImages.map(p => p.file)
+    ]
+    if (!canalActual || (!textoPlano && !allFiles.length && !ticketRef)) return
     try {
-      await sendChatMensaje(canalActual.id, mensajeText, ticketRef?.id || null, pendingFiles)
-      setMensajeText(''); setPendingFiles([]); setTicketRef(null)
+      await sendChatMensaje(canalActual.id, htmlContent, ticketRef?.id || null, allFiles)
+      if (editorRef.current) editorRef.current.innerHTML = ''
+      setMensajeText('')
+      setPendingFiles([])
+      pendingImages.forEach(p => URL.revokeObjectURL(p.previewUrl))
+      setPendingImages([])
+      setTicketRef(null)
       await loadMensajes(canalActual.id)
     } catch (err) { showToast('error', 'Error', err.message) }
   }
+
   async function eliminarMensaje(id) {
     if (!confirm('¿Eliminar este mensaje?')) return
     try { await deleteChatMensaje(id); loadMensajes(canalActual.id) }
@@ -676,7 +643,7 @@ export default function Chat() {
   async function guardarEdicionMsg() {
     if (!editingMsgText.trim()) return
     try {
-      await editChatMensaje(editingMsg.id, editingMsgText.trim())
+      await editChatMensaje(editingMsg.id, editingMsgText)
       setEditingMsg(null); setEditingMsgText(''); loadMensajes(canalActual.id)
     } catch (err) { showToast('error', 'Error', err.message) }
   }
@@ -688,12 +655,53 @@ export default function Chat() {
   }
   function onMsgRightClick(e, msg)     { e.preventDefault(); setMsgCtxMenu({ x: e.clientX, y: e.clientY, msg }) }
   function onCanalRightClick(e, canal) { e.preventDefault(); e.stopPropagation(); setCanalCtxMenu({ x: e.clientX, y: e.clientY, canal }) }
-  function handleFileSelect(e)         { setPendingFiles(prev => [...prev, ...Array.from(e.target.files)]); e.target.value = '' }
-  function removePendingFile(i)        { setPendingFiles(prev => prev.filter((_, idx) => idx !== i)) }
-  function handleKeyDown(e) {
-    if (editingMsg) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); guardarEdicionMsg() }; return }
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje() }
+
+  function handleFileSelect(e) {
+    const files = Array.from(e.target.files)
+    const imgs = files.filter(f => f.type.startsWith('image/'))
+    const rest = files.filter(f => !f.type.startsWith('image/'))
+    if (imgs.length) {
+      const newImgs = imgs.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))
+      setPendingImages(prev => [...prev, ...newImgs])
+    }
+    if (rest.length) setPendingFiles(prev => [...prev, ...rest])
+    e.target.value = ''
   }
+
+  function removePendingFile(i)  { setPendingFiles(prev => prev.filter((_, idx) => idx !== i)) }
+  function removePendingImage(i) {
+    setPendingImages(prev => {
+      URL.revokeObjectURL(prev[i].previewUrl)
+      return prev.filter((_, idx) => idx !== i)
+    })
+  }
+
+  function handlePaste(e) {
+    const items = Array.from(e.clipboardData?.items || [])
+    const imageItems = items.filter(item => item.type.startsWith('image/'))
+    if (imageItems.length) {
+      e.preventDefault()
+      imageItems.forEach(item => {
+        const file = item.getAsFile()
+        if (file) {
+          const previewUrl = URL.createObjectURL(file)
+          setPendingImages(prev => [...prev, { file, previewUrl }])
+        }
+      })
+    }
+  }
+
+  function handleKeyDownEditor(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      enviarMensaje()
+    }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); guardarEdicionMsg() }
+  }
+
   async function descargarArchivo(archivoId, nombre) {
     try {
       const { url } = await getChatArchivoUrl(archivoId)
@@ -715,9 +723,13 @@ export default function Chat() {
     setTimeout(() => { if (toast.parentElement) toast.remove() }, 5000)
   }
 
+  function execFormat(command, value) {
+    editorRef.current?.focus()
+    document.execCommand(command, false, value)
+  }
+
   const mensajesAnclados = mensajes.filter(m => m.anclado)
 
-  // ── Render item del sidebar ───────────────────────────────────────────────
   function renderCanalItem(canal, idx, dragHandlers, extraClass = '') {
     const isDm     = canal.tipo === 'directo'
     const unread   = isDm ? (dmUnread[canal.id] || 0) : (channelUnread[canal.id] || 0)
@@ -725,10 +737,7 @@ export default function Chat() {
     const isMuted  = prefs[canal.id]?.muted
     const isPinned = prefs[canal.id]?.pinned
     const otros    = isDm ? getDmOtros(canal, user?.id) : []
-
-    // ¿Tiene invitación pendiente para MÍ?
     const hasPendingInvite = isDm && !!pendingInvites[canal.id]
-    // ¿Envié invitación y esperando respuesta?
     const hasSentInvite    = isDm && !!sentInvites[canal.id]
 
     return (
@@ -741,7 +750,6 @@ export default function Chat() {
         onDragEnd={dragHandlers.onDragEnd}
         onDrop={dragHandlers.onDrop}
         onClick={() => {
-          // Si tiene invitación pendiente para mí o es enviada, no abrir el canal
           if (hasPendingInvite || hasSentInvite) return
           setCanalActual(canal)
         }}
@@ -750,7 +758,6 @@ export default function Chat() {
         <span className="drag-handle" onMouseDown={e => e.stopPropagation()} title="Arrastrar para reordenar">
           <i className="fas fa-grip-vertical"></i>
         </span>
-
         {isDm ? (
           <div className="dm-avatars">
             {otros.length === 0
@@ -764,38 +771,26 @@ export default function Chat() {
         ) : (
           <i className="fas fa-hashtag canal-hash"></i>
         )}
-
         <span className="canal-nombre" style={{ flex: hasPendingInvite || hasSentInvite ? 'none' : 1 }}>
           {isDm ? getDmNombre(canal, user?.id) : canal.nombre}
         </span>
-
-        {/* Estado de invitación enviada */}
         {hasSentInvite && (
           <span className="dm-invite-sent-badge" title="Esperando respuesta">
             <i className="fas fa-clock"></i>
           </span>
         )}
-
-        {/* Botones de aceptar/rechazar si yo recibí la invitación */}
         {hasPendingInvite && (
           <div className="dm-invite-actions" onClick={e => e.stopPropagation()}>
-            <button
-              className="dm-invite-btn accept"
-              title="Aceptar"
-              onClick={() => aceptarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}
-            >
+            <button className="dm-invite-btn accept" title="Aceptar"
+              onClick={() => aceptarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}>
               <i className="fas fa-check"></i>
             </button>
-            <button
-              className="dm-invite-btn reject"
-              title="Rechazar"
-              onClick={() => rechazarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}
-            >
+            <button className="dm-invite-btn reject" title="Rechazar"
+              onClick={() => rechazarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}>
               <i className="fas fa-times"></i>
             </button>
           </div>
         )}
-
         {!hasPendingInvite && !hasSentInvite && (
           <div className="canal-badges">
             {isPinned && <i className="fas fa-thumbtack canal-pin-icon" title="Fijado"></i>}
@@ -814,13 +809,9 @@ export default function Chat() {
     <div className="loading-screen"><i className="fas fa-spinner fa-spin"></i><p>Cargando...</p></div>
   )
 
-  // ── Comprobación de mensajes especiales al renderizar ─────────────────────
-  // Los mensajes de invite/respuesta se convierten en mensajes de sistema visibles,
-  // en lugar de filtrarse silenciosamente (evita que el admin vea el chat vacío)
   const mensajesFiltrados = mensajes.map(m => {
     const c = m.contenido || ''
     if (c.startsWith(DM_INVITE_PREFIX)) {
-      // Convertir a mensaje de sistema legible
       try {
         const parsed = JSON.parse(c.replace(DM_INVITE_PREFIX, ''))
         return { ...m, __sistema: true, __sistemaTexto: `${parsed.remitente} quiere iniciar un chat directo` }
@@ -831,17 +822,17 @@ export default function Chat() {
     if (c.startsWith(DM_ACCEPTED_PREFIX)) {
       return { ...m, __sistema: true, __sistemaTexto: c.replace(DM_ACCEPTED_PREFIX, '') }
     }
-    // DM_REJECTED_PREFIX ya no se usa (el canal se elimina directamente al rechazar)
     if (c.startsWith(DM_REJECTED_PREFIX)) return null
     return m
   }).filter(Boolean)
 
+  const hasPendingContent = pendingFiles.length > 0 || pendingImages.length > 0 || ticketRef
+
   return (
     <div className="chat-page" onClick={() => { setMsgCtxMenu(null); setCanalCtxMenu(null) }}>
       <div className="toast-container" id="toastContainer"></div>
-      <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }} onChange={handleFileSelect} />
+      <input ref={fileInputRef} type="file" multiple accept="*/*" style={{ display: 'none' }} onChange={handleFileSelect} />
 
-      {/* ── Banner de invitaciones pendientes (para el receptor) ── */}
       {Object.values(pendingInvites).length > 0 && (
         <div className="dm-invites-banner">
           {Object.values(pendingInvites).map(invite => (
@@ -896,7 +887,6 @@ export default function Chat() {
 
           <div className="sidebar-scroll">
 
-            {/* Fijados */}
             {pinnedAll.length > 0 && (
               <div className="canal-section">
                 <div className="canal-section-header">
@@ -945,7 +935,6 @@ export default function Chat() {
               </div>
             )}
 
-            {/* Canales */}
             <div className="canal-section">
               <div className="canal-section-header">
                 <span>Canales</span>
@@ -960,7 +949,6 @@ export default function Chat() {
               </div>
             </div>
 
-            {/* Directos */}
             <div className="canal-section">
               <div className="canal-section-header">
                 <span>Mensajes directos</span>
@@ -973,8 +961,6 @@ export default function Chat() {
                   ? <div className="canal-empty">Sin mensajes</div>
                   : unPinnedDirectos.map((canal, idx) => {
                     const hasSent = !!sentInvites[canal.id]
-                    const hasPend = !!pendingInvites[canal.id]
-                    // Mostrar label de "Petición enviada" debajo del item
                     const item = renderCanalItem(canal, idx, dragDirectos)
                     return (
                       <div key={canal.id}>
@@ -990,7 +976,6 @@ export default function Chat() {
               </div>
             </div>
 
-            {/* Ocultos */}
             {hiddenAll.length > 0 && (
               <div className="canal-section hidden-section">
                 <button className="btn-show-hidden" onClick={() => setShowHidden(v => !v)}>
@@ -1037,7 +1022,7 @@ export default function Chat() {
               </div>
             )}
 
-          </div>{/* /sidebar-scroll */}
+          </div>
         </aside>
 
         {/* ── Main ── */}
@@ -1097,7 +1082,6 @@ export default function Chat() {
                 {mensajesFiltrados.length === 0 ? (
                   <div className="chat-mensajes-empty"><i className="fas fa-comment-dots"></i><p>Sin mensajes aún</p></div>
                 ) : mensajesFiltrados.map(msg => {
-                  // ── Mensaje de sistema (nativo __SISTEMA__ o convertido de invite) ──
                   const esSistema = msg.__sistema || msg.contenido?.startsWith(SISTEMA_PREFIX)
                   if (esSistema) {
                     const texto = msg.__sistemaTexto || msg.contenido?.replace(SISTEMA_PREFIX, '') || ''
@@ -1107,9 +1091,7 @@ export default function Chat() {
                         <i className="fas fa-info-circle"></i>
                         <span>{texto}</span>
                         {isAdmin() && esEliminacion && (
-                          <button
-                            className="msg-sistema-eliminar"
-                            title="Eliminar el chat definitivamente"
+                          <button className="msg-sistema-eliminar" title="Eliminar el chat definitivamente"
                             onClick={async () => {
                               if (!confirm('¿Eliminar este chat de mensajes directos definitivamente?')) return
                               try {
@@ -1117,8 +1099,7 @@ export default function Chat() {
                                 setCanales(prev => prev.filter(c => c.id !== canalActual.id))
                                 setCanalActual(null)
                               } catch (err) { showToast('error', 'Error', err.message) }
-                            }}
-                          >
+                            }}>
                             <i className="fas fa-trash"></i> Eliminar
                           </button>
                         )}
@@ -1126,12 +1107,10 @@ export default function Chat() {
                     )
                   }
 
-                  // ── Mensaje normal ─────────────────────────────────────────
                   const esPropio  = msg.user_id === user?.id
                   const archivos  = msg.chat_mensajes_archivos || []
                   const ticketData = msg.tickets
                   const contenidoVisible = msg.contenido || ''
-                  // Doble protección: no mostrar mensajes internos como normales
                   if (contenidoVisible.startsWith(DM_INVITE_PREFIX) ||
                       contenidoVisible.startsWith(DM_ACCEPTED_PREFIX) ||
                       contenidoVisible.startsWith(DM_REJECTED_PREFIX)) return null
@@ -1151,12 +1130,18 @@ export default function Chat() {
                           {msg.anclado && <span className="msg-pin-badge"><i className="fas fa-thumbtack"></i></span>}
                         </div>
                         {contenidoVisible
-                          ? <div className="chat-mensaje-text">{contenidoVisible}</div>
+                          ? <div className="chat-mensaje-text" dangerouslySetInnerHTML={{ __html: contenidoVisible }} />
                           : archivos.length > 0
                             ? <div className="chat-mensaje-text msg-solo-archivo"><i className="fas fa-paperclip"></i> {archivos.length === 1 ? 'Archivo adjunto' : `${archivos.length} archivos adjuntos`}</div>
                             : null}
+
+                        {/* FIX: navegar directamente al ticket usando router state */}
                         {ticketData && (
-                          <div className="msg-ticket-ref" onClick={() => navigate(`/tickets?abrirId=${ticketData.id}`)} style={{ cursor: 'pointer' }}>
+                          <div
+                            className="msg-ticket-ref"
+                            onClick={() => navigate('/tickets', { state: { abrirTicketId: ticketData.id } })}
+                            style={{ cursor: 'pointer' }}
+                          >
                             <div className="msg-ticket-ref-header">
                               <i className="fas fa-ticket-alt"></i>
                               <span>Ticket #{ticketData.numero}</span>
@@ -1168,18 +1153,39 @@ export default function Chat() {
                             <div className="msg-ticket-asunto">{ticketData.asunto}</div>
                           </div>
                         )}
+
                         {archivos.length > 0 && (
                           <div className="msg-archivos">
-                            {archivos.map(a => (
-                              <div key={a.id} className="msg-archivo-chip" onClick={() => descargarArchivo(a.id, a.nombre_original)} title={`Descargar ${a.nombre_original}`}>
-                                <i className={`fas ${getFileIcon(a.mime_type)}`}></i>
-                                <div className="msg-archivo-info">
-                                  <span className="msg-archivo-nombre">{a.nombre_original}</span>
-                                  {a.tamanio && <span className="msg-archivo-size">{formatBytes(a.tamanio)}</span>}
+                            {archivos.map(a => {
+                              const isImg = a.mime_type?.startsWith('image/')
+                              return isImg ? (
+                                <div key={a.id} className="msg-archivo-img-wrap" onClick={() => descargarArchivo(a.id, a.nombre_original)} title={`Ver/descargar ${a.nombre_original}`}>
+                                  <img
+                                    src={`/api/chat/archivos/${a.id}/preview`}
+                                    alt={a.nombre_original}
+                                    className="msg-archivo-img"
+                                    onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }}
+                                  />
+                                  <div className="msg-archivo-chip" style={{ display: 'none' }}>
+                                    <i className="fas fa-image"></i>
+                                    <div className="msg-archivo-info">
+                                      <span className="msg-archivo-nombre">{a.nombre_original}</span>
+                                      {a.tamanio && <span className="msg-archivo-size">{formatBytes(a.tamanio)}</span>}
+                                    </div>
+                                    <i className="fas fa-download msg-archivo-dl"></i>
+                                  </div>
                                 </div>
-                                <i className="fas fa-download msg-archivo-dl"></i>
-                              </div>
-                            ))}
+                              ) : (
+                                <div key={a.id} className="msg-archivo-chip" onClick={() => descargarArchivo(a.id, a.nombre_original)} title={`Descargar ${a.nombre_original}`}>
+                                  <i className={`fas ${getFileIcon(a.mime_type)}`}></i>
+                                  <div className="msg-archivo-info">
+                                    <span className="msg-archivo-nombre">{a.nombre_original}</span>
+                                    {a.tamanio && <span className="msg-archivo-size">{formatBytes(a.tamanio)}</span>}
+                                  </div>
+                                  <i className="fas fa-download msg-archivo-dl"></i>
+                                </div>
+                              )
+                            })}
                           </div>
                         )}
                       </div>
@@ -1189,7 +1195,15 @@ export default function Chat() {
                 <div ref={mensajesEndRef} />
               </div>
 
+              {/* ── Input area ── */}
               <div className="chat-input">
+                {ticketRef && (
+                  <div className="pending-ticket-ref">
+                    <i className="fas fa-ticket-alt"></i>
+                    <span>#{ticketRef.numero} — {ticketRef.asunto}</span>
+                    <button onClick={() => setTicketRef(null)}><i className="fas fa-times"></i></button>
+                  </div>
+                )}
                 {pendingFiles.length > 0 && (
                   <div className="pending-files">
                     {pendingFiles.map((f, i) => (
@@ -1201,40 +1215,131 @@ export default function Chat() {
                     ))}
                   </div>
                 )}
-                {ticketRef && (
-                  <div className="pending-ticket-ref">
-                    <i className="fas fa-ticket-alt"></i>
-                    <span>#{ticketRef.numero} — {ticketRef.asunto}</span>
-                    <button onClick={() => setTicketRef(null)}><i className="fas fa-times"></i></button>
-                  </div>
-                )}
-                {editingMsg && (
-                  <div className="editing-banner">
-                    <i className="fas fa-pen"></i><span>Editando mensaje</span>
-                    <button onClick={() => { setEditingMsg(null); setEditingMsgText('') }}><i className="fas fa-times"></i></button>
+                {pendingImages.length > 0 && (
+                  <div className="pending-images">
+                    {pendingImages.map((img, i) => (
+                      <div key={i} className="pending-image-item">
+                        <img src={img.previewUrl} alt={img.file.name} className="pending-image-thumb" />
+                        <button className="pending-image-remove" onClick={() => removePendingImage(i)} title="Eliminar imagen">
+                          <i className="fas fa-times"></i>
+                        </button>
+                        <span className="pending-image-name">{img.file.name}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {showTicketPicker && (
-                  <TicketPicker tickets={allTickets} onSelect={t => { setTicketRef(t); setShowTicketPicker(false) }} onClose={() => setShowTicketPicker(false)} />
-                )}
-                <div className="chat-input-row">
-                  <button className="input-icon-btn" title="Adjuntar archivo" onClick={() => fileInputRef.current?.click()}>
-                    <i className="fas fa-paperclip"></i>
-                  </button>
-                  <button className={`input-icon-btn ${ticketRef ? 'active' : ''}`} title="Referenciar ticket" onClick={() => setShowTicketPicker(v => !v)}>
-                    <i className="fas fa-ticket-alt"></i>
-                  </button>
-                  <textarea
-                    ref={textareaRef}
-                    placeholder={editingMsg ? 'Editar mensaje... (Enter para guardar)' : 'Escribe un mensaje...'}
-                    value={editingMsg ? editingMsgText : mensajeText}
-                    onChange={e => editingMsg ? setEditingMsgText(e.target.value) : setMensajeText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    rows={1}
+                  <TicketPicker
+                    tickets={allTickets}
+                    onSelect={t => { setTicketRef(t); setShowTicketPicker(false) }}
+                    onClose={() => setShowTicketPicker(false)}
                   />
-                  <button className="chat-send-btn" onClick={editingMsg ? guardarEdicionMsg : enviarMensaje} title={editingMsg ? 'Guardar' : 'Enviar'}>
-                    <i className={`fas ${editingMsg ? 'fa-check' : 'fa-paper-plane'}`}></i>
-                  </button>
+                )}
+
+                <div className="chat-editor-wrap">
+                  <div className="chat-editor-toolbar">
+                    <div className="toolbar-group">
+                      <button type="button" className="chat-editor-btn" title="Negrita (Ctrl+B)"
+                        onMouseDown={e => { e.preventDefault(); execFormat('bold') }}>
+                        <i className="fas fa-bold"></i>
+                      </button>
+                      <button type="button" className="chat-editor-btn" title="Cursiva (Ctrl+I)"
+                        onMouseDown={e => { e.preventDefault(); execFormat('italic') }}>
+                        <i className="fas fa-italic"></i>
+                      </button>
+                      <button type="button" className="chat-editor-btn" title="Subrayado (Ctrl+U)"
+                        onMouseDown={e => { e.preventDefault(); execFormat('underline') }}>
+                        <i className="fas fa-underline"></i>
+                      </button>
+                      <button type="button" className="chat-editor-btn" title="Tachado"
+                        onMouseDown={e => { e.preventDefault(); execFormat('strikeThrough') }}>
+                        <i className="fas fa-strikethrough"></i>
+                      </button>
+                    </div>
+                    <div className="chat-editor-sep"></div>
+                    <div className="toolbar-group">
+                      <button type="button" className="chat-editor-btn" title="Lista con viñetas"
+                        onMouseDown={e => { e.preventDefault(); execFormat('insertUnorderedList') }}>
+                        <i className="fas fa-list-ul"></i>
+                      </button>
+                      <button type="button" className="chat-editor-btn" title="Lista numerada"
+                        onMouseDown={e => { e.preventDefault(); execFormat('insertOrderedList') }}>
+                        <i className="fas fa-list-ol"></i>
+                      </button>
+                    </div>
+                    <div className="chat-editor-sep"></div>
+                    <div className="toolbar-group">
+                      <button type="button" className="chat-editor-btn" title="Cita"
+                        onMouseDown={e => { e.preventDefault(); execFormat('formatBlock', 'blockquote') }}>
+                        <i className="fas fa-quote-right"></i>
+                      </button>
+                      <button type="button" className="chat-editor-btn" title="Código"
+                        onMouseDown={e => { e.preventDefault(); execFormat('formatBlock', 'pre') }}>
+                        <i className="fas fa-code"></i>
+                      </button>
+                      <button type="button" className="chat-editor-btn" title="Limpiar formato"
+                        onMouseDown={e => { e.preventDefault(); execFormat('removeFormat') }}>
+                        <i className="fas fa-remove-format"></i>
+                      </button>
+                    </div>
+                    <div style={{ flex: 1 }}></div>
+                    <div className="toolbar-group toolbar-actions">
+                      <button
+                        type="button"
+                        className={`chat-editor-btn toolbar-action-btn ${ticketRef ? 'active' : ''}`}
+                        title="Referenciar ticket"
+                        onClick={() => setShowTicketPicker(v => !v)}
+                      >
+                        <i className="fas fa-ticket-alt"></i>
+                        <span className="toolbar-btn-label">Ticket</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="chat-editor-btn toolbar-action-btn"
+                        title="Adjuntar archivo o imagen"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <i className="fas fa-paperclip"></i>
+                        <span className="toolbar-btn-label">Adjuntar</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {editingMsg ? (
+                    <div className="chat-edit-row">
+                      <textarea
+                        ref={textareaRef}
+                        className="chat-edit-textarea"
+                        placeholder="Editar mensaje..."
+                        value={editingMsgText}
+                        onChange={e => setEditingMsgText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        rows={2}
+                      />
+                      <button className="chat-send-btn" onClick={guardarEdicionMsg} title="Guardar (Enter)">
+                        <i className="fas fa-check"></i>
+                      </button>
+                      <button className="chat-cancel-btn" onClick={() => { setEditingMsg(null); setEditingMsgText('') }} title="Cancelar (Esc)">
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="chat-editor-body-row">
+                      <div
+                        ref={editorRef}
+                        className="chat-editor-content"
+                        contentEditable
+                        suppressContentEditableWarning
+                        data-placeholder="Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)"
+                        onInput={e => setMensajeText(e.currentTarget.innerText)}
+                        onKeyDown={handleKeyDownEditor}
+                        onPaste={handlePaste}
+                      />
+                      <button className="chat-send-btn" onClick={enviarMensaje} title="Enviar (Enter)">
+                        <i className="fas fa-paper-plane"></i>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1242,7 +1347,6 @@ export default function Chat() {
         </section>
       </div>
 
-      {/* Context menus */}
       {msgCtxMenu && (
         <MsgContextMenu x={msgCtxMenu.x} y={msgCtxMenu.y} msg={msgCtxMenu.msg}
           userId={user?.id} isAdmin={isAdmin()}
@@ -1260,7 +1364,6 @@ export default function Chat() {
         />
       )}
 
-      {/* Modales */}
       {showCanalModal && (
         <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowCanalModal(false)}>
           <div className="modal-content">

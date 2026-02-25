@@ -35,6 +35,20 @@ export async function apiFetch(path, options = {}) {
   return data
 }
 
+// ── FIX: evitar corrupción de nombres con tildes/caracteres especiales ────────
+// El navegador puede corromper el filename al hacer FormData.append('files', file).
+// Solución: crear un nuevo File con el nombre explícitamente en UTF-8.
+// Rename file to ASCII slug to avoid latin-1 encoding issues in multipart.
+// The original filename is sent as a separate field (file_names JSON array).
+function safeFile(file, index = 0) {
+  try {
+    const ext = file.name.includes('.') ? '.' + file.name.split('.').pop() : ''
+    return new File([file], `upload_${index}${ext}`, { type: file.type, lastModified: file.lastModified })
+  } catch {
+    return file
+  }
+}
+
 // ── Empresas ──────────────────────────────────────────────────────────────────
 export async function getEmpresas()           { return apiFetch('/api/empresas') }
 export async function createEmpresa(data)     { return apiFetch('/api/empresas', { method: 'POST', body: JSON.stringify(data) }) }
@@ -65,7 +79,10 @@ export async function getTicketComentarios(ticketId) { return apiFetch(`/api/v2/
 export async function createTicketComentario(ticketId, contenido, files = []) {
   const formData = new FormData()
   formData.append('contenido', contenido)
-  files.forEach(f => formData.append('files', f))
+  if (files.length > 0) {
+    formData.append('file_names', JSON.stringify(files.map(f => f.name)))
+  }
+  files.forEach((f, i) => formData.append('files', safeFile(f, i)))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/tickets/${ticketId}/comentarios`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,
@@ -89,7 +106,10 @@ export async function getArchivoUrl(archivoId) { return apiFetch(`/api/v2/archiv
 
 export async function uploadTicketArchivo(ticketId, files) {
   const formData = new FormData()
-  files.forEach(f => formData.append('files', f))
+  if (files.length > 0) {
+    formData.append('file_names', JSON.stringify(files.map(f => f.name)))
+  }
+  files.forEach((f, i) => formData.append('files', safeFile(f, i)))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/tickets/${ticketId}/archivos`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,
@@ -119,10 +139,6 @@ export async function createChatCanal(data) {
   return apiFetch('/api/v2/chat/canales', { method: 'POST', body: JSON.stringify(data) })
 }
 
-/**
- * PUT /api/v2/chat/canales/:id
- * Body: { nombre, descripcion, miembros: [uuid, ...] }
- */
 export async function updateChatCanal(id, data) {
   return apiFetch(`/api/v2/chat/canales/${id}`, { method: 'PUT', body: JSON.stringify(data) })
 }
@@ -137,7 +153,11 @@ export async function sendChatMensaje(canalId, contenido, ticketRefId = null, fi
   const formData = new FormData()
   formData.append('contenido', contenido)
   if (ticketRefId) formData.append('ticket_ref_id', ticketRefId)
-  files.forEach(f => formData.append('files', f))
+  // Send real filenames as JSON so backend can restore UTF-8 names with tildes
+  if (files.length > 0) {
+    formData.append('file_names', JSON.stringify(files.map(f => f.name)))
+  }
+  files.forEach((f, i) => formData.append('files', safeFile(f, i)))
   const token = sessionStorage.getItem('hola_token')
   const res = await fetch(`${API_URL}/api/v2/chat/canales/${canalId}/mensajes`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData,
@@ -150,10 +170,6 @@ export async function deleteChatMensaje(mensajeId) {
   return apiFetch(`/api/v2/chat/mensajes/${mensajeId}`, { method: 'DELETE' })
 }
 
-/**
- * PATCH /api/v2/chat/mensajes/:id
- * Body: { contenido }
- */
 export async function editChatMensaje(mensajeId, contenido) {
   return apiFetch(`/api/v2/chat/mensajes/${mensajeId}`, {
     method: 'PATCH',
@@ -161,10 +177,6 @@ export async function editChatMensaje(mensajeId, contenido) {
   })
 }
 
-/**
- * PATCH /api/v2/chat/mensajes/:id/pin
- * Body: { anclado: true|false }
- */
 export async function pinChatMensaje(mensajeId, anclado) {
   return apiFetch(`/api/v2/chat/mensajes/${mensajeId}/pin`, {
     method: 'PATCH',
@@ -176,11 +188,6 @@ export async function addChatMiembros(canalId, miembros) {
   return apiFetch(`/api/v2/chat/canales/${canalId}/miembros`, { method: 'POST', body: JSON.stringify({ miembros }) })
 }
 
-/**
- * GET /api/v2/chat/archivos/:id/url
- * Para descargar archivos adjuntos a mensajes de chat (bucket: chat-archivos)
- * DISTINTO de getArchivoUrl que es para archivos de tickets (bucket: ticket-archivos)
- */
 export async function getChatArchivoUrl(archivoId) {
   return apiFetch(`/api/v2/chat/archivos/${archivoId}/url`)
 }

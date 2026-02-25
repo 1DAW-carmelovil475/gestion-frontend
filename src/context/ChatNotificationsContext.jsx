@@ -1,11 +1,8 @@
 /**
  * ChatNotificationsContext — VERSIÓN COMPLETA
  * ─────────────────────────────────────────────
- * - Fix DMs: misma lógica que canales
- * - setActiveCanalId actualiza ref síncronamente (sin delay de useEffect)
- * - Preferencias por usuario guardadas en localStorage:
- *     pinned, muted, hidden
- * - Sistema de invitaciones DM para trabajadores
+ * FIX: lastSeen ahora se guarda en localStorage (no sessionStorage)
+ *      para que sobreviva al cierre del navegador/pestaña.
  */
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from './AuthContext'
@@ -13,6 +10,19 @@ import { getChatCanales, getChatMensajes } from '../services/api'
 
 const Ctx = createContext(null)
 
+// ── Helpers para lastSeen — ahora en localStorage ─────────────────────────
+function loadLastSeen(userId) {
+  try {
+    const raw = localStorage.getItem(`chat_seen_${userId}`)
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+function saveLastSeen(userId, seen) {
+  try { localStorage.setItem(`chat_seen_${userId}`, JSON.stringify(seen)) } catch {}
+}
+
+// ── Helpers para prefs ────────────────────────────────────────────────────
 function loadPrefs(userId) {
   try {
     const raw = localStorage.getItem(`chat_prefs_${userId}`)
@@ -35,7 +45,7 @@ export function ChatNotificationsProvider({ children }) {
 
   const lastSeenRef      = useRef({})
   const canalesRef       = useRef([])
-  const activeCanalIdRef = useRef(null)   // se actualiza síncronamente
+  const activeCanalIdRef = useRef(null)
   const prefsRef         = useRef({})
   const mountedRef       = useRef(true)
   const tickRef          = useRef(0)
@@ -47,14 +57,13 @@ export function ChatNotificationsProvider({ children }) {
     _setActiveCanalId(id)
   }, [])
 
-  // ── Cargar lastSeen y prefs ───────────────────────────────────────────────
+  // ── Cargar lastSeen (localStorage) y prefs al iniciar sesión ─────────────
   useEffect(() => {
     mountedRef.current = true
     if (!user) return
-    try {
-      const saved = sessionStorage.getItem(`cls_${user.id}`)
-      if (saved) lastSeenRef.current = JSON.parse(saved)
-    } catch { lastSeenRef.current = {} }
+
+    // FIX: usar localStorage en lugar de sessionStorage
+    lastSeenRef.current = loadLastSeen(user.id)
 
     const p = loadPrefs(user.id)
     prefsRef.current = p
@@ -65,7 +74,8 @@ export function ChatNotificationsProvider({ children }) {
 
   function saveSeen() {
     if (!user) return
-    try { sessionStorage.setItem(`cls_${user.id}`, JSON.stringify(lastSeenRef.current)) } catch {}
+    // FIX: guardar en localStorage
+    saveLastSeen(user.id, lastSeenRef.current)
   }
 
   // ── updatePref ────────────────────────────────────────────────────────────
@@ -119,7 +129,7 @@ export function ChatNotificationsProvider({ children }) {
 
           const lastMsg         = msgs[msgs.length - 1]
           const lastSeenId      = lastSeenRef.current[canal.id]
-          const currentActiveId = activeCanalIdRef.current  // síncrono, siempre actual
+          const currentActiveId = activeCanalIdRef.current
           const isMuted         = prefsRef.current[canal.id]?.muted
 
           // Canal abierto ahora mismo → 0 y actualizar lastSeen
@@ -138,7 +148,7 @@ export function ChatNotificationsProvider({ children }) {
             return
           }
 
-          // Calcular no leídos — misma lógica para canales y DMs
+          // Calcular no leídos
           let unread = 0
           if (!lastSeenId) {
             unread = msgs.filter(m => m.user_id !== user.id).length

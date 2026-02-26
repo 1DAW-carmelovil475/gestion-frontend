@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ChatNotificationsProvider } from './context/ChatNotificationsContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Usuarios from './pages/Usuarios'
 import Tickets from './pages/Tickets'
 import Estadisticas from './pages/Estadisticas'
 import Chat from './pages/Chat'
@@ -39,6 +40,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/usuarios"
+          element={
+            <ProtectedRoute>
+              <Usuarios />
             </ProtectedRoute>
           }
         />

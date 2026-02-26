@@ -861,6 +861,7 @@ export default function Chat() {
         </div>
         <nav className="top-nav">
           <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
+          <Link to="/usuarios" className="nav-link"><i className="fas fa-user"></i> Usuarios</Link>
           <Link to="/tickets" className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
           <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>
           <Link to="/chat" className="nav-link active"><i className="fas fa-comments"></i> Chat</Link>

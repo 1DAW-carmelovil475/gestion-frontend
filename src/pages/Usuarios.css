@@ -1,0 +1,213 @@
+/* ══════════════════════════════════════════════
+   Usuarios Page
+══════════════════════════════════════════════ */
+.usuarios-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* ── Celda de usuario (avatar + nombre) ──────── */
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-cell-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.user-cell-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ── Badge "Tú" ──────────────────────────────── */
+.badge-yo {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #dbeafe;
+  color: #2563eb;
+  padding: 1px 7px;
+  border-radius: 10px;
+  letter-spacing: 0.2px;
+}
+
+/* ── Badge de rol ────────────────────────────── */
+.badge-rol {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-rol.admin {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.badge-rol.trabajador {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-rol i { font-size: 0.7rem; }
+
+/* ── Badge de estado ─────────────────────────── */
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-estado.activo {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-estado.inactivo {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.estado-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Celdas de tabla ─────────────────────────── */
+.u-email {
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+.u-fecha {
+  font-size: 0.82rem;
+  color: var(--gray);
+  white-space: nowrap;
+}
+
+/* ── Modal de usuario ────────────────────────── */
+.modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.modal-header h2 i {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.form-group label i {
+  color: var(--primary);
+  font-size: 0.78rem;
+  width: 14px;
+  text-align: center;
+}
+
+/* ── Hint info en modal ──────────────────────── */
+.user-modal-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 14px;
+  background: #f0f8ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #1d4ed8;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.user-modal-hint i {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #3b82f6;
+}
+
+/* ── Data card (mobile) ──────────────────────── */
+.data-card {
+  background: white;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+}
+
+.data-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.data-card-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.data-card-subtitle {
+  font-size: 0.78rem;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+.data-card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.data-card-meta i { color: var(--primary); }
+
+.data-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 768px) {
+  .u-email,
+  .u-fecha { display: none; }
+}

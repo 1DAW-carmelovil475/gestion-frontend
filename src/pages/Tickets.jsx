@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
@@ -21,7 +21,6 @@ function getAvatarColor(str) {
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
-
 
 function getInitials(nombre) {
   if (!nombre) return '?'
@@ -77,11 +76,10 @@ function formatBytes(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
-// FIX 1: Tildes en nombres de archivo — solo elimina chars realmente prohibidos en rutas
 function sanitizarNombreArchivo(nombre) {
   return nombre
-    .normalize('NFC')               // compone tildes (a + ́ → á)
-    .replace(/[/\\:*?"<>|]/g, '_') // solo reemplaza los chars inválidos en rutas de archivo
+    .normalize('NFC')
+    .replace(/[/\\:*?"<>|]/g, '_')
 }
 
 function PrioridadBadge({ p }) {
@@ -102,7 +100,6 @@ export default function Tickets() {
   const { totalUnread } = useChatNotifications()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const location = useLocation()
 
   const [tickets, setTickets]         = useState([])
   const [allTickets, setAllTickets]   = useState([])
@@ -141,7 +138,6 @@ export default function Tickets() {
   const archivoInputRef = useRef(null)
   const notasTimer      = useRef(null)
   const notasGuardado   = useRef(null)
-  // FIX 2: ref directo al div contentEditable para limpiar sin querySelector
   const editorRef       = useRef(null)
 
   useEffect(() => { loadData() }, [])
@@ -149,13 +145,6 @@ export default function Tickets() {
   useEffect(() => {
     if (!loading && allTickets.length > 0) applyFilters()
   }, [estadoFilter, prioridadFilter, operarioFilter, empresaFilter, filtroDesde, filtroHasta, searchTerm, allTickets])
-
-  useEffect(() => {
-    if (!loading && location.state?.abrirTicketId) {
-      abrirTicket(location.state.abrirTicketId)
-      window.history.replaceState({}, document.title)
-    }
-  }, [loading])
 
   async function loadData() {
     setLoading(true)
@@ -220,7 +209,6 @@ export default function Tickets() {
 
   function onSearchChange(e) { setSearchTerm(e.target.value) }
 
-  // FIX 3: carga ticket Y comentarios en paralelo — así los comentarios aparecen al entrar
   async function abrirTicket(id) {
     setVistaDetalle(true)
     setActiveTab('comentarios')
@@ -231,8 +219,6 @@ export default function Tickets() {
       ])
       setTicketActual(data)
       setNotasValue(data.notas || '')
-      // Usamos la respuesta explícita de getTicketComentarios, no data.ticket_comentarios
-      // porque el join de Supabase puede no incluirlos según la query
       setComentarios(comentariosData || data.ticket_comentarios || [])
     } catch (error) {
       showToast('error', 'Error', error.message)
@@ -339,7 +325,6 @@ export default function Tickets() {
     }
   }
 
-  // FIX 1: sanitiza nombre del archivo antes de subirlo (mantiene tildes y ñ)
   async function subirArchivos(e) {
     const files = Array.from(e.target.files).map(file => {
       const nombreSanitizado = sanitizarNombreArchivo(file.name)
@@ -392,7 +377,6 @@ export default function Tickets() {
     try {
       await createTicketComentario(ticketActual.id, comentarioText, [])
       setComentarioText('')
-      // FIX 2: limpia el editor usando ref directo, no querySelector
       if (editorRef.current) editorRef.current.innerHTML = ''
       const data = await getTicketComentarios(ticketActual.id)
       setComentarios(data || [])
@@ -548,7 +532,7 @@ export default function Tickets() {
           </div>
           <nav className="top-nav">
             <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
-            {isAdmin() && <Link to="/" className="nav-link"><i className="fas fa-users"></i> Usuarios</Link>}
+            {isAdmin() && <Link to="/usuarios" className="nav-link"><i className="fas fa-users"></i> Usuarios</Link>}
             <Link to="/tickets" className="nav-link active"><i className="fas fa-headset"></i> Tickets</Link>
             {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
             <Link to="/chat" className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
@@ -715,8 +699,9 @@ export default function Tickets() {
       archivo: 'paperclip', comentario: 'comment',
     }
 
+    // CAMBIO 2: filtrar también los comentarios del historial (tipo 'comentario')
     const historialFiltrado = [...historial]
-      .filter(h => h.tipo !== 'nota_interna')
+      .filter(h => h.tipo !== 'nota_interna' && h.tipo !== 'comentario')
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
     return (
@@ -1010,25 +995,32 @@ export default function Tickets() {
                             <div className="editor-sep"></div>
                             <button type="button" className="editor-btn" title="Limpiar formato" onMouseDown={e => { e.preventDefault(); document.execCommand('removeFormat') }}><i className="fas fa-remove-format"></i></button>
                           </div>
-                          {/* FIX: ref directo + Ctrl+Enter envía */}
+                          {/* CAMBIO 1: Enter envía, Shift+Enter inserta salto de línea */}
                           <div
                             className="editor-content"
                             contentEditable
                             suppressContentEditableWarning
-                            data-placeholder="Escribe un comentario... (Ctrl+Enter para enviar)"
+                            data-placeholder="Escribe un comentario... (Enter para enviar, Shift+Enter para nueva línea)"
                             ref={editorRef}
                             onInput={e => setComentarioText(e.currentTarget.innerHTML)}
                             onKeyDown={e => {
-                              if (e.key === 'Enter' && e.ctrlKey) {
-                                e.preventDefault()
-                                enviarComentario()
+                              if (e.key === 'Enter') {
+                                if (e.shiftKey) {
+                                  // Shift+Enter: insertar salto de línea manual
+                                  e.preventDefault()
+                                  document.execCommand('insertLineBreak')
+                                } else {
+                                  // Enter solo: enviar comentario
+                                  e.preventDefault()
+                                  enviarComentario()
+                                }
                               }
                             }}
                           />
                         </div>
                         <div className="comentario-nuevo-acciones">
                           <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>
-                            <kbd>Ctrl</kbd>+<kbd>Enter</kbd> para enviar
+                            <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd>+<kbd>Enter</kbd> nueva línea
                           </span>
                           <button className="btn-primary" onClick={enviarComentario}>
                             <i className="fas fa-paper-plane"></i> Comentar
@@ -1039,8 +1031,6 @@ export default function Tickets() {
 
                   </div>
                 )}
-
-                {/* ── PESTAÑA HISTORIAL eliminada — ahora es acordeón en sidebar ── */}
 
               </div>
             </div>

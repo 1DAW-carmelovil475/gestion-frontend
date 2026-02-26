@@ -126,33 +126,37 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
     <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && onClose()}>
       <div className="modal-content modal-large">
         <div className="modal-header">
-          <h2>{editingCompany ? 'Editar Empresa' : 'Nueva Empresa'}</h2>
+          <h2><i className={`fas ${editingCompany ? 'fa-building' : 'fa-plus-circle'}`}></i>{editingCompany ? 'Editar Empresa' : 'Nueva Empresa'}</h2>
           <button className="modal-close" onClick={onClose}><i className="fas fa-times"></i></button>
         </div>
         <form onSubmit={onSave}>
           <div className="form-tabs">
-            {['datos', 'servicios', 'contactos'].map(tab => (
-              <button key={tab} type="button"
-                className={`form-tab ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {[
+              { key: 'datos', icon: 'fa-info-circle', label: 'Datos' },
+              { key: 'servicios', icon: 'fa-cogs', label: 'Servicios' },
+              { key: 'contactos', icon: 'fa-users', label: 'Contactos' },
+            ].map(({ key, icon, label }) => (
+              <button key={key} type="button"
+                className={`form-tab ${activeTab === key ? 'active' : ''}`}
+                onClick={() => setActiveTab(key)}>
+                <i className={`fas ${icon}`}></i> {label}
               </button>
             ))}
           </div>
 
-          <div className={`form-tab-content ${activeTab === 'datos' ? 'active' : ''}`}>
+        <div className={`form-tab-content ${activeTab === 'datos' ? 'active' : ''}`}>
             <div className="form-row">
-              <div className="form-group"><label>Nombre *</label><input type="text" name="nombre" defaultValue={editingCompany?.nombre} required /></div>
-              <div className="form-group"><label>CIF *</label><input type="text" name="cif" defaultValue={editingCompany?.cif} required /></div>
+              <div className="form-group"><label><i className="fas fa-building"></i> Nombre *</label><input type="text" name="nombre" defaultValue={editingCompany?.nombre} placeholder="Ej: Empresa S.L." required /></div>
+              <div className="form-group"><label><i className="fas fa-id-card"></i> CIF *</label><input type="text" name="cif" defaultValue={editingCompany?.cif} placeholder="Ej: B12345678" required /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Email</label><input type="email" name="email" defaultValue={editingCompany?.email} /></div>
-              <div className="form-group"><label>Teléfono</label><input type="tel" name="telefono" defaultValue={editingCompany?.telefono} /></div>
+              <div className="form-group"><label><i className="fas fa-envelope"></i> Email</label><input type="email" name="email" defaultValue={editingCompany?.email} placeholder="Ej: info@empresa.com" /></div>
+              <div className="form-group"><label><i className="fas fa-phone"></i> Teléfono</label><input type="tel" name="telefono" defaultValue={editingCompany?.telefono} placeholder="Ej: 912 345 678" /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Dirección</label><input type="text" name="direccion" defaultValue={editingCompany?.direccion} /></div>
+              <div className="form-group"><label><i className="fas fa-map-marker-alt"></i> Dirección</label><input type="text" name="direccion" defaultValue={editingCompany?.direccion} placeholder="Ej: Calle Mayor 1, Madrid" /></div>
               <div className="form-group">
-                <label>Estado</label>
+                <label><i className="fas fa-toggle-on"></i> Estado</label>
                 <select name="estado" defaultValue={editingCompany?.estado || 'Activo'}>
                   <option value="Activo">Activo</option>
                   <option value="En revisión">En revisión</option>
@@ -160,7 +164,7 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
                 </select>
               </div>
             </div>
-            <div className="form-group"><label>Notas</label><textarea name="notas" defaultValue={editingCompany?.notas}></textarea></div>
+            <div className="form-group"><label><i className="fas fa-sticky-note"></i> Notas</label><textarea name="notas" defaultValue={editingCompany?.notas} placeholder="Observaciones internas sobre la empresa..."></textarea></div>
           </div>
 
           <div className={`form-tab-content ${activeTab === 'servicios' ? 'active' : ''}`}>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
@@ -47,9 +47,13 @@ function formatFechaCorta(isoStr) {
 }
 
 function formatHoras(horas) {
-  if (!horas || horas <= 0) return '< 1h'
+  if (!horas || horas <= 0) return '0min'
   if (horas < 1) return `${Math.round(horas * 60)}min`
-  if (horas < 24) return `${horas.toFixed(1)}h`
+  if (horas < 24) {
+    const h = Math.floor(horas)
+    const min = Math.round((horas - h) * 60)
+    return min > 0 ? `${h}h ${min}min` : `${h}h`
+  }
   const dias = Math.floor(horas / 24)
   const restH = Math.round(horas % 24)
   if (dias < 30) return restH > 0 ? `${dias}d ${restH}h` : `${dias}d`
@@ -83,22 +87,291 @@ function sanitizarNombreArchivo(nombre) {
 }
 
 function PrioridadBadge({ p }) {
-  const colors = { Baja: '#22c55e', Media: '#3b82f6', Alta: '#f59e0b', Urgente: '#ef4444' }
+  return <span className={`prioridad-badge prioridad-${p}`}>{p}</span>
+}
+
+function EstadoBadge({ e }) {
+  const icons = {
+    'Pendiente':  'fa-clock',
+    'En curso':   'fa-spinner',
+    'Completado': 'fa-check-circle',
+    'Facturado':  'fa-file-invoice-dollar',
+  }
   return (
-    <span className={`prioridad-badge prioridad-${p}`}>
-      <i className="fas fa-circle" style={{ color: colors[p] || '#94a3b8', fontSize: '0.7rem' }}></i> {p}
+    <span className={`estado-badge estado-${e.replace(/ /g, '-')}`}>
+      <i className={`fas ${icons[e] || 'fa-circle'}`} style={{ fontSize: '0.68rem' }}></i> {e}
     </span>
   )
 }
 
-function EstadoBadge({ e }) {
-  return <span className={`estado-badge estado-${e}`}>{e}</span>
+// ============================================================
+// SEARCHABLE SELECT — input de búsqueda + dropdown
+// ============================================================
+function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar...', required = false, name }) {
+  const [query, setQuery]     = useState('')
+  const [open, setOpen]       = useState(false)
+  const [typing, setTyping]   = useState(false)
+  const wrapRef               = useRef(null)
+  const inputRef              = useRef(null)
+
+  const selected = options.find(o => o.value === value)
+
+  // What to show in the input: if user is actively typing show query, else show selected label
+  const displayValue = typing ? query : (selected?.label || '')
+
+  const filtered = typing && query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options
+
+  useEffect(() => {
+    function handler(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false)
+        setTyping(false)
+        setQuery('')
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function handleInputChange(e) {
+    setQuery(e.target.value)
+    setTyping(true)
+    setOpen(true)
+  }
+
+  function handleFocus() {
+    setOpen(true)
+    setTyping(true)
+    setQuery('')
+    // select all so user can immediately type to replace
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+
+  function select(val) {
+    onChange(val)
+    setTyping(false)
+    setQuery('')
+    setOpen(false)
+  }
+
+  function handleClear() {
+    onChange('')
+    setTyping(true)
+    setQuery('')
+    setOpen(true)
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="ss-wrap" ref={wrapRef}>
+      {required && <input type="text" name={name} value={value} onChange={() => {}} required style={{ display: 'none' }} />}
+      <div className={`ss-input-wrap ${open ? 'open' : ''}`}>
+        <i className="fas fa-search ss-input-icon"></i>
+        <input
+          ref={inputRef}
+          className="ss-input"
+          value={displayValue}
+          onChange={handleInputChange}
+          onFocus={handleFocus}
+          placeholder={placeholder}
+          autoComplete="off"
+        />
+        {value && !typing && (
+          <button type="button" className="ss-clear-query" onMouseDown={e => { e.preventDefault(); handleClear() }}>
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+        <i className={`fas fa-chevron-down ss-arrow ${open ? 'open' : ''}`}></i>
+      </div>
+      {open && (
+        <div className="ss-dropdown">
+          <div className="ss-list">
+            {filtered.length === 0
+              ? <div className="ss-empty">Sin resultados</div>
+              : filtered.map(o => (
+                  <div key={o.value} className={`ss-option ${value === o.value ? 'active' : ''}`} onMouseDown={e => { e.preventDefault(); select(o.value) }}>
+                    <span className="ss-opt-label">{o.label}</span>
+                    {value === o.value && <i className="fas fa-check ss-opt-check"></i>}
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+// ============================================================
+// OPERARIOS SELECTOR — filtros rápidos por rol (igual que Chat)
+// ============================================================
+function OperariosSelector({ operarios, selected, onChange }) {
+  const [query, setQuery] = useState('')
+  const admins  = operarios.filter(o => o.rol === 'admin')
+  const workers = operarios.filter(o => o.rol !== 'admin')
+  const filtered = query.trim()
+    ? operarios.filter(o => (o.nombre || o.email || '').toLowerCase().includes(query.toLowerCase()))
+    : operarios
+  function toggle(id) { onChange(selected.includes(id) ? selected.filter(s => s !== id) : [...selected, id]) }
+  return (
+    <div>
+      <div className="miembros-quick-filters">
+        <button type="button" className="qf-btn qf-all"     onClick={() => onChange(operarios.map(o => o.id))}><i className="fas fa-users"></i> Todos</button>
+        <button type="button" className="qf-btn qf-admins"  onClick={() => onChange(admins.map(o => o.id))}><i className="fas fa-shield-alt"></i> Admins</button>
+        <button type="button" className="qf-btn qf-workers" onClick={() => onChange(workers.map(o => o.id))}><i className="fas fa-hard-hat"></i> Trabajadores</button>
+        {selected.length > 0 && <button type="button" className="qf-btn qf-clear" onClick={() => onChange([])}><i className="fas fa-times"></i> Limpiar</button>}
+      </div>
+      <div className="ss-search-wrap os-search-wrap">
+        <i className="fas fa-search ss-search-icon"></i>
+        <input
+          className="ss-search"
+          placeholder="Buscar operario..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+        />
+        {query && <button type="button" className="ss-clear-query" onClick={() => setQuery('')}><i className="fas fa-times"></i></button>}
+      </div>
+      <div className="operarios-checkboxes">
+        {filtered.length === 0 && <p style={{ color: 'var(--gray)', fontSize: '0.85rem', padding: '8px' }}>Sin resultados.</p>}
+        {filtered.map(op => {
+          const isSel = selected.includes(op.id)
+          return (
+            <div key={op.id} className={`operario-checkbox-item ${isSel ? 'selected' : ''}`} onClick={() => toggle(op.id)}>
+              <div className="avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
+              <div className="operario-info">
+                <span className="nombre">{op.nombre || op.email}</span>
+                {op.rol === 'admin'
+                  ? <span className="badge-rol admin"><i className="fas fa-shield-alt"></i> Admin</span>
+                  : <span className="badge-rol worker"><i className="fas fa-hard-hat"></i> Trabajador</span>}
+              </div>
+              <span className="check-icon"><i className="fas fa-check"></i></span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="selected-count">
+        {selected.length > 0
+          ? `${selected.length} operario${selected.length > 1 ? 's' : ''} seleccionado${selected.length > 1 ? 's' : ''}`
+          : <span style={{ color: '#aaa' }}>Ningún operario seleccionado</span>}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// MODAL: TICKET — definido fuera para evitar pérdida de foco
+// ============================================================
+function TicketModal({
+  editingTicket, empresas, operarios,
+  modalEmprId, modalDispId, modalDispositivos,
+  modalAsunto, modalDesc, modalPrioridad, modalEstado,
+  selectedOperarios,
+  onClose, onSave,
+  onEmpresaChange, onDispChange,
+  onAsuntoChange, onDescChange,
+  onPrioridadChange, onEstadoChange,
+  onOperariosChange,
+}) {
+  return (
+    <div
+      className="modal"
+      style={{ display: 'flex' }}
+      onClick={e => e.target.classList.contains('modal') && onClose()}
+    >
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>
+            <i className="fas fa-ticket-alt"></i>{' '}
+            {editingTicket ? `Editar Ticket #${editingTicket.numero}` : 'Nuevo Ticket'}
+          </h2>
+          <button className="modal-close" onClick={onClose}>
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+        <form onSubmit={onSave}>
+          <div className="modal-body">
+            <div className="form-group">
+              <label><i className="fas fa-building"></i> Empresa *</label>
+              <SearchableSelect
+                name="empresa_id"
+                value={modalEmprId}
+                onChange={onEmpresaChange}
+                options={empresas.map(e => ({ value: e.id, label: e.nombre }))}
+                placeholder="Seleccionar empresa..."
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label><i className="fas fa-desktop"></i> Dispositivo</label>
+              <select name="dispositivo_id" value={modalDispId} onChange={e => onDispChange(e.target.value)}>
+                <option value="">Sin dispositivo</option>
+                {modalDispositivos.map(d => (<option key={d.id} value={d.id}>[{d.tipo || d.categoria}] {d.nombre}</option>))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label><i className="fas fa-tag"></i> Asunto *</label>
+              <input
+                type="text"
+                value={modalAsunto}
+                onChange={e => onAsuntoChange(e.target.value)}
+                required
+                placeholder="Describe brevemente el problema..."
+              />
+            </div>
+            <div className="form-group">
+              <label><i className="fas fa-align-left"></i> Descripción</label>
+              <textarea
+                value={modalDesc}
+                onChange={e => onDescChange(e.target.value)}
+                rows={3}
+                placeholder="Detalles adicionales..."
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label><i className="fas fa-exclamation-triangle"></i> Prioridad</label>
+                <select value={modalPrioridad} onChange={e => onPrioridadChange(e.target.value)}>
+                  <option value="Baja">Baja</option>
+                  <option value="Media">Media</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Urgente">Urgente</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label><i className="fas fa-tasks"></i> Estado</label>
+                <select value={modalEstado} onChange={e => onEstadoChange(e.target.value)}>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="En curso">En curso</option>
+                  <option value="Completado">Completado</option>
+                  <option value="Facturado">Facturado</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label><i className="fas fa-user-check"></i> Asignar operarios</label>
+              <OperariosSelector
+                operarios={operarios}
+                selected={selectedOperarios}
+                onChange={onOperariosChange}
+              />
+            </div>
+          </div>
+          <div className="modal-buttons">
+            <button type="submit" className="btn-primary"><i className="fas fa-save"></i> Guardar</button>
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
 }
 
 export default function Tickets() {
   const { user, logout, isAdmin } = useAuth()
   const { totalUnread } = useChatNotifications()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [tickets, setTickets]         = useState([])
@@ -126,8 +399,14 @@ export default function Tickets() {
   const [showTicketModal, setShowTicketModal]         = useState(false)
   const [editingTicket, setEditingTicket]             = useState(null)
   const [modalEmprId, setModalEmprId]                 = useState('')
+  const [modalDispId, setModalDispId]                 = useState('')
+  const [modalAsunto, setModalAsunto]                 = useState('')
+  const [modalDesc, setModalDesc]                     = useState('')
+  const [modalPrioridad, setModalPrioridad]           = useState('Media')
+  const [modalEstado, setModalEstado]                 = useState('Pendiente')
   const [modalDispositivos, setModalDispositivos]     = useState([])
   const [modalOperariosCheck, setModalOperariosCheck] = useState([])
+  const [selectedOperarios, setSelectedOperarios]     = useState([])
 
   const [showAsignarModal, setShowAsignarModal]           = useState(false)
   const [asignarOperariosCheck, setAsignarOperariosCheck] = useState([])
@@ -141,6 +420,16 @@ export default function Tickets() {
   const editorRef       = useRef(null)
 
   useEffect(() => { loadData() }, [])
+
+  // Abrir ticket directo desde chat (router state)
+  useEffect(() => {
+    const ticketId = location.state?.abrirTicketId
+    if (ticketId && !loading) {
+      abrirTicket(ticketId)
+      // Limpiar el state para no re-abrir en navegaciones posteriores
+      window.history.replaceState({}, document.title)
+    }
+  }, [loading, location.state])
 
   useEffect(() => {
     if (!loading && allTickets.length > 0) applyFilters()
@@ -292,12 +581,6 @@ export default function Tickets() {
     setAsignarOperariosCheck(updated)
   }
 
-  function toggleModalOperario(i) {
-    const updated = [...modalOperariosCheck]
-    updated[i] = { ...updated[i], checked: !updated[i].checked }
-    setModalOperariosCheck(updated)
-  }
-
   async function guardarAsignaciones() {
     const seleccionados = asignarOperariosCheck.filter(o => o.checked).map(o => o.id)
     if (!seleccionados.length) { showToast('warning', 'Aviso', 'Selecciona al menos un operario'); return }
@@ -401,16 +684,28 @@ export default function Tickets() {
   async function abrirModalNuevoTicket() {
     setEditingTicket(null)
     setModalEmprId('')
+    setModalDispId('')
+    setModalAsunto('')
+    setModalDesc('')
+    setModalPrioridad('Media')
+    setModalEstado('Pendiente')
     setModalDispositivos([])
     setModalOperariosCheck(operarios.map(op => ({ ...op, checked: false })))
+    setSelectedOperarios([])
     setShowTicketModal(true)
   }
 
   async function abrirModalEditarTicket(t) {
     setEditingTicket(t)
     setModalEmprId(t.empresa_id || '')
+    setModalDispId(t.dispositivo_id || '')
+    setModalAsunto(t.asunto || '')
+    setModalDesc(t.descripcion || '')
+    setModalPrioridad(t.prioridad || 'Media')
+    setModalEstado(t.estado || 'Pendiente')
     const asignadosIds = (t.ticket_asignaciones || []).map(a => a.user_id)
     setModalOperariosCheck(operarios.map(op => ({ ...op, checked: asignadosIds.includes(op.id) })))
+    setSelectedOperarios(asignadosIds)
     if (t.empresa_id) {
       try {
         const dispositivos = await getDispositivos(t.empresa_id)
@@ -422,6 +717,7 @@ export default function Tickets() {
 
   async function onModalEmpresaChange(empresaId) {
     setModalEmprId(empresaId)
+    setModalDispId('')
     setModalDispositivos([])
     if (!empresaId) return
     try {
@@ -432,17 +728,16 @@ export default function Tickets() {
 
   async function saveTicket(e) {
     e.preventDefault()
-    const formData       = new FormData(e.target)
-    const empresa_id     = formData.get('empresa_id')
-    const dispositivo_id = formData.get('dispositivo_id') || null
-    const asunto         = formData.get('asunto')?.trim()
-    const descripcion    = formData.get('descripcion')?.trim() || null
-    const prioridad      = formData.get('prioridad')
-    const estado         = formData.get('estado')
+    const empresa_id     = modalEmprId
+    const dispositivo_id = modalDispId || null
+    const asunto         = modalAsunto.trim()
+    const descripcion    = modalDesc.trim() || null
+    const prioridad      = modalPrioridad
+    const estado         = modalEstado
 
     if (!empresa_id || !asunto) { showToast('error', 'Error', 'Empresa y asunto son obligatorios'); return }
 
-    const operariosSeleccionados = modalOperariosCheck.filter(o => o.checked).map(o => o.id)
+    const operariosSeleccionados = selectedOperarios
     const btn = e.target.querySelector('button[type="submit"]')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...' }
 
@@ -549,100 +844,12 @@ export default function Tickets() {
         </header>
         <nav className="bottom-nav">
           <Link to="/" className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
-          {isAdmin() && <Link to="/" className="bottom-nav-item"><i className="fas fa-users"></i><span>Usuarios</span></Link>}
+          {isAdmin() && <Link to="/usuarios" className="bottom-nav-item"><i className="fas fa-users"></i><span>Usuarios</span></Link>}
           <Link to="/tickets" className="bottom-nav-item active"><i className="fas fa-headset"></i><span>Tickets</span></Link>
           {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
           <Link to="/chat" className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
         </nav>
       </>
-    )
-  }
-
-  function TicketModal() {
-    return (
-      <div
-        className="modal"
-        style={{ display: 'flex' }}
-        onClick={e => e.target.classList.contains('modal') && setShowTicketModal(false)}
-      >
-        <div className="modal-content">
-          <div className="modal-header">
-            <h2>
-              <i className="fas fa-ticket-alt"></i>{' '}
-              {editingTicket ? `Editar Ticket #${editingTicket.numero}` : 'Nuevo Ticket'}
-            </h2>
-            <button className="modal-close" onClick={() => setShowTicketModal(false)}>
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
-          <form onSubmit={saveTicket}>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Empresa *</label>
-                <select name="empresa_id" value={modalEmprId} onChange={e => onModalEmpresaChange(e.target.value)} required>
-                  <option value="">Seleccionar empresa...</option>
-                  {empresas.map(e => (<option key={e.id} value={e.id}>{e.nombre}</option>))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Dispositivo</label>
-                <select name="dispositivo_id" defaultValue={editingTicket?.dispositivo_id || ''}>
-                  <option value="">Sin dispositivo</option>
-                  {modalDispositivos.map(d => (<option key={d.id} value={d.id}>[{d.tipo || d.categoria}] {d.nombre}</option>))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Asunto *</label>
-                <input type="text" name="asunto" defaultValue={editingTicket?.asunto} required placeholder="Describe brevemente el problema..." />
-              </div>
-              <div className="form-group">
-                <label>Descripción</label>
-                <textarea name="descripcion" defaultValue={editingTicket?.descripcion} rows={3} placeholder="Detalles adicionales..." />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Prioridad</label>
-                  <select name="prioridad" defaultValue={editingTicket?.prioridad || 'Media'}>
-                    <option value="Baja">Baja</option>
-                    <option value="Media">Media</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Urgente">Urgente</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Estado</label>
-                  <select name="estado" defaultValue={editingTicket?.estado || 'Pendiente'}>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En curso">En curso</option>
-                    <option value="Completado">Completado</option>
-                    <option value="Facturado">Facturado</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Asignar operarios</label>
-                <div className="operarios-checkboxes">
-                  {modalOperariosCheck.length === 0
-                    ? <p style={{ color: 'var(--gray)', fontSize: '0.88rem' }}>No hay operarios disponibles.</p>
-                    : modalOperariosCheck.map((op, i) => (
-                        <div key={op.id} className={`operario-check-item ${op.checked ? 'checked' : ''}`} onClick={() => toggleModalOperario(i)}>
-                          <div className="operario-check-avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
-                          <span className="operario-check-nombre">{op.nombre}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>{op.rol}</span>
-                          <div className="operario-check-tick">{op.checked ? <i className="fas fa-check"></i> : ''}</div>
-                        </div>
-                      ))
-                  }
-                </div>
-              </div>
-            </div>
-            <div className="modal-buttons">
-              <button type="submit" className="btn-primary"><i className="fas fa-save"></i> Guardar</button>
-              <button type="button" className="btn-secondary" onClick={() => setShowTicketModal(false)}>Cancelar</button>
-            </div>
-          </form>
-        </div>
-      </div>
     )
   }
 
@@ -1039,7 +1246,7 @@ export default function Tickets() {
         </main>
 
         {showAsignarModal && <AsignarModal />}
-        {showTicketModal && <TicketModal />}
+        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispId={modalDispId} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispChange={setModalDispId} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
       </div>
     )
   }
@@ -1218,7 +1425,7 @@ export default function Tickets() {
         </div>
 
       </main>
-      {showTicketModal && <TicketModal />}
+      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispId={modalDispId} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispChange={setModalDispId} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
     </div>
   )
 }

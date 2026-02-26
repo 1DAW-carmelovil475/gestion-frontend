@@ -379,9 +379,22 @@
 /* ── Responsive ───────────────────────────────── */
 @media (max-width: 768px) {
   .stats-grid-2 { grid-template-columns: 1fr; }
-  .date-range   { flex-wrap: wrap; }
-  .stats-tabs   { flex-wrap: wrap; }
+  .date-range   { flex-wrap: wrap; gap: 6px; }
+  .stats-tabs   { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .stats-tabs::-webkit-scrollbar { display: none; }
+  .stats-tab    { white-space: nowrap; padding: 8px 12px; }
   .operarios-grid { grid-template-columns: 1fr; }
 
-  .stats-panel-body--chart { padding: 10px 4px; }
+  .stats-panel-body--chart { padding: 10px 0; }
+
+  /* Gráficos que se adapten al ancho */
+  .recharts-responsive-container { min-width: 0 !important; }
+
+  /* Tarjetas de operario compactas */
+  .operario-stat-card { padding: 10px 12px; }
+  .operario-stat-name { font-size: 0.88rem; }
+}
+
+@media (max-width: 480px) {
+  .date-range input[type="date"] { width: 100%; }
 }

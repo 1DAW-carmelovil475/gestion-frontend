@@ -801,10 +801,123 @@
 .selected-count { font-size: 0.78rem; color: #0047b3; font-weight: 600; margin-top: 7px; min-height: 17px; }
 .modal-hint { color: #7a8ab0; font-size: 0.84rem; margin-bottom: 14px; }
 
+/* ── Botón hamburguesa (solo en móvil) ───────── */
+.btn-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: #4a5568;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1rem;
+  transition: background 0.15s;
+}
+.btn-sidebar-toggle:hover { background: rgba(0,0,0,0.06); }
+.btn-sidebar-toggle-empty {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
 /* ── Responsive ──────────────────────────────── */
 @media (max-width: 768px) {
-  .chat-layout { grid-template-columns: 1fr; }
-  .chat-sidebar { display: none; }
+  /* El chat usa toda la pantalla; el bottom-nav es fixed */
+  .chat-page {
+    height: 100vh;
+    padding-bottom: 0;
+  }
+
+  /* El chat-layout debe ocupar el espacio entre topbar (50px) y bottom-nav (60px) */
+  .chat-layout {
+    grid-template-columns: 1fr;
+    position: relative;
+    height: calc(100vh - 50px - 60px);
+    flex: none;
+  }
+
+  .btn-sidebar-toggle { display: flex; }
+
+  /* Sidebar se convierte en overlay deslizable */
+  .chat-sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    bottom: 60px;
+    width: 85%;
+    max-width: 320px;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+  }
+
+  .chat-sidebar.open {
+    transform: translateX(0);
+    display: flex;
+  }
+
+  /* Overlay oscuro detrás del sidebar */
+  .chat-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 199;
+    display: none;
+  }
+
+  .chat-sidebar-overlay.open {
+    display: block;
+  }
+
+  /* Main del chat ocupa todo el ancho */
+  .chat-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Header del chat con botón para abrir sidebar */
+  .chat-header {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .chat-header-title { font-size: 0.95rem; }
+
+  /* Burbuja de mensajes más anchas en móvil */
+  .chat-mensaje-burbuja {
+    max-width: 88% !important;
+  }
+
+  /* Input de mensaje */
+  .chat-input-area {
+    padding: 8px 10px;
+  }
+
+  .chat-editor-wrapper {
+    font-size: 16px; /* evita zoom en iOS */
+  }
+
+  /* Toolbar del editor más compacta */
+  .chat-toolbar {
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 4px 6px;
+  }
+
+  .chat-toolbar-btn {
+    width: 30px;
+    height: 28px;
+  }
+
+  /* Scroll del historial */
+  .chat-mensajes-scroll {
+    padding: 10px 10px;
+  }
 }
 
 /* ══════════════════════════════════════════════

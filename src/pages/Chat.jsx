@@ -285,6 +285,8 @@ export default function Chat() {
   const [editMiembros,     setEditMiembros]     = useState([])
   const [editLoading,      setEditLoading]      = useState(false)
 
+  const [sidebarOpen,    setSidebarOpen]    = useState(false)
+
   const [editingMsg,     setEditingMsg]     = useState(null)
   const [editingMsgText, setEditingMsgText] = useState('')
   const [msgCtxMenu,     setMsgCtxMenu]     = useState(null)
@@ -752,6 +754,7 @@ export default function Chat() {
         onClick={() => {
           if (hasPendingInvite || hasSentInvite) return
           setCanalActual(canal)
+          setSidebarOpen(false)
         }}
         onContextMenu={e => onCanalRightClick(e, canal)}
       >
@@ -872,10 +875,23 @@ export default function Chat() {
         </div>
       </header>
 
+      <nav className="bottom-nav">
+        <Link to="/"             className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
+        <Link to="/usuarios"     className="bottom-nav-item"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>
+        <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
+        <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>
+        <Link to="/chat"         className="bottom-nav-item active"><i className="fas fa-comments"></i><span>Chat</span></Link>
+      </nav>
+
       <div className="chat-layout">
 
+        {/* ── Overlay móvil ── */}
+        {sidebarOpen && (
+          <div className="chat-sidebar-overlay open" onClick={() => setSidebarOpen(false)} />
+        )}
+
         {/* ── Sidebar ── */}
-        <aside className="chat-sidebar">
+        <aside className={`chat-sidebar${sidebarOpen ? ' open' : ''}`}>
           <div className="chat-sidebar-header">
             <div className="workspace-info">
               <div className="workspace-icon"><i className="fas fa-comments"></i></div>
@@ -904,7 +920,7 @@ export default function Chat() {
                     return (
                       <div key={canal.id}
                         className={`canal-item pinned-item ${isAct ? 'active' : ''} ${unread > 0 && !isAct ? 'has-unread' : ''}`}
-                        onClick={() => { if (!hasPend && !hasSent) setCanalActual(canal) }}
+                        onClick={() => { if (!hasPend && !hasSent) { setCanalActual(canal); setSidebarOpen(false) } }}
                         onContextMenu={e => onCanalRightClick(e, canal)}
                       >
                         {isDm ? (
@@ -996,7 +1012,7 @@ export default function Chat() {
                         return (
                           <div key={canal.id}
                             className="canal-item hidden-item"
-                            onClick={() => { handleUnhide(canal.id); setCanalActual(canal) }}
+                            onClick={() => { handleUnhide(canal.id); setCanalActual(canal); setSidebarOpen(false) }}
                             onContextMenu={e => onCanalRightClick(e, canal)}
                           >
                             {isDm ? (
@@ -1030,6 +1046,9 @@ export default function Chat() {
         <section className="chat-main">
           {!canalActual ? (
             <div className="chat-empty">
+              <button className="btn-sidebar-toggle btn-sidebar-toggle-empty" onClick={() => setSidebarOpen(v => !v)} title="Canales">
+                <i className="fas fa-bars"></i>
+              </button>
               <i className="fas fa-comments"></i>
               <h2>Bienvenido al chat del equipo</h2>
               <p>Selecciona un canal de la barra lateral para empezar</p>
@@ -1038,6 +1057,9 @@ export default function Chat() {
             <div className="chat-canal">
               <div className="chat-canal-header">
                 <div className="chat-canal-info">
+                  <button className="btn-sidebar-toggle" onClick={() => setSidebarOpen(v => !v)} title="Canales">
+                    <i className="fas fa-bars"></i>
+                  </button>
                   <div className="chat-canal-icono">
                     <i className={`fas ${canalActual.tipo === 'directo' ? 'fa-user' : 'fa-hashtag'}`}></i>
                   </div>

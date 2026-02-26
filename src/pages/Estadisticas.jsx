@@ -181,6 +181,15 @@ export default function Estadisticas() {
         </div>
       </header>
 
+      {/* ── Bottom nav (móvil) ─────────────────────── */}
+      <nav className="bottom-nav">
+        <Link to="/"             className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
+        <Link to="/usuarios"     className="bottom-nav-item"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>
+        <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
+        <Link to="/estadisticas" className="bottom-nav-item active"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>
+        <Link to="/chat"         className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+      </nav>
+
       <main className="main-content">
         {/* ── Cabecera ─────────────────────────────── */}
         <div className="section-header">

@@ -90,7 +90,7 @@ function UserModal({ editingUser, onSave, onClose }) {
             {!editingUser && (
               <div className="user-modal-hint">
                 <i className="fas fa-info-circle"></i>
-                El usuario recibirá sus credenciales y podrá cambiar la contraseña desde su perfil.
+                Recuerda que la contraseña debe ser segura.
               </div>
             )}
           </div>
@@ -269,9 +269,15 @@ export default function Usuarios() {
         </div>
       </header>
 
-      <main className="main-content">
+      <nav className="bottom-nav">
+        <Link to="/"             className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
+        <Link to="/usuarios"     className="bottom-nav-item active"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>
+        <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
+        <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>
+        <Link to="/chat"         className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+      </nav>
 
-        {/* ── Header ───────────────────────────────── */}
+      <main className="main-content">
         <div className="section-header">
           <div>
             <h1><i className="fas fa-users-cog"></i> Usuarios</h1>
@@ -399,7 +405,6 @@ export default function Usuarios() {
                   </td>
                   <td>
                     <span className={`badge-estado ${u.activo ? 'activo' : 'inactivo'}`}>
-                      <span className="estado-dot"></span>
                       {u.activo ? 'Activo' : 'Desactivado'}
                     </span>
                   </td>
@@ -456,7 +461,6 @@ export default function Usuarios() {
                   </div>
                 </div>
                 <span className={`badge-estado ${u.activo ? 'activo' : 'inactivo'}`}>
-                  <span className="estado-dot"></span>
                   {u.activo ? 'Activo' : 'Desactivado'}
                 </span>
               </div>

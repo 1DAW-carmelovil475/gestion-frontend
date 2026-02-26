@@ -23,7 +23,9 @@
    ESTADO BADGES
    ============================================================ */
 .estado-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 3px 9px;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -162,8 +164,7 @@
    DETALLE TICKET — HEADER
    ============================================================ */
 .detalle-ticket {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .detalle-header {
@@ -1538,8 +1539,9 @@
     height: auto;
     min-height: 56px;
     flex-wrap: wrap;
-    padding: 8px 12px;
+    padding: 8px 10px;
     position: static;
+    gap: 8px;
   }
 
   .detalle-ticket-body-wrapper {
@@ -1549,6 +1551,14 @@
   .detalle-acciones {
     width: 100%;
     justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Estado select ancho completo en móvil */
+  .estado-select {
+    flex: 1;
+    min-width: 0;
   }
 
   .ticket-modal-grid {
@@ -1561,25 +1571,156 @@
 
   .notas-textarea {
     min-height: 250px;
+    font-size: 16px;
   }
 
   .comentario-nuevo-textarea {
     min-height: 80px;
     height: 80px;
+    font-size: 16px;
   }
 
+  /* Tabs con scroll */
   .detalle-tabs {
     overflow-x: auto;
-    padding: 0 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 6px 8px 0;
+    flex-wrap: nowrap;
   }
+  .detalle-tabs::-webkit-scrollbar { display: none; }
 
   .detalle-tab {
-    padding: 10px 12px;
-    font-size: 0.82rem;
+    padding: 8px 12px;
+    font-size: 0.8rem;
     white-space: nowrap;
   }
 
   .historial-timeline-content {
     padding-bottom: 16px;
   }
+
+  /* Sidebar info compacta */
+  .sidebar-card { padding: 10px 12px; }
+  .info-row { font-size: 0.82rem; }
+
+  /* Chips de operarios compactos */
+  .operario-chip { padding: 5px 8px; }
+
+  /* Lista de archivos */
+  .archivo-item { padding: 6px 8px; }
+
+  /* Prioridad badge más compacto */
+  .prioridad-badge { padding: 2px 7px; font-size: 0.72rem; }
 }
+
+/* ============================================================
+   OPERARIOS SELECTOR (filtros rápidos por rol)
+   ============================================================ */
+.miembros-quick-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.qf-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 18px;
+  font-size: 0.76rem; font-weight: 500;
+  border: 1.5px solid transparent; cursor: pointer; transition: all 0.13s;
+  font-family: inherit;
+}
+.qf-all     { background: #e8f4ff; color: #0047b3; border-color: #b8dcf8; }
+.qf-all:hover { background: #0047b3; color: white; border-color: #0047b3; }
+.qf-admins  { background: #fff3cd; color: #856404; border-color: #ffe08a; }
+.qf-admins:hover { background: #ffc107; color: #333; border-color: #ffc107; }
+.qf-workers { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+.qf-workers:hover { background: #4caf50; color: white; border-color: #4caf50; }
+.qf-clear   { background: #fce4e4; color: #c62828; border-color: #ef9a9a; }
+.qf-clear:hover { background: #e53935; color: white; border-color: #e53935; }
+
+.operario-checkbox-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 11px; border-radius: 8px;
+  cursor: pointer; transition: background 0.13s;
+  border: 2px solid transparent; user-select: none;
+}
+.operario-checkbox-item:hover    { background: #f0f8ff; }
+.operario-checkbox-item.selected { background: #e8f4ff; border-color: #0047b3; }
+.operario-checkbox-item .avatar  { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+.operario-info { flex: 1; display: flex; align-items: center; gap: 7px; min-width: 0; }
+.operario-info .nombre { font-size: 0.88rem; color: var(--dark); font-weight: 500; }
+.badge-rol { font-size: 0.67rem; font-weight: 600; padding: 2px 7px; border-radius: 9px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.badge-rol.admin  { background: #fff3cd; color: #856404; }
+.badge-rol.worker { background: #e8f5e9; color: #2e7d32; }
+.check-icon {
+  width: 19px; height: 19px; border-radius: 50%;
+  border: 2px solid #d0d8e8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; color: transparent; flex-shrink: 0; transition: all 0.13s;
+}
+.operario-checkbox-item.selected .check-icon { background: #0047b3; border-color: #0047b3; color: white; }
+.selected-count { font-size: 0.78rem; color: #0047b3; font-weight: 600; margin-top: 7px; min-height: 17px; }
+
+/* ============================================================
+   SEARCHABLE SELECT (combobox — input siempre visible)
+   ============================================================ */
+.ss-wrap { position: relative; width: 100%; }
+
+.ss-input-wrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px; border-radius: 8px;
+  border: 1.5px solid var(--border, #dde3f0);
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 40px;
+}
+.ss-input-wrap:focus-within,
+.ss-input-wrap.open { border-color: var(--primary, #0047b3); box-shadow: 0 0 0 3px rgba(0,71,179,0.1); }
+
+.ss-input-icon { color: #9aa4bc; font-size: 0.78rem; flex-shrink: 0; }
+.ss-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 0.9rem; color: var(--dark, #2a3a5a);
+  font-family: inherit; padding: 9px 0;
+}
+.ss-input::placeholder { color: #9aa4bc; }
+.ss-arrow { font-size: 0.7rem; color: #9aa4bc; transition: transform 0.18s; flex-shrink: 0; }
+.ss-arrow.open { transform: rotate(180deg); }
+.ss-clear-query {
+  border: none; background: none; cursor: pointer; color: #9aa4bc;
+  padding: 0; font-size: 0.75rem; line-height: 1; flex-shrink: 0;
+}
+.ss-clear-query:hover { color: #e53935; }
+
+.ss-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 500;
+  background: white; border-radius: 10px;
+  border: 1.5px solid #dde3f0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+.ss-list { max-height: 220px; overflow-y: auto; }
+.ss-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px; cursor: pointer;
+  font-size: 0.88rem; color: var(--dark, #2a3a5a);
+  transition: background 0.1s;
+}
+.ss-option:hover  { background: #f0f6ff; }
+.ss-option.active { background: #e8f0ff; font-weight: 600; color: #0047b3; }
+.ss-opt-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ss-opt-check { color: #0047b3; font-size: 0.75rem; flex-shrink: 0; margin-left: 8px; }
+.ss-empty { padding: 12px 14px; color: #9aa4bc; font-size: 0.85rem; text-align: center; }
+
+/* Buscador dentro del OperariosSelector */
+.ss-search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px; border-radius: 8px; margin-bottom: 8px;
+  border: 1.5px solid var(--border, #dde3f0);
+  background: white; min-height: 36px;
+  transition: border-color 0.15s;
+}
+.ss-search-wrap:focus-within { border-color: var(--primary, #0047b3); }
+.ss-search-icon { color: #9aa4bc; font-size: 0.78rem; flex-shrink: 0; }
+.ss-search {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 0.85rem; color: var(--dark, #2a3a5a); font-family: inherit; padding: 7px 0;
+}
+.ss-search::placeholder { color: #9aa4bc; }
+.os-search-wrap { margin-bottom: 8px; }

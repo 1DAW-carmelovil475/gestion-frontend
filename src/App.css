@@ -86,7 +86,7 @@ select option {
 .topbar {
   background: #ffffff;
   border-bottom: 1px solid var(--border);
-  padding: 0 20px;
+  padding: 0 16px;
   height: 56px;
   display: flex;
   align-items: center;
@@ -95,6 +95,7 @@ select option {
   top: 0;
   z-index: 100;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  width: 100%;
 }
 
 .topbar .logo {
@@ -228,9 +229,7 @@ select option {
    MAIN CONTENT
    ============================================================ */
 .main-content {
-  padding: 16px 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 16px 24px;
 }
 
 .section-header {
@@ -1473,9 +1472,10 @@ select option {
   .top-nav    { display: none; }
   .bottom-nav { display: flex; }
 
+  /* Pantalla completa en móvil */
   .main-content {
-    padding: 12px 14px;
-    padding-bottom: 72px;
+    padding: 10px 12px;
+    padding-bottom: 74px;
   }
 
   .desktop-only { display: none !important; }
@@ -1483,12 +1483,27 @@ select option {
 
   .form-row      { grid-template-columns: 1fr; }
   .contact-row   { grid-template-columns: 1fr; }
-  .modal-content { max-width: 100%; }
+
+  /* Modal desliza desde abajo en móvil */
+  .modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    border-radius: 18px 18px 0 0;
+    max-height: 95vh;
+  }
 
   .section-header        { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .section-header h1     { font-size: 1.1rem; }
   .empresa-detalle-header { flex-direction: column; align-items: flex-start; }
 
-  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-card { padding: 10px 12px; }
+  .stat-info h3 { font-size: 1.2rem; }
+
   .ticket-form-grid { grid-template-columns: 1fr; }
 
   .detalle-header   { flex-direction: column; align-items: flex-start; }
@@ -1498,12 +1513,125 @@ select option {
   .btn-logout span { display: none; }
   .logo-text       { display: none; }
 
+  /* Topbar compacto */
+  .topbar { padding: 0 12px; height: 50px; }
+  .topbar .logo img { height: 28px; }
+
+  /* Bottom nav ergonómico */
+  .bottom-nav {
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav-item {
+    padding: 6px 6px 4px;
+    font-size: 0.6rem;
+    flex: 1;
+    justify-content: center;
+  }
+  .bottom-nav-item i { font-size: 1.2rem; }
+
+  /* Filtros en columna */
+  .filters { flex-direction: column; gap: 8px; }
+  .search-box { min-width: 0; width: 100%; }
+
+  .filter-row { flex-wrap: nowrap; gap: 6px; }
   .filter-row select,
   .filters select {
     min-width: 0;
     max-width: 100%;
     flex: 1;
   }
+
+  /* Scroll horizontal en tabla si es necesario */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Inputs más grandes para no hacer zoom en iOS */
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .search-box input {
+    font-size: 16px;
+  }
+
+  /* IT grid en 1 columna */
+  .it-items-grid { grid-template-columns: 1fr; }
+
+  /* Tabs IT con scroll horizontal */
+  .it-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 1px;
+  }
+  .it-tabs::-webkit-scrollbar { display: none; }
+  .it-search-box { max-width: 100%; }
+
+  /* Botones de acción táctiles */
+  .btn-action { width: 36px; height: 36px; font-size: 0.9rem; }
+
+  /* Modal botones en fila */
+  .modal-buttons { flex-direction: row; gap: 8px; }
+  .modal-buttons .btn-primary,
+  .modal-buttons .btn-secondary {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Paginación táctil */
+  .pagination button { padding: 10px 14px; }
+
+  /* Ocultar labels de botones en pantallas pequeñas */
+  .btn-label { display: none; }
+
+  /* Toast en la parte inferior */
+  .toast-container {
+    top: auto;
+    bottom: 80px;
+    right: 10px;
+    left: 10px;
+  }
+  .toast { min-width: 0; max-width: 100%; }
+
+  /* Botones de header-actions más compactos */
+  .header-actions { gap: 6px; }
+
+  /* Section header: acciones en fila, no se desborden */
+  .section-header { flex-wrap: wrap; }
+
+  /* Botones action táctiles en tablas y cards */
+  .btn-action { flex-shrink: 0; }
+
+  /* form-tabs con scroll horizontal */
+  .form-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .form-tabs::-webkit-scrollbar { display: none; }
+  .form-tab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Company card actions wrap */
+  .company-card-actions { flex-wrap: wrap; }
+  .company-card-actions .btn-action {
+    padding: 8px 12px;
+    width: auto;
+    height: auto;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 8px 10px; padding-bottom: 74px; }
+  .section-header h1 { font-size: 1rem; }
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats { gap: 6px; }
 }
 
 .mobile-only { display: none; }

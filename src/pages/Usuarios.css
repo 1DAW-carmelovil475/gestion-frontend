@@ -71,9 +71,7 @@
 
 /* ── Badge de estado ─────────────────────────── */
 .badge-estado {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-block;
   padding: 3px 10px;
   border-radius: 20px;
   font-size: 0.78rem;
@@ -210,4 +208,27 @@
 @media (max-width: 768px) {
   .u-email,
   .u-fecha { display: none; }
+
+  /* Cards de usuario más táctiles */
+  .data-card { padding: 12px; }
+
+  .user-cell-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+
+  .badge-yo { margin-left: 4px; }
+
+  /* Botones de acción más grandes */
+  .data-card-actions .btn-action {
+    padding: 8px 12px;
+    height: auto;
+    width: auto;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
 }

@@ -756,22 +756,35 @@
 @media (max-width: 640px) {
   .emp-header {
     flex-wrap: wrap;
-    padding: 14px 16px;
+    padding: 12px 14px;
+    gap: 10px;
   }
 
   .emp-header-avatar {
-    width: 42px;
-    height: 42px;
-    font-size: 1.1rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
   }
 
   .emp-header-title h1 {
     font-size: 1rem;
   }
 
+  .emp-header-meta {
+    font-size: 0.78rem;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   .emp-edit-btn {
     width: 100%;
     justify-content: center;
+    margin-top: 4px;
+  }
+
+  .emp-service-pill {
+    font-size: 0.72rem;
+    padding: 2px 8px;
   }
 
   .it-items-grid {
@@ -779,7 +792,23 @@
   }
 
   .contact-card-form-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  /* Cards empresa más compactas */
+  .company-card-header { padding: 10px 12px; }
+  .company-card-body   { padding: 8px 12px; }
+  .company-card-name   { font-size: 0.9rem; }
+
+  /* Contactos inline */
+  .emp-contacto-row {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .emp-contacto-row-links {
+    flex-wrap: wrap;
+    gap: 4px;
   }
 }
 
@@ -787,4 +816,6 @@
   .contact-card-form-row {
     grid-template-columns: 1fr;
   }
+
+  .emp-card { padding: 12px 12px; }
 }

@@ -92,10 +92,11 @@ function PrioridadBadge({ p }) {
 
 function EstadoBadge({ e }) {
   const icons = {
-    'Pendiente':  'fa-clock',
-    'En curso':   'fa-spinner',
-    'Completado': 'fa-check-circle',
-    'Facturado':  'fa-file-invoice-dollar',
+    'Pendiente':            'fa-clock',
+    'En curso':             'fa-spinner',
+    'Completado':           'fa-check-circle',
+    'Pendiente de facturar':'fa-file-invoice',
+    'Facturado':            'fa-file-invoice-dollar',
   }
   return (
     <span className={`estado-badge estado-${e.replace(/ /g, '-')}`}>
@@ -116,7 +117,6 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar
 
   const selected = options.find(o => o.value === value)
 
-  // What to show in the input: if user is actively typing show query, else show selected label
   const displayValue = typing ? query : (selected?.label || '')
 
   const filtered = typing && query.trim()
@@ -145,7 +145,6 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar
     setOpen(true)
     setTyping(true)
     setQuery('')
-    // select all so user can immediately type to replace
     setTimeout(() => inputRef.current?.select(), 0)
   }
 
@@ -203,8 +202,9 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar
     </div>
   )
 }
+
 // ============================================================
-// OPERARIOS SELECTOR — filtros rápidos por rol (igual que Chat)
+// OPERARIOS SELECTOR
 // ============================================================
 function OperariosSelector({ operarios, selected, onChange }) {
   const [query, setQuery] = useState('')
@@ -260,7 +260,7 @@ function OperariosSelector({ operarios, selected, onChange }) {
 }
 
 // ============================================================
-// MODAL: TICKET — definido fuera para evitar pérdida de foco
+// MODAL: TICKET
 // ============================================================
 function TicketModal({
   editingTicket, empresas, operarios,
@@ -344,6 +344,7 @@ function TicketModal({
                   <option value="Pendiente">Pendiente</option>
                   <option value="En curso">En curso</option>
                   <option value="Completado">Completado</option>
+                  <option value="Pendiente de facturar">Pendiente de facturar</option>
                   <option value="Facturado">Facturado</option>
                 </select>
               </div>
@@ -421,12 +422,10 @@ export default function Tickets() {
 
   useEffect(() => { loadData() }, [])
 
-  // Abrir ticket directo desde chat (router state)
   useEffect(() => {
     const ticketId = location.state?.abrirTicketId
     if (ticketId && !loading) {
       abrirTicket(ticketId)
-      // Limpiar el state para no re-abrir en navegaciones posteriores
       window.history.replaceState({}, document.title)
     }
   }, [loading, location.state])
@@ -455,12 +454,13 @@ export default function Tickets() {
 
   function calcStats(list) {
     setStats({
-      total:       list.length,
-      pendientes:  list.filter(t => t.estado === 'Pendiente').length,
-      en_curso:    list.filter(t => t.estado === 'En curso').length,
-      completados: list.filter(t => t.estado === 'Completado').length,
-      facturados:  list.filter(t => t.estado === 'Facturado').length,
-      urgentes:    list.filter(t => t.prioridad === 'Urgente').length,
+      total:                 list.length,
+      pendientes:            list.filter(t => t.estado === 'Pendiente').length,
+      en_curso:              list.filter(t => t.estado === 'En curso').length,
+      completados:           list.filter(t => t.estado === 'Completado').length,
+      pendiente_facturar:    list.filter(t => t.estado === 'Pendiente de facturar').length,
+      facturados:            list.filter(t => t.estado === 'Facturado').length,
+      urgentes:              list.filter(t => t.prioridad === 'Urgente').length,
     })
   }
 
@@ -476,11 +476,7 @@ export default function Tickets() {
       )
     }
     if (estadoFilter !== 'all') {
-      if (estadoFilter === 'abiertos') {
-        filtered = filtered.filter(t => t.estado === 'Pendiente' || t.estado === 'En curso')
-      } else {
-        filtered = filtered.filter(t => t.estado === estadoFilter)
-      }
+      filtered = filtered.filter(t => t.estado === estadoFilter)
     }
     if (prioridadFilter !== 'all') filtered = filtered.filter(t => t.prioridad === prioridadFilter)
     if (operarioFilter !== 'all') {
@@ -581,15 +577,33 @@ export default function Tickets() {
     setAsignarOperariosCheck(updated)
   }
 
+  // ── ASIGNAR + ENVIAR EMAIL ──────────────────────────────────
   async function guardarAsignaciones() {
     const seleccionados = asignarOperariosCheck.filter(o => o.checked).map(o => o.id)
     if (!seleccionados.length) { showToast('warning', 'Aviso', 'Selecciona al menos un operario'); return }
     try {
       await assignOperarios(ticketActual.id, seleccionados)
+
+      // Enviar email a cada operario recién asignado
+      const asignadosPrevios = (ticketActual.ticket_asignaciones || []).map(a => a.user_id)
+      const nuevosAsignados  = seleccionados.filter(id => !asignadosPrevios.includes(id))
+      if (nuevosAsignados.length > 0) {
+        try {
+          await fetch(`${import.meta.env.VITE_API_URL || ''}/api/tickets/${ticketActual.id}/notificar-asignacion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ operarioIds: nuevosAsignados }),
+          })
+        } catch (emailErr) {
+          console.warn('Email no enviado:', emailErr)
+        }
+      }
+
       const updated = await getTicket(ticketActual.id)
       setTicketActual(updated)
       setShowAsignarModal(false)
-      showToast('success', 'Operarios asignados', '')
+      showToast('success', 'Operarios asignados', 'Se ha enviado notificación por email')
     } catch (error) {
       showToast('error', 'Error', error.message)
     }
@@ -726,6 +740,7 @@ export default function Tickets() {
     } catch { setModalDispositivos([]) }
   }
 
+  // ── GUARDAR TICKET + ENVIAR EMAIL si hay nuevos operarios ──
   async function saveTicket(e) {
     e.preventDefault()
     const empresa_id     = modalEmprId
@@ -744,15 +759,40 @@ export default function Tickets() {
     try {
       if (editingTicket) {
         await updateTicket(editingTicket.id, { asunto, descripcion, prioridad, estado, dispositivo_id })
-        if (operariosSeleccionados.length > 0) await assignOperarios(editingTicket.id, operariosSeleccionados)
+        if (operariosSeleccionados.length > 0) {
+          const asignadosPrevios = (editingTicket.ticket_asignaciones || []).map(a => a.user_id)
+          await assignOperarios(editingTicket.id, operariosSeleccionados)
+          const nuevosAsignados = operariosSeleccionados.filter(id => !asignadosPrevios.includes(id))
+          if (nuevosAsignados.length > 0) {
+            try {
+              await fetch(`${import.meta.env.VITE_API_URL || ''}/api/tickets/${editingTicket.id}/notificar-asignacion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ operarioIds: nuevosAsignados }),
+              })
+            } catch (emailErr) { console.warn('Email no enviado:', emailErr) }
+          }
+        }
         showToast('success', 'Ticket actualizado', '')
         if (ticketActual?.id === editingTicket.id) {
           const updated = await getTicket(editingTicket.id)
           setTicketActual(updated)
         }
       } else {
-        await createTicket({ empresa_id, dispositivo_id, asunto, descripcion, prioridad, estado, operarios: operariosSeleccionados })
+        const nuevoTicket = await createTicket({ empresa_id, dispositivo_id, asunto, descripcion, prioridad, estado, operarios: operariosSeleccionados })
         showToast('success', 'Ticket creado', asunto)
+        // Notificar a operarios asignados en la creación
+        if (operariosSeleccionados.length > 0 && nuevoTicket?.id) {
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL || ''}/api/tickets/${nuevoTicket.id}/notificar-asignacion`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ operarioIds: operariosSeleccionados }),
+            })
+          } catch (emailErr) { console.warn('Email no enviado:', emailErr) }
+        }
       }
       setShowTicketModal(false)
       await loadData()
@@ -893,7 +933,7 @@ export default function Tickets() {
     const asignados     = ticketActual.ticket_asignaciones || []
     const archivos      = ticketActual.ticket_archivos     || []
     const historial     = ticketActual.ticket_historial    || []
-    const estadoCerrado = ticketActual.estado === 'Completado' || ticketActual.estado === 'Facturado'
+    const estadoCerrado = ticketActual.estado === 'Completado' || ticketActual.estado === 'Facturado' || ticketActual.estado === 'Pendiente de facturar'
 
     const colorMap = {
       creacion: '#22c55e', estado: '#3b82f6', asignacion: '#9333ea',
@@ -906,7 +946,6 @@ export default function Tickets() {
       archivo: 'paperclip', comentario: 'comment',
     }
 
-    // CAMBIO 2: filtrar también los comentarios del historial (tipo 'comentario')
     const historialFiltrado = [...historial]
       .filter(h => h.tipo !== 'nota_interna' && h.tipo !== 'comentario')
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -940,6 +979,7 @@ export default function Tickets() {
                 <option value="Pendiente">Pendiente</option>
                 <option value="En curso">En curso</option>
                 <option value="Completado">Completado</option>
+                <option value="Pendiente de facturar">Pendiente de facturar</option>
                 <option value="Facturado">Facturado</option>
               </select>
               <button className="btn-primary btn-sm" onClick={() => abrirModalEditarTicket(ticketActual)}>
@@ -1180,7 +1220,7 @@ export default function Tickets() {
                       )}
                     </div>
 
-                    {/* Nuevo comentario — editor enriquecido */}
+                    {/* Nuevo comentario */}
                     <div className="comentario-nuevo">
                       <div className="comentario-nuevo-avatar" style={{ background: getAvatarColor(user?.id) }}>
                         {getInitials(user?.nombre || user?.email)}
@@ -1202,7 +1242,6 @@ export default function Tickets() {
                             <div className="editor-sep"></div>
                             <button type="button" className="editor-btn" title="Limpiar formato" onMouseDown={e => { e.preventDefault(); document.execCommand('removeFormat') }}><i className="fas fa-remove-format"></i></button>
                           </div>
-                          {/* CAMBIO 1: Enter envía, Shift+Enter inserta salto de línea */}
                           <div
                             className="editor-content"
                             contentEditable
@@ -1213,11 +1252,9 @@ export default function Tickets() {
                             onKeyDown={e => {
                               if (e.key === 'Enter') {
                                 if (e.shiftKey) {
-                                  // Shift+Enter: insertar salto de línea manual
                                   e.preventDefault()
                                   document.execCommand('insertLineBreak')
                                 } else {
-                                  // Enter solo: enviar comentario
                                   e.preventDefault()
                                   enviarComentario()
                                 }
@@ -1269,12 +1306,13 @@ export default function Tickets() {
 
         <div className="stats">
           {[
-            { id: 'statTotal',       label: 'Total',       val: stats.total || 0,       icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('all'); setPrioridadFilter('all') } },
-            { id: 'statPendientes',  label: 'Pendientes',  val: stats.pendientes || 0,  icon: 'fa-clock',               bg: '#fef3c7', col: '#d97706', click: () => { setEstadoFilter('Pendiente'); setPrioridadFilter('all') } },
-            { id: 'statEnCurso',     label: 'En curso',    val: stats.en_curso || 0,    icon: 'fa-spinner',             bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('En curso'); setPrioridadFilter('all') } },
-            { id: 'statCompletados', label: 'Completados', val: stats.completados || 0, icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', click: () => { setEstadoFilter('Completado'); setPrioridadFilter('all') } },
-            { id: 'statFacturados',  label: 'Facturados',  val: stats.facturados || 0,  icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => { setEstadoFilter('Facturado'); setPrioridadFilter('all') } },
-            { id: 'statUrgentes',    label: 'Urgentes',    val: stats.urgentes || 0,    icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => { setEstadoFilter('all'); setPrioridadFilter('Urgente') } },
+            { id: 'statTotal',             label: 'Total',                val: stats.total || 0,              icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('all'); setPrioridadFilter('all') } },
+            { id: 'statPendientes',        label: 'Pendientes',           val: stats.pendientes || 0,         icon: 'fa-clock',               bg: '#fef3c7', col: '#d97706', click: () => { setEstadoFilter('Pendiente'); setPrioridadFilter('all') } },
+            { id: 'statEnCurso',           label: 'En curso',             val: stats.en_curso || 0,           icon: 'fa-spinner',             bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('En curso'); setPrioridadFilter('all') } },
+            { id: 'statCompletados',       label: 'Completados',          val: stats.completados || 0,        icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', click: () => { setEstadoFilter('Completado'); setPrioridadFilter('all') } },
+            { id: 'statPendFacturar',      label: 'Pend. facturar',       val: stats.pendiente_facturar || 0, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', click: () => { setEstadoFilter('Pendiente de facturar'); setPrioridadFilter('all') } },
+            { id: 'statFacturados',        label: 'Facturados',           val: stats.facturados || 0,         icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => { setEstadoFilter('Facturado'); setPrioridadFilter('all') } },
+            { id: 'statUrgentes',          label: 'Urgentes',             val: stats.urgentes || 0,           icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => { setEstadoFilter('all'); setPrioridadFilter('Urgente') } },
           ].map(s => (
             <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer' }}>
               <div className="stat-icon" style={{ background: s.bg, color: s.col }}><i className={`fas ${s.icon}`}></i></div>
@@ -1291,10 +1329,10 @@ export default function Tickets() {
           <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
             <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
               <option value="all">Todos los estados</option>
-              <option value="abiertos">Abiertos</option>
               <option value="Pendiente">Pendiente</option>
               <option value="En curso">En curso</option>
               <option value="Completado">Completado</option>
+              <option value="Pendiente de facturar">Pendiente de facturar</option>
               <option value="Facturado">Facturado</option>
             </select>
             <select value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
@@ -1341,7 +1379,7 @@ export default function Tickets() {
               ) : (
                 tickets.map(t => {
                   const asignados     = t.ticket_asignaciones || []
-                  const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado'
+                  const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado' || t.estado === 'Pendiente de facturar'
                   return (
                     <tr key={t.id} onClick={() => abrirTicket(t.id)} style={{ cursor: 'pointer' }}>
                       <td><span className="ticket-numero">#{t.numero}</span></td>
@@ -1399,7 +1437,7 @@ export default function Tickets() {
             tickets.map(t => {
               const asignados     = t.ticket_asignaciones || []
               const nombresOps    = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
-              const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado'
+              const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado' || t.estado === 'Pendiente de facturar'
               return (
                 <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
                   <div className="ticket-card-top">

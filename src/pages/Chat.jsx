@@ -1012,7 +1012,7 @@ export default function Chat() {
           <ChatNavLink mode="top" isActive={true} />
         </nav>
         <div className="user-area">
-          <div className="user-info"><i className="fas fa-user-circle"></i><span>{user?.nombre || user?.email}</span></div>
+<div className="user-info"><div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div><span>{user?.nombre || user?.email}</span></div>
           <button className="btn-logout" onClick={handleLogout}><i className="fas fa-sign-out-alt"></i><span>Salir</span></button>
         </div>
       </header>

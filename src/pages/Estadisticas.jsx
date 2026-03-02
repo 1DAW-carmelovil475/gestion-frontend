@@ -11,6 +11,21 @@ import {
 import ChatNavLink from '../components/ChatNavLink'
 import './Estadisticas.css'
 
+// Avatar helper functions
+const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
+
+function getAvatarColor(str) {
+  if (!str) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function getInitials(nombre) {
+  if (!nombre) return '?'
+  return nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+}
+
 // ── Paleta ──────────────────────────────────────────
 const PRIMARY   = '#0047b3'
 const PRIMARY_L = '#3a7bd5'
@@ -173,7 +188,9 @@ export default function Estadisticas() {
         </nav>
         <div className="user-area">
           <div className="user-info">
-            <i className="fas fa-user-circle"></i>
+            <div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>
+              {getInitials(user?.nombre || user?.email)}
+            </div>
             <span>{user?.nombre || user?.email}</span>
           </div>
           <button className="btn-logout" onClick={handleLogout}>

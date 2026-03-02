@@ -873,8 +873,8 @@ export default function Tickets() {
             <Link to="/chat" className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
           </nav>
           <div className="user-area">
-            <div className="user-info">
-              <i className="fas fa-user-circle"></i>
+<div className="user-info">
+              <div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div>
               <span>{user?.nombre || user?.email}</span>
             </div>
             <button className="btn-logout" onClick={handleLogout}>

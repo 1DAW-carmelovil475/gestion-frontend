@@ -12,6 +12,20 @@ import './Dashboard.css'
 
 const SERVICIOS = ['Cloud', 'Soporte', 'Hardware', 'Redes', 'Seguridad', 'Backup']
 
+const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
+
+function getAvatarColor(str) {
+  if (!str) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function getInitials(nombre) {
+  if (!nombre) return '?'
+  return nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+}
+
 const TIPO_SUGERENCIAS = {
   equipo:   ['PC', 'Portátil', 'Cámara de Seguridad', 'Impresora', 'Tablet', 'All-in-One'],
   servidor: ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
@@ -650,7 +664,7 @@ export default function Dashboard() {
         <ChatNavLink mode="top" />
       </nav>
       <div className="user-area">
-        <div className="user-info"><i className="fas fa-user-circle"></i><span>{user?.nombre || user?.email}</span></div>
+<div className="user-info"><div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div><span>{user?.nombre || user?.email}</span></div>
         <button className="btn-logout" onClick={handleLogout}><i className="fas fa-sign-out-alt"></i><span>Salir</span></button>
       </div>
     </header>

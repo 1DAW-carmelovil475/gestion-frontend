@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ChatNotificationsProvider } from './context/ChatNotificationsContext'
+import ChatToasts from './components/ChatToasts'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Usuarios from './pages/Usuarios'
@@ -9,8 +10,8 @@ import Estadisticas from './pages/Estadisticas'
 import Chat from './pages/Chat'
 import './App.css'
 
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+function ProtectedRoute({ children, adminOnly = false }) {
+  const { user, loading, isAdmin } = useAuth()
 
   if (loading) {
     return (
@@ -21,15 +22,15 @@ function ProtectedRoute({ children }) {
     )
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
+  if (!user) return <Navigate to="/login" replace />
+  if (adminOnly && !isAdmin()) return <Navigate to="/tickets" replace />
 
   return children
 }
 
-// El provider de notificaciones necesita estar dentro de AuthProvider
-// (usa useAuth internamente) y dentro de BrowserRouter (usa react-router).
+// ChatToasts y ChatNotificationsProvider están al nivel de AppRoutes
+// para que los toasts sean visibles en CUALQUIER página de la app,
+// no solo cuando Chat.jsx está montado.
 function AppRoutes() {
   return (
     <ChatNotificationsProvider>
@@ -46,7 +47,7 @@ function AppRoutes() {
         <Route
           path="/usuarios"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute adminOnly>
               <Usuarios />
             </ProtectedRoute>
           }
@@ -62,7 +63,7 @@ function AppRoutes() {
         <Route
           path="/estadisticas"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute adminOnly>
               <Estadisticas />
             </ProtectedRoute>
           }
@@ -77,6 +78,9 @@ function AppRoutes() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* Toasts globales — visibles en todas las páginas */}
+      <ChatToasts />
     </ChatNotificationsProvider>
   )
 }

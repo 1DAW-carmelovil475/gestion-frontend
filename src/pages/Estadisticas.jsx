@@ -8,6 +8,7 @@ import {
   PieChart, Pie,
   RadialBarChart, RadialBar
 } from 'recharts'
+import ChatNavLink from '../components/ChatNavLink'
 import './Estadisticas.css'
 
 // ── Paleta ──────────────────────────────────────────
@@ -168,7 +169,7 @@ export default function Estadisticas() {
           <Link to="/usuarios"     className="nav-link"><i className="fas fa-user"></i> Usuarios</Link>
           <Link to="/tickets"      className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
           <Link to="/estadisticas" className="nav-link active"><i className="fas fa-chart-bar"></i> Estadísticas</Link>
-          <Link to="/chat"         className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
+          <ChatNavLink mode="top" />
         </nav>
         <div className="user-area">
           <div className="user-info">
@@ -187,7 +188,7 @@ export default function Estadisticas() {
         <Link to="/usuarios"     className="bottom-nav-item"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>
         <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
         <Link to="/estadisticas" className="bottom-nav-item active"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>
-        <Link to="/chat"         className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+        <ChatNavLink mode="bottom" />
       </nav>
 
       <main className="main-content">

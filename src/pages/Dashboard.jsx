@@ -7,6 +7,7 @@ import {
   getTickets,
 } from '../services/api'
 import * as XLSX from 'xlsx'
+import ChatNavLink from '../components/ChatNavLink'
 import './Dashboard.css'
 
 const SERVICIOS = ['Cloud', 'Soporte', 'Hardware', 'Redes', 'Seguridad', 'Backup']
@@ -646,7 +647,7 @@ export default function Dashboard() {
         )}
         <Link to="/tickets"      className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
         {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
-        <Link to="/chat"         className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
+        <ChatNavLink mode="top" />
       </nav>
       <div className="user-area">
         <div className="user-info"><i className="fas fa-user-circle"></i><span>{user?.nombre || user?.email}</span></div>
@@ -891,7 +892,7 @@ export default function Dashboard() {
         )}
         <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
         {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
-        <Link to="/chat"         className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+        <ChatNavLink mode="bottom" />
       </nav>
 
       <main className="main-content">

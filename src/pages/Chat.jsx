@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
@@ -7,6 +7,7 @@ import {
   getChatMensajes, sendChatMensaje, deleteChatMensaje, editChatMensaje, pinChatMensaje,
   getOperarios, getTickets, getChatArchivoUrl
 } from '../services/api'
+import ChatNavLink from '../components/ChatNavLink'
 import './Chat.css'
 
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
@@ -47,6 +48,12 @@ function getFileIcon(mime) {
   if (mime.startsWith('video/')) return 'fa-file-video'
   return 'fa-file'
 }
+
+function fmtBadge(n) {
+  if (!n || n <= 0) return null
+  return n > 9 ? '+9' : String(n)
+}
+
 const ESTADO_COLORS = {
   'Pendiente':  { bg: '#fef3c7', color: '#d97706' },
   'En curso':   { bg: '#dbeafe', color: '#2563eb' },
@@ -54,10 +61,10 @@ const ESTADO_COLORS = {
   'Facturado':  { bg: '#ede9fe', color: '#7c3aed' },
 }
 
-const DM_INVITE_PREFIX = '__DM_INVITE__:'
+const DM_INVITE_PREFIX   = '__DM_INVITE__:'
 const DM_ACCEPTED_PREFIX = '__DM_ACCEPTED__:'
 const DM_REJECTED_PREFIX = '__DM_REJECTED__:'
-const SISTEMA_PREFIX = '__SISTEMA__:'
+const SISTEMA_PREFIX     = '__SISTEMA__:'
 
 // ── MiembrosSelector ──────────────────────────────────────────────────────────
 function MiembrosSelector({ operarios, userId, selected, onChange, showQuickFilters = false }) {
@@ -129,7 +136,7 @@ function MsgContextMenu({ x, y, msg, userId, isAdmin, onClose, onEdit, onDelete,
   )
 }
 
-// ── Context menu: canal (sidebar) ─────────────────────────────────────────────
+// ── Context menu: canal ───────────────────────────────────────────────────────
 function CanalContextMenu({ x, y, canal, prefs, isAdmin, onClose, onPin, onMute, onHide, onUnhide, onEdit, onDelete }) {
   const ref = useRef(null)
   const cp  = prefs[canal.id] || {}
@@ -180,10 +187,8 @@ function TicketPicker({ tickets, onSelect, onClose }) {
   const ref = useRef(null)
   useEffect(() => {
     function h(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
-    const timeout = setTimeout(() => {
-      document.addEventListener('mousedown', h)
-    }, 100)
-    return () => { clearTimeout(timeout); document.removeEventListener('mousedown', h) }
+    const t = setTimeout(() => document.addEventListener('mousedown', h), 100)
+    return () => { clearTimeout(t); document.removeEventListener('mousedown', h) }
   }, [onClose])
   const filtered = tickets.filter(t => String(t.numero).includes(q) || t.asunto?.toLowerCase().includes(q.toLowerCase())).slice(0, 25)
   return (
@@ -211,11 +216,45 @@ function TicketPicker({ tickets, onSelect, onClose }) {
   )
 }
 
+// ── MentionPicker — igual que TicketPicker pero para menciones ────────────────
+function MentionPicker({ personas, onSelect, onClose, initialQuery = '' }) {
+  const [q, setQ] = useState(initialQuery)
+  const ref = useRef(null)
+  useEffect(() => {
+    function h(e) { if (ref.current && !ref.current.contains(e.target)) onClose() }
+    const t = setTimeout(() => document.addEventListener('mousedown', h), 100)
+    return () => { clearTimeout(t); document.removeEventListener('mousedown', h) }
+  }, [onClose])
+  const filtered = personas.filter(p =>
+    (p.nombre || '').toLowerCase().includes(q.toLowerCase()) ||
+    (p.email  || '').toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 20)
+  return (
+    <div ref={ref} className="ticket-picker mention-picker-popup">
+      <div className="ticket-picker-header">
+        <i className="fas fa-at"></i>
+        <input autoFocus type="text" placeholder="Buscar persona..." value={q} onChange={e => setQ(e.target.value)} />
+        <button onMouseDown={e => { e.preventDefault(); onClose() }}><i className="fas fa-times"></i></button>
+      </div>
+      <div className="ticket-picker-list">
+        {filtered.length === 0
+          ? <div className="ticket-picker-empty">Sin resultados</div>
+          : filtered.map(p => (
+            <div key={p.id} className="ticket-picker-item mention-picker-item" onMouseDown={e => { e.preventDefault(); onSelect(p) }}>
+              <div className="mp-avatar" style={{ background: getAvatarColor(p.id) }}>{getInitials(p.nombre)}</div>
+              <span className="mp-nombre">{p.nombre || p.email}</span>
+              {p.rol === 'admin' && <span className="tp-estado" style={{ background: '#fff3cd', color: '#856404' }}>Admin</span>}
+            </div>
+          ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Drag-and-drop hook ────────────────────────────────────────────────────────
 function useDragSort(items, onReorder) {
   const dragIdx     = useRef(null)
   const dragOverIdx = useRef(null)
-
   function onDragStart(e, idx) {
     dragIdx.current = idx
     e.dataTransfer.effectAllowed = 'move'
@@ -241,40 +280,47 @@ function useDragSort(items, onReorder) {
     dragIdx.current = null; dragOverIdx.current = null
   }
   function onDrop(e) { e.preventDefault() }
-
   return { onDragStart, onDragOver, onDragEnd, onDrop }
 }
 
-// ── Componente principal ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente principal
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Chat() {
   const { user, logout, isAdmin } = useAuth()
-  const { dmUnread, channelUnread, channelActivity, markRead, setActiveCanalId, prefs, updatePref } = useChatNotifications()
+  const {
+    dmUnread, channelUnread, channelMentionCnt,
+    channelActivity, channelMention,
+    notifPermission, markRead, setActiveCanalId,
+    prefs, updatePref, requestNotificationPermission,
+  } = useChatNotifications()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  // FIX: clave de localStorage por usuario
   const CANAL_KEY = `chat_canal_activo_${user?.id || 'u'}`
 
-  const [canales,      setCanales]      = useState([])
-  const [operarios,    setOperarios]    = useState([])
-  const [allTickets,   setAllTickets]   = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [canalActual,  setCanalActual]  = useState(null)
-  const [mensajes,     setMensajes]     = useState([])
-  const [mensajeText,  setMensajeText]  = useState('')
-  const [pendingFiles, setPendingFiles] = useState([])
+  const [canales,       setCanales]       = useState([])
+  const [operarios,     setOperarios]     = useState([])
+  const [allTickets,    setAllTickets]    = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [canalActual,   setCanalActual]   = useState(null)
+  const [mensajes,      setMensajes]      = useState([])
+  const [pendingFiles,  setPendingFiles]  = useState([])
   const [pendingImages, setPendingImages] = useState([])
-  const [ticketRef,    setTicketRef]    = useState(null)
-  const [showHidden,   setShowHidden]   = useState(false)
-  const [customOrder,  setCustomOrder]  = useState({ canales: [], directos: [] })
+  const [ticketRef,     setTicketRef]     = useState(null)
+  const [showHidden,    setShowHidden]    = useState(false)
+  const [customOrder,   setCustomOrder]   = useState({ canales: [], directos: [] })
 
   const [pendingInvites, setPendingInvites] = useState({})
   const [sentInvites,    setSentInvites]    = useState({})
   const sentInvitesRef = useRef({})
 
-  const [showTicketPicker, setShowTicketPicker] = useState(false)
-  const [showCanalModal,   setShowCanalModal]   = useState(false)
-  const [showEditModal,    setShowEditModal]    = useState(false)
-  const [showDirectoModal, setShowDirectoModal] = useState(false)
+  const [showTicketPicker,  setShowTicketPicker]  = useState(false)
+  const [showMentionPicker,    setShowMentionPicker]    = useState(false)
+  const [mentionInlineQuery,   setMentionInlineQuery]   = useState('')
+  const [showCanalModal,    setShowCanalModal]    = useState(false)
+  const [showEditModal,     setShowEditModal]     = useState(false)
+  const [showDirectoModal,  setShowDirectoModal]  = useState(false)
 
   const [nuevoNombre,      setNuevoNombre]      = useState('')
   const [nuevoDesc,        setNuevoDesc]        = useState('')
@@ -286,7 +332,6 @@ export default function Chat() {
   const [editLoading,      setEditLoading]      = useState(false)
 
   const [sidebarOpen,    setSidebarOpen]    = useState(false)
-
   const [editingMsg,     setEditingMsg]     = useState(null)
   const [editingMsgText, setEditingMsgText] = useState('')
   const [msgCtxMenu,     setMsgCtxMenu]     = useState(null)
@@ -300,6 +345,7 @@ export default function Chat() {
   const canalActualRef  = useRef(null)
   const mensajesRef     = useRef([])
   const shouldScrollRef = useRef(false)
+  const mentionQueryRef  = useRef(null) // { node, atOffset } cuando @ inline está activo
 
   useEffect(() => { canalActualRef.current = canalActual }, [canalActual])
   useEffect(() => { mensajesRef.current = mensajes }, [mensajes])
@@ -319,7 +365,6 @@ export default function Chat() {
 
   useEffect(() => { loadData() }, [])
 
-  // ── Polling de canales ─────────────────────────────────────────────────────
   const canalesIdsRef = useRef('')
   useEffect(() => {
     if (!user) return
@@ -338,7 +383,6 @@ export default function Chat() {
     return () => clearInterval(t)
   }, [user?.id]) // eslint-disable-line
 
-  // ── FIX: Restaurar canal activo desde localStorage (persiste entre visitas) ─
   const restoredRef = useRef(false)
   useEffect(() => {
     if (!canales.length || restoredRef.current) return
@@ -350,9 +394,20 @@ export default function Chat() {
     }
   }, [canales])
 
+  // Si venimos de un toast (desde otra página), abrir el canal indicado
+  useEffect(() => {
+    const canalId = location.state?.canalId
+    if (!canalId || !canales.length) return
+    const canal = canales.find(c => c.id === canalId)
+    if (canal) {
+      setCanalActual(canal)
+      setSidebarOpen(false)
+      navigate('/chat', { replace: true, state: {} })
+    }
+  }, [location.state?.canalId, canales]) // eslint-disable-line
+
   useEffect(() => {
     if (!canalActual) return
-    // FIX: guardar en localStorage para que persista al salir y volver
     localStorage.setItem(CANAL_KEY, canalActual.id)
     setActiveCanalId(canalActual.id)
     loadMensajes(canalActual.id)
@@ -367,12 +422,8 @@ export default function Chat() {
     return () => {
       const canal = canalActualRef.current
       const msgs  = mensajesRef.current
-      if (canal && msgs.length) {
-        markRead(canal.id, msgs[msgs.length - 1].id)
-      }
+      if (canal && msgs.length) markRead(canal.id, msgs[msgs.length - 1].id)
       setActiveCanalId(null)
-      // FIX: NO eliminamos la clave al salir — así se restaura al volver
-      // localStorage.removeItem(CANAL_KEY)  ← eliminado intencionalmente
     }
   }, []) // eslint-disable-line
 
@@ -393,16 +444,17 @@ export default function Chat() {
     pollingRef.current = setInterval(async () => {
       const canal = canalActualRef.current; if (!canal) return
       try {
-        const data = await getChatMensajes(canal.id)
-        const nuevos = data || []; const actuales = mensajesRef.current
-        if (nuevos.length !== actuales.length || nuevos[nuevos.length - 1]?.id !== actuales[actuales.length - 1]?.id)
+        const data   = await getChatMensajes(canal.id)
+        const nuevos = data || []
+        const act    = mensajesRef.current
+        if (nuevos.length !== act.length || nuevos[nuevos.length - 1]?.id !== act[act.length - 1]?.id)
           setMensajes(nuevos)
       } catch {}
     }, 4000)
     return () => clearInterval(pollingRef.current)
   }, [canalActual?.id])
 
-  // ── Polling de invitaciones DM ─────────────────────────────────────────────
+  // Polling de invitaciones DM
   useEffect(() => {
     if (!user) return
     const checkInvites = async () => {
@@ -485,7 +537,6 @@ export default function Chat() {
     const unindexed = list.filter(c => !order.includes(c.id))
     return [...indexed, ...unindexed]
   }
-
   function handleReorder(section, newList) {
     const o = { ...customOrder, [section]: newList.map(c => c.id) }
     setCustomOrder(o); saveOrder(o)
@@ -493,33 +544,29 @@ export default function Chat() {
 
   const allCanalesRaw  = canales.filter(c => c.tipo === 'canal')
   const allDirectosRaw = canales.filter(c => c.tipo === 'directo')
-
   const canalesVisible  = sortList(allCanalesRaw.filter(c => !prefs[c.id]?.hidden),  'canales')
   const directosVisible = sortList(allDirectosRaw.filter(c => !prefs[c.id]?.hidden), 'directos')
   const hiddenAll       = [...allCanalesRaw, ...allDirectosRaw].filter(c => prefs[c.id]?.hidden)
-
-  const pinnedAll = [...canalesVisible, ...directosVisible].filter(c => prefs[c.id]?.pinned)
+  const pinnedAll        = [...canalesVisible, ...directosVisible].filter(c => prefs[c.id]?.pinned)
   const unPinnedCanales  = canalesVisible.filter(c => !prefs[c.id]?.pinned)
   const unPinnedDirectos = directosVisible.filter(c => !prefs[c.id]?.pinned)
 
-  const dragCanales  = useDragSort(unPinnedCanales,  (nl) => handleReorder('canales',  nl))
-  const dragDirectos = useDragSort(unPinnedDirectos, (nl) => handleReorder('directos', nl))
+  const dragCanales  = useDragSort(unPinnedCanales,  nl => handleReorder('canales', nl))
+  const dragDirectos = useDragSort(unPinnedDirectos, nl => handleReorder('directos', nl))
 
-  function handlePin(id, v)   { updatePref(id, { pinned: v }) }
-  function handleMute(id, v)  { updatePref(id, { muted: v }) }
-  function handleHide(id)     {
+  function handlePin(id, v)  { updatePref(id, { pinned: v }) }
+  function handleMute(id, v) { updatePref(id, { muted: v }) }
+  function handleHide(id) {
     updatePref(id, { hidden: true })
     if (canalActual?.id === id) { setCanalActual(null); setActiveCanalId(null) }
   }
-  function handleUnhide(id)   { updatePref(id, { hidden: false }) }
+  function handleUnhide(id) { updatePref(id, { hidden: false }) }
 
   function handleLogout() {
     if (confirm('¿Cerrar sesión?')) { logout(); navigate('/login') }
   }
   function openEditModalForCanal(canal) {
-    setEditingCanal(canal)
-    setEditNombre(canal.nombre || '')
-    setEditDesc(canal.descripcion || '')
+    setEditingCanal(canal); setEditNombre(canal.nombre || ''); setEditDesc(canal.descripcion || '')
     setEditMiembros((canal.chat_canales_miembros || []).filter(m => m.user_id !== user?.id).map(m => m.user_id))
     setShowEditModal(true)
   }
@@ -542,7 +589,6 @@ export default function Chat() {
     } catch (err) { showToast('error', 'Error', err.message) }
     finally { setEditLoading(false) }
   }
-
   async function crearDirecto(opId) {
     const operario = operarios.find(o => o.id === opId)
     if (isAdmin()) {
@@ -553,17 +599,15 @@ export default function Chat() {
     } else {
       try {
         const canal = await createChatCanal({ nombre: `directo-${opId}`, descripcion: null, tipo: 'directo', miembros: [opId] })
-        const nombreRemitente     = user?.nombre || user?.email || 'Alguien'
-        const nombreDestinatario  = operario?.nombre || operario?.email || 'Alguien'
+        const nombreRemitente    = user?.nombre || user?.email || 'Alguien'
+        const nombreDestinatario = operario?.nombre || operario?.email || 'Alguien'
         const payload = JSON.stringify({ remitente: nombreRemitente, destinatario: nombreDestinatario })
         await sendChatMensaje(canal.id || canal, `${DM_INVITE_PREFIX}${payload}`, null, [])
         showToast('success', 'Petición enviada', `Esperando que ${nombreDestinatario} acepte`)
-        setShowDirectoModal(false)
-        loadData()
+        setShowDirectoModal(false); loadData()
       } catch (err) { showToast('error', 'Error', err.message) }
     }
   }
-
   async function aceptarInvitacion(canalId, nombreRemitente) {
     try {
       const nombrePropio = user?.nombre || user?.email || 'Alguien'
@@ -574,7 +618,6 @@ export default function Chat() {
       showToast('success', 'Chat aceptado', `Ahora puedes chatear con ${nombreRemitente}`)
     } catch (err) { showToast('error', 'Error', err.message) }
   }
-
   async function rechazarInvitacion(canalId, nombreRemitente) {
     try {
       await deleteChatCanal(canalId)
@@ -584,26 +627,20 @@ export default function Chat() {
       showToast('info', 'Chat rechazado', `Rechazaste el chat de ${nombreRemitente}`)
     } catch (err) { showToast('error', 'Error', err.message) }
   }
-
   async function eliminarCanalObj(canal) {
     if (!canal) return
-    const isDm  = canal.tipo === 'directo'
+    const isDm   = canal.tipo === 'directo'
     const nombre = isDm ? getDmNombre(canal, user?.id) : canal.nombre
     if (!isDm && !isAdmin()) return
-    if (isDm && !isAdmin() && !confirm(`¿Eliminar el chat con "${nombre}"?\n\nTodos los miembros verán un aviso de que eliminaste el chat.`)) return
+    if (isDm && !isAdmin() && !confirm(`¿Eliminar el chat con "${nombre}"?`)) return
     if (!isDm && !confirm(`¿Eliminar el canal "${nombre}"?`)) return
     try {
       if (isDm) {
         const nombreUsuario = user?.nombre || user?.email || 'Alguien'
         await sendChatMensaje(canal.id, `${SISTEMA_PREFIX}${nombreUsuario} eliminó el chat de mensajes directos`, null, [])
-        if (isAdmin()) {
-          await deleteChatCanal(canal.id)
-          setCanales(prev => prev.filter(c => c.id !== canal.id))
-          if (canalActual?.id === canal.id) { setCanalActual(null); setActiveCanalId(null) }
-        } else {
-          setCanales(prev => prev.filter(c => c.id !== canal.id))
-          if (canalActual?.id === canal.id) { setCanalActual(null); setActiveCanalId(null) }
-        }
+        if (isAdmin()) await deleteChatCanal(canal.id)
+        setCanales(prev => prev.filter(c => c.id !== canal.id))
+        if (canalActual?.id === canal.id) { setCanalActual(null); setActiveCanalId(null) }
       } else {
         await deleteChatCanal(canal.id)
         setCanales(prev => prev.filter(c => c.id !== canal.id))
@@ -613,18 +650,107 @@ export default function Chat() {
     } catch (err) { showToast('error', 'Error', err.message) }
   }
 
+  // ── Menciones: lista de personas disponibles ──────────────────────────────
+  // Incluye TODOS los operarios (no solo miembros del canal) para que siempre aparezcan
+  function getCanalMiembros() {
+    const result = []
+    const seen   = new Set()
+
+    // Primero los miembros explícitos del canal (tienen datos en profiles)
+    if (canalActual?.chat_canales_miembros) {
+      for (const m of canalActual.chat_canales_miembros) {
+        if (m.user_id === user?.id) continue
+        if (seen.has(m.user_id)) continue
+        seen.add(m.user_id)
+        result.push({
+          id:     m.user_id,
+          nombre: m.profiles?.nombre || m.profiles?.email || 'Usuario',
+          email:  m.profiles?.email  || '',
+          rol:    m.profiles?.rol    || '',
+        })
+      }
+    }
+
+    // Luego todos los operarios (para cubrir casos donde no estén en chat_canales_miembros)
+    for (const o of operarios) {
+      if (o.id === user?.id) continue
+      if (seen.has(o.id)) continue
+      seen.add(o.id)
+      result.push({
+        id:     o.id,
+        nombre: o.nombre || o.email || 'Usuario',
+        email:  o.email  || '',
+        rol:    o.rol    || '',
+      })
+    }
+
+    return result
+  }
+
+  function insertMention(persona) {
+    const editor = editorRef.current
+    if (!editor) return
+
+    const span = document.createElement('span')
+    span.className = 'mention-tag'
+    span.setAttribute('data-id', persona.id)
+    span.contentEditable = 'false'
+    span.textContent = `@${persona.nombre}`
+
+    const inlineCtx = mentionQueryRef.current
+
+    if (inlineCtx) {
+      // Modo inline (@query): borrar el @query y reemplazar con span
+      const { node, atOffset } = inlineCtx
+      const sel = window.getSelection()
+      if (sel && node.isConnected) {
+        const range = document.createRange()
+        range.setStart(node, atOffset)
+        range.setEnd(node, node.textContent.length) // borra hasta fin del texto node
+        range.deleteContents()
+        range.insertNode(span)
+        // Cursor después
+        const after = document.createRange()
+        after.setStartAfter(span); after.collapse(true)
+        sel.removeAllRanges(); sel.addRange(after)
+        const space = document.createTextNode('\u00A0')
+        after.insertNode(space); after.setStartAfter(space); after.collapse(true)
+        sel.removeAllRanges(); sel.addRange(after)
+      }
+      mentionQueryRef.current = null
+    } else {
+      // Modo botón: insertar en posición del cursor (o al final)
+      editor.focus()
+      const sel = window.getSelection()
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0)
+        range.deleteContents()
+        range.insertNode(span)
+        const after = document.createRange()
+        after.setStartAfter(span); after.collapse(true)
+        sel.removeAllRanges(); sel.addRange(after)
+        const space = document.createTextNode('\u00A0')
+        after.insertNode(space); after.setStartAfter(space); after.collapse(true)
+        sel.removeAllRanges(); sel.addRange(after)
+      } else {
+        editor.appendChild(span)
+        editor.appendChild(document.createTextNode('\u00A0'))
+      }
+    }
+
+    setShowMentionPicker(false)
+    setMentionInlineQuery('')
+    editor.focus()
+  }
+
   async function enviarMensaje() {
     const htmlContent = editorRef.current?.innerHTML || ''
     const textoPlano  = editorRef.current?.innerText?.trim() || ''
-    const allFiles    = [
-      ...pendingFiles,
-      ...pendingImages.map(p => p.file)
-    ]
+    const allFiles    = [...pendingFiles, ...pendingImages.map(p => p.file)]
     if (!canalActual || (!textoPlano && !allFiles.length && !ticketRef)) return
     try {
       await sendChatMensaje(canalActual.id, htmlContent, ticketRef?.id || null, allFiles)
       if (editorRef.current) editorRef.current.innerHTML = ''
-      setMensajeText('')
       setPendingFiles([])
       pendingImages.forEach(p => URL.revokeObjectURL(p.previewUrl))
       setPendingImages([])
@@ -660,46 +786,62 @@ export default function Chat() {
 
   function handleFileSelect(e) {
     const files = Array.from(e.target.files)
-    const imgs = files.filter(f => f.type.startsWith('image/'))
-    const rest = files.filter(f => !f.type.startsWith('image/'))
-    if (imgs.length) {
-      const newImgs = imgs.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))
-      setPendingImages(prev => [...prev, ...newImgs])
-    }
+    const imgs  = files.filter(f => f.type.startsWith('image/'))
+    const rest  = files.filter(f => !f.type.startsWith('image/'))
+    if (imgs.length) setPendingImages(prev => [...prev, ...imgs.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))])
     if (rest.length) setPendingFiles(prev => [...prev, ...rest])
     e.target.value = ''
   }
-
   function removePendingFile(i)  { setPendingFiles(prev => prev.filter((_, idx) => idx !== i)) }
   function removePendingImage(i) {
-    setPendingImages(prev => {
-      URL.revokeObjectURL(prev[i].previewUrl)
-      return prev.filter((_, idx) => idx !== i)
+    setPendingImages(prev => { URL.revokeObjectURL(prev[i].previewUrl); return prev.filter((_, idx) => idx !== i) })
+  }
+  function handlePaste(e) {
+    const items = Array.from(e.clipboardData?.items || []).filter(i => i.type.startsWith('image/'))
+    if (!items.length) return
+    e.preventDefault()
+    items.forEach(item => {
+      const file = item.getAsFile()
+      if (file) setPendingImages(prev => [...prev, { file, previewUrl: URL.createObjectURL(file) }])
     })
   }
 
-  function handlePaste(e) {
-    const items = Array.from(e.clipboardData?.items || [])
-    const imageItems = items.filter(item => item.type.startsWith('image/'))
-    if (imageItems.length) {
-      e.preventDefault()
-      imageItems.forEach(item => {
-        const file = item.getAsFile()
-        if (file) {
-          const previewUrl = URL.createObjectURL(file)
-          setPendingImages(prev => [...prev, { file, previewUrl }])
-        }
-      })
+  // Detecta @query al escribir y abre el picker de menciones inline
+  function handleEditorInput() {
+    const sel = window.getSelection()
+    if (!sel || !sel.rangeCount) return
+    const range  = sel.getRangeAt(0)
+    const node   = range.startContainer
+    const offset = range.startOffset
+    if (node.nodeType !== Node.TEXT_NODE) {
+      mentionQueryRef.current = null
+      return
     }
+    const textBefore = node.textContent.substring(0, offset)
+    const atIdx = textBefore.lastIndexOf('@')
+    if (atIdx === -1) {
+      mentionQueryRef.current = null
+      setShowMentionPicker(false)
+      return
+    }
+    const query = textBefore.substring(atIdx + 1)
+    if (query.includes(' ')) {
+      mentionQueryRef.current = null
+      setShowMentionPicker(false)
+      return
+    }
+    mentionQueryRef.current = { node, atOffset: atIdx, query }
+    setMentionInlineQuery(query)
+    setShowMentionPicker(true)
   }
 
+  // Enter para enviar, Shift+Enter para nueva línea
   function handleKeyDownEditor(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      enviarMensaje()
+    if (e.key === 'Escape' && showMentionPicker) {
+      e.preventDefault(); setShowMentionPicker(false); mentionQueryRef.current = null; return
     }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje() }
   }
-
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); guardarEdicionMsg() }
   }
@@ -724,7 +866,6 @@ export default function Chat() {
     container.appendChild(toast)
     setTimeout(() => { if (toast.parentElement) toast.remove() }, 5000)
   }
-
   function execFormat(command, value) {
     editorRef.current?.focus()
     document.execCommand(command, false, value)
@@ -732,33 +873,47 @@ export default function Chat() {
 
   const mensajesAnclados = mensajes.filter(m => m.anclado)
 
+  // ── Renderizar item de canal en la sidebar ────────────────────────────────
   function renderCanalItem(canal, idx, dragHandlers, extraClass = '') {
-    const isDm     = canal.tipo === 'directo'
-    const unread   = isDm ? (dmUnread[canal.id] || 0) : (channelUnread[canal.id] || 0)
-    const isActive = canalActual?.id === canal.id
-    const isMuted  = prefs[canal.id]?.muted
-    const isPinned = prefs[canal.id]?.pinned
-    const otros    = isDm ? getDmOtros(canal, user?.id) : []
-    const hasPendingInvite = isDm && !!pendingInvites[canal.id]
-    const hasSentInvite    = isDm && !!sentInvites[canal.id]
+    const isDm         = canal.tipo === 'directo'
+    const dmCount      = isDm ? (dmUnread[canal.id] || 0) : 0
+    const chanCount    = !isDm ? (channelUnread[canal.id] || 0) : 0
+    const mentionCount = !isDm ? (channelMentionCnt[canal.id] || 0) : 0
+    const hasActivity  = !isDm && chanCount > 0
+    const isMentioned  = !isDm && mentionCount > 0
+    const isActive     = canalActual?.id === canal.id
+    const isPinned     = prefs[canal.id]?.pinned
+    const isMuted      = prefs[canal.id]?.muted
+    const otros        = isDm ? getDmOtros(canal, user?.id) : []
+    const hasPending   = isDm && !!pendingInvites[canal.id]
+    const hasSent      = isDm && !!sentInvites[canal.id]
+
+    const badgeCount = isDm ? dmCount : mentionCount
+    const badgeStr   = fmtBadge(badgeCount)
 
     return (
       <div
         key={canal.id}
-        className={`canal-item ${isActive ? 'active' : ''} ${unread > 0 && !isActive ? 'has-unread' : ''} ${extraClass}`}
+        className={[
+          'canal-item',
+          isActive    ? 'active'       : '',
+          !isDm && hasActivity  && !isActive ? 'has-activity' : '',
+          !isDm && isMentioned && !isActive ? 'has-mention'  : '',
+          isDm  && dmCount > 0 && !isActive ? 'has-unread'   : '',
+          extraClass,
+        ].join(' ').trim()}
         draggable
         onDragStart={e => dragHandlers.onDragStart(e, idx)}
-        onDragOver={e => dragHandlers.onDragOver(e, idx)}
+        onDragOver={e  => dragHandlers.onDragOver(e, idx)}
         onDragEnd={dragHandlers.onDragEnd}
         onDrop={dragHandlers.onDrop}
         onClick={() => {
-          if (hasPendingInvite || hasSentInvite) return
-          setCanalActual(canal)
-          setSidebarOpen(false)
+          if (hasPending || hasSent) return
+          setCanalActual(canal); setSidebarOpen(false)
         }}
         onContextMenu={e => onCanalRightClick(e, canal)}
       >
-        <span className="drag-handle" onMouseDown={e => e.stopPropagation()} title="Arrastrar para reordenar">
+        <span className="drag-handle" onMouseDown={e => e.stopPropagation()}>
           <i className="fas fa-grip-vertical"></i>
         </span>
         {isDm ? (
@@ -774,33 +929,26 @@ export default function Chat() {
         ) : (
           <i className="fas fa-hashtag canal-hash"></i>
         )}
-        <span className="canal-nombre" style={{ flex: hasPendingInvite || hasSentInvite ? 'none' : 1 }}>
+        <span className="canal-nombre" style={{ flex: hasPending || hasSent ? 'none' : 1 }}>
           {isDm ? getDmNombre(canal, user?.id) : canal.nombre}
         </span>
-        {hasSentInvite && (
-          <span className="dm-invite-sent-badge" title="Esperando respuesta">
-            <i className="fas fa-clock"></i>
-          </span>
-        )}
-        {hasPendingInvite && (
+        {hasSent && <span className="dm-invite-sent-badge"><i className="fas fa-clock"></i></span>}
+        {hasPending && (
           <div className="dm-invite-actions" onClick={e => e.stopPropagation()}>
-            <button className="dm-invite-btn accept" title="Aceptar"
-              onClick={() => aceptarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}>
+            <button className="dm-invite-btn accept" onClick={() => aceptarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}>
               <i className="fas fa-check"></i>
             </button>
-            <button className="dm-invite-btn reject" title="Rechazar"
-              onClick={() => rechazarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}>
+            <button className="dm-invite-btn reject" onClick={() => rechazarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}>
               <i className="fas fa-times"></i>
             </button>
           </div>
         )}
-        {!hasPendingInvite && !hasSentInvite && (
+        {!hasPending && !hasSent && (
           <div className="canal-badges">
-            {isPinned && <i className="fas fa-thumbtack canal-pin-icon" title="Fijado"></i>}
-            {isMuted  && <i className="fas fa-bell-slash canal-mute-icon" title="Silenciado"></i>}
-            {unread > 0 && !isActive && <span className="canal-unread-badge">{unread > 9 ? '9+' : unread}</span>}
-            {unread === 0 && !isActive && !isMuted && !isDm && channelActivity[canal.id] && (
-              <span className="canal-activity-dot">···</span>
+            {isPinned && <i className="fas fa-thumbtack canal-pin-icon"></i>}
+            {isMuted  && <i className="fas fa-bell-slash canal-mute-icon"></i>}
+            {badgeStr && !isActive && (
+              <span className="canal-unread-badge">{badgeStr}</span>
             )}
           </div>
         )}
@@ -818,18 +966,12 @@ export default function Chat() {
       try {
         const parsed = JSON.parse(c.replace(DM_INVITE_PREFIX, ''))
         return { ...m, __sistema: true, __sistemaTexto: `${parsed.remitente} quiere iniciar un chat directo` }
-      } catch {
-        return { ...m, __sistema: true, __sistemaTexto: 'Solicitud de chat directo enviada' }
-      }
+      } catch { return { ...m, __sistema: true, __sistemaTexto: 'Solicitud de chat directo enviada' } }
     }
-    if (c.startsWith(DM_ACCEPTED_PREFIX)) {
-      return { ...m, __sistema: true, __sistemaTexto: c.replace(DM_ACCEPTED_PREFIX, '') }
-    }
+    if (c.startsWith(DM_ACCEPTED_PREFIX)) return { ...m, __sistema: true, __sistemaTexto: c.replace(DM_ACCEPTED_PREFIX, '') }
     if (c.startsWith(DM_REJECTED_PREFIX)) return null
     return m
   }).filter(Boolean)
-
-  const hasPendingContent = pendingFiles.length > 0 || pendingImages.length > 0 || ticketRef
 
   return (
     <div className="chat-page" onClick={() => { setMsgCtxMenu(null); setCanalCtxMenu(null) }}>
@@ -864,10 +1006,10 @@ export default function Chat() {
         </div>
         <nav className="top-nav">
           <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
-          <Link to="/usuarios" className="nav-link"><i className="fas fa-user"></i> Usuarios</Link>
+          {isAdmin() && <Link to="/usuarios" className="nav-link"><i className="fas fa-user"></i> Usuarios</Link>}
           <Link to="/tickets" className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
-          <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>
-          <Link to="/chat" className="nav-link active"><i className="fas fa-comments"></i> Chat</Link>
+          {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
+          <ChatNavLink mode="top" isActive={true} />
         </nav>
         <div className="user-area">
           <div className="user-info"><i className="fas fa-user-circle"></i><span>{user?.nombre || user?.email}</span></div>
@@ -877,20 +1019,15 @@ export default function Chat() {
 
       <nav className="bottom-nav">
         <Link to="/"             className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
-        <Link to="/usuarios"     className="bottom-nav-item"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>
+        {isAdmin() && <Link to="/usuarios"     className="bottom-nav-item"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>}
         <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
-        <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>
-        <Link to="/chat"         className="bottom-nav-item active"><i className="fas fa-comments"></i><span>Chat</span></Link>
+        {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
+        <ChatNavLink mode="bottom" isActive={true} />
       </nav>
 
       <div className="chat-layout">
+        {sidebarOpen && <div className="chat-sidebar-overlay open" onClick={() => setSidebarOpen(false)} />}
 
-        {/* ── Overlay móvil ── */}
-        {sidebarOpen && (
-          <div className="chat-sidebar-overlay open" onClick={() => setSidebarOpen(false)} />
-        )}
-
-        {/* ── Sidebar ── */}
         <aside className={`chat-sidebar${sidebarOpen ? ' open' : ''}`}>
           <div className="chat-sidebar-header">
             <div className="workspace-info">
@@ -901,7 +1038,6 @@ export default function Chat() {
               </div>
             </div>
           </div>
-
           <div className="sidebar-scroll">
 
             {pinnedAll.length > 0 && (
@@ -911,15 +1047,20 @@ export default function Chat() {
                 </div>
                 <div className="canales-list">
                   {pinnedAll.map(canal => {
-                    const isDm   = canal.tipo === 'directo'
-                    const unread = isDm ? (dmUnread[canal.id] || 0) : (channelUnread[canal.id] || 0)
-                    const isAct  = canalActual?.id === canal.id
-                    const otros  = isDm ? getDmOtros(canal, user?.id) : []
-                    const hasPend = isDm && !!pendingInvites[canal.id]
-                    const hasSent = isDm && !!sentInvites[canal.id]
+                    const isDm         = canal.tipo === 'directo'
+                    const dmCount      = isDm ? (dmUnread[canal.id] || 0) : 0
+                    const mentionCount = !isDm ? (channelMentionCnt[canal.id] || 0) : 0
+                    const chanCount    = !isDm ? (channelUnread[canal.id] || 0) : 0
+                    const hasActivity  = !isDm && chanCount > 0
+                    const isMentioned  = !isDm && mentionCount > 0
+                    const isAct        = canalActual?.id === canal.id
+                    const otros        = isDm ? getDmOtros(canal, user?.id) : []
+                    const hasPend      = isDm && !!pendingInvites[canal.id]
+                    const hasSent      = isDm && !!sentInvites[canal.id]
+                    const badgeStr     = fmtBadge(isDm ? dmCount : mentionCount)
                     return (
                       <div key={canal.id}
-                        className={`canal-item pinned-item ${isAct ? 'active' : ''} ${unread > 0 && !isAct ? 'has-unread' : ''}`}
+                        className={['canal-item pinned-item', isAct ? 'active' : '', !isDm && hasActivity && !isAct ? 'has-activity' : '', !isDm && isMentioned && !isAct ? 'has-mention' : '', isDm && dmCount > 0 && !isAct ? 'has-unread' : ''].join(' ').trim()}
                         onClick={() => { if (!hasPend && !hasSent) { setCanalActual(canal); setSidebarOpen(false) } }}
                         onContextMenu={e => onCanalRightClick(e, canal)}
                       >
@@ -927,15 +1068,9 @@ export default function Chat() {
                           <div className="dm-avatars">
                             {otros.length === 0
                               ? <div className="dm-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre)}</div>
-                              : otros.slice(0, 2).map(m => (
-                                <div key={m.user_id} className="dm-avatar" style={{ background: getAvatarColor(m.user_id) }}>
-                                  {getInitials(m.profiles?.nombre)}
-                                </div>
-                              ))}
+                              : otros.slice(0, 2).map(m => <div key={m.user_id} className="dm-avatar" style={{ background: getAvatarColor(m.user_id) }}>{getInitials(m.profiles?.nombre)}</div>)}
                           </div>
-                        ) : (
-                          <i className="fas fa-hashtag canal-hash"></i>
-                        )}
+                        ) : <i className="fas fa-hashtag canal-hash"></i>}
                         <span className="canal-nombre">{isDm ? getDmNombre(canal, user?.id) : canal.nombre}</span>
                         {hasSent && <span className="dm-invite-sent-badge"><i className="fas fa-clock"></i></span>}
                         {hasPend && (
@@ -944,7 +1079,9 @@ export default function Chat() {
                             <button className="dm-invite-btn reject" onClick={() => rechazarInvitacion(canal.id, pendingInvites[canal.id].nombreRemitente)}><i className="fas fa-times"></i></button>
                           </div>
                         )}
-                        {!hasPend && !hasSent && unread > 0 && !isAct && <span className="canal-unread-badge">{unread > 9 ? '9+' : unread}</span>}
+                        {!hasPend && !hasSent && badgeStr && !isAct && (
+                          <span className="canal-unread-badge">{badgeStr}</span>
+                        )}
                       </div>
                     )
                   })}
@@ -955,7 +1092,7 @@ export default function Chat() {
             <div className="canal-section">
               <div className="canal-section-header">
                 <span>Canales</span>
-                <button className="btn-canal-nuevo" onClick={() => { setNuevoNombre(''); setNuevoDesc(''); setSelectedMiembros([]); setShowCanalModal(true) }} title="Nuevo canal">
+                <button className="btn-canal-nuevo" onClick={() => { setNuevoNombre(''); setNuevoDesc(''); setSelectedMiembros([]); setShowCanalModal(true) }}>
                   <i className="fas fa-plus"></i>
                 </button>
               </div>
@@ -969,7 +1106,7 @@ export default function Chat() {
             <div className="canal-section">
               <div className="canal-section-header">
                 <span>Mensajes directos</span>
-                <button className="btn-canal-nuevo" onClick={() => setShowDirectoModal(true)} title="Nuevo DM">
+                <button className="btn-canal-nuevo" onClick={() => setShowDirectoModal(true)}>
                   <i className="fas fa-plus"></i>
                 </button>
               </div>
@@ -978,10 +1115,9 @@ export default function Chat() {
                   ? <div className="canal-empty">Sin mensajes</div>
                   : unPinnedDirectos.map((canal, idx) => {
                     const hasSent = !!sentInvites[canal.id]
-                    const item = renderCanalItem(canal, idx, dragDirectos)
                     return (
                       <div key={canal.id}>
-                        {item}
+                        {renderCanalItem(canal, idx, dragDirectos)}
                         {hasSent && (
                           <div className="dm-invite-sent-label">
                             <i className="fas fa-paper-plane"></i> Petición enviada a {sentInvites[canal.id].nombreDestinatario}
@@ -1001,17 +1137,13 @@ export default function Chat() {
                 </button>
                 {showHidden && (
                   <>
-                    <div className="hidden-notice">
-                      <i className="fas fa-user-secret"></i>
-                      Solo tú ves esta lista — clic derecho para mostrar
-                    </div>
+                    <div className="hidden-notice"><i className="fas fa-user-secret"></i>Solo tú ves esta lista — clic derecho para mostrar</div>
                     <div className="canales-list">
                       {hiddenAll.map(canal => {
                         const isDm  = canal.tipo === 'directo'
                         const otros = isDm ? getDmOtros(canal, user?.id) : []
                         return (
-                          <div key={canal.id}
-                            className="canal-item hidden-item"
+                          <div key={canal.id} className="canal-item hidden-item"
                             onClick={() => { handleUnhide(canal.id); setCanalActual(canal); setSidebarOpen(false) }}
                             onContextMenu={e => onCanalRightClick(e, canal)}
                           >
@@ -1019,17 +1151,11 @@ export default function Chat() {
                               <div className="dm-avatars">
                                 {otros.length === 0
                                   ? <div className="dm-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre)}</div>
-                                  : otros.slice(0, 2).map(m => (
-                                    <div key={m.user_id} className="dm-avatar" style={{ background: getAvatarColor(m.user_id) }}>
-                                      {getInitials(m.profiles?.nombre)}
-                                    </div>
-                                  ))}
+                                  : otros.slice(0, 2).map(m => <div key={m.user_id} className="dm-avatar" style={{ background: getAvatarColor(m.user_id) }}>{getInitials(m.profiles?.nombre)}</div>)}
                               </div>
-                            ) : (
-                              <i className="fas fa-hashtag canal-hash"></i>
-                            )}
+                            ) : <i className="fas fa-hashtag canal-hash"></i>}
                             <span className="canal-nombre">{isDm ? getDmNombre(canal, user?.id) : canal.nombre}</span>
-                            <i className="fas fa-eye canal-eye-icon" title="Clic para mostrar"></i>
+                            <i className="fas fa-eye canal-eye-icon"></i>
                           </div>
                         )
                       })}
@@ -1038,15 +1164,41 @@ export default function Chat() {
                 )}
               </div>
             )}
-
           </div>
         </aside>
 
-        {/* ── Main ── */}
         <section className="chat-main">
+
+          {notifPermission === 'denied' && (
+            <div className="notif-blocked-banner">
+              <i className="fas fa-bell-slash"></i>
+              <span>Las notificaciones están bloqueadas. Ve a <strong>Configuración del sitio</strong> en Chrome y permite las notificaciones.</span>
+            </div>
+          )}
+          {(notifPermission === 'default' || notifPermission === 'unsupported') && (
+            <div className="notif-request-banner">
+              <i className="fas fa-bell"></i>
+              <span>Activa las notificaciones para recibir avisos de mensajes y menciones.</span>
+              <button onClick={() => {
+                // Llamar requestPermission DIRECTAMENTE desde el click (requisito Edge/Safari)
+                if (!('Notification' in window)) return
+                const handleResult = (result) => {
+                  requestNotificationPermission() // actualiza el estado del contexto
+                }
+                // Llamada síncrona directa — sin async/await ni promesas encadenadas
+                try {
+                  const p = Notification.requestPermission(handleResult)
+                  if (p && typeof p.then === 'function') p.then(handleResult)
+                } catch(e) {
+                  console.warn('[Notif] requestPermission error:', e)
+                }
+              }}>Activar</button>
+            </div>
+          )}
+
           {!canalActual ? (
             <div className="chat-empty">
-              <button className="btn-sidebar-toggle btn-sidebar-toggle-empty" onClick={() => setSidebarOpen(v => !v)} title="Canales">
+              <button className="btn-sidebar-toggle btn-sidebar-toggle-empty" onClick={() => setSidebarOpen(v => !v)}>
                 <i className="fas fa-bars"></i>
               </button>
               <i className="fas fa-comments"></i>
@@ -1057,7 +1209,7 @@ export default function Chat() {
             <div className="chat-canal">
               <div className="chat-canal-header">
                 <div className="chat-canal-info">
-                  <button className="btn-sidebar-toggle" onClick={() => setSidebarOpen(v => !v)} title="Canales">
+                  <button className="btn-sidebar-toggle" onClick={() => setSidebarOpen(v => !v)}>
                     <i className="fas fa-bars"></i>
                   </button>
                   <div className="chat-canal-icono">
@@ -1072,12 +1224,8 @@ export default function Chat() {
                 </div>
                 {isAdmin() && canalActual.tipo === 'canal' && (
                   <div className="canal-header-actions">
-                    <button className="btn-canal-icon btn-edit-canal" onClick={() => openEditModalForCanal(canalActual)} title="Editar canal">
-                      <i className="fas fa-pen"></i>
-                    </button>
-                    <button className="btn-canal-icon btn-delete-canal" onClick={() => eliminarCanalObj(canalActual)} title="Eliminar canal">
-                      <i className="fas fa-trash"></i>
-                    </button>
+                    <button className="btn-canal-icon btn-edit-canal" onClick={() => openEditModalForCanal(canalActual)}><i className="fas fa-pen"></i></button>
+                    <button className="btn-canal-icon btn-delete-canal" onClick={() => eliminarCanalObj(canalActual)}><i className="fas fa-trash"></i></button>
                   </div>
                 )}
               </div>
@@ -1091,9 +1239,8 @@ export default function Chat() {
                       ? m.contenido.substring(0, 40) + (m.contenido.length > 40 ? '…' : '')
                       : (m.chat_mensajes_archivos?.length ? '📎 Archivo adjunto' : '(sin texto)')
                     return (
-                      <span key={m.id} className="anclado-chip" onClick={() =>
-                        document.getElementById(`msg-${m.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                      }>
+                      <span key={m.id} className="anclado-chip"
+                        onClick={() => document.getElementById(`msg-${m.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
                         {m.profiles?.nombre}: {textoChip}
                       </span>
                     )
@@ -1108,15 +1255,14 @@ export default function Chat() {
                   const esSistema = msg.__sistema || msg.contenido?.startsWith(SISTEMA_PREFIX)
                   if (esSistema) {
                     const texto = msg.__sistemaTexto || msg.contenido?.replace(SISTEMA_PREFIX, '') || ''
-                    const esEliminacion = msg.contenido?.startsWith(SISTEMA_PREFIX)
                     return (
                       <div key={msg.id} id={`msg-${msg.id}`} className="msg-sistema">
                         <i className="fas fa-info-circle"></i>
                         <span>{texto}</span>
-                        {isAdmin() && esEliminacion && (
-                          <button className="msg-sistema-eliminar" title="Eliminar el chat definitivamente"
+                        {isAdmin() && msg.contenido?.startsWith(SISTEMA_PREFIX) && (
+                          <button className="msg-sistema-eliminar"
                             onClick={async () => {
-                              if (!confirm('¿Eliminar este chat de mensajes directos definitivamente?')) return
+                              if (!confirm('¿Eliminar este chat definitivamente?')) return
                               try {
                                 await deleteChatCanal(canalActual.id)
                                 setCanales(prev => prev.filter(c => c.id !== canalActual.id))
@@ -1129,14 +1275,10 @@ export default function Chat() {
                       </div>
                     )
                   }
-
-                  const esPropio  = msg.user_id === user?.id
-                  const archivos  = msg.chat_mensajes_archivos || []
-                  const ticketData = msg.tickets
+                  const esPropio = msg.user_id === user?.id
+                  const archivos = msg.chat_mensajes_archivos || []
                   const contenidoVisible = msg.contenido || ''
-                  if (contenidoVisible.startsWith(DM_INVITE_PREFIX) ||
-                      contenidoVisible.startsWith(DM_ACCEPTED_PREFIX) ||
-                      contenidoVisible.startsWith(DM_REJECTED_PREFIX)) return null
+                  if (contenidoVisible.startsWith(DM_INVITE_PREFIX) || contenidoVisible.startsWith(DM_ACCEPTED_PREFIX) || contenidoVisible.startsWith(DM_REJECTED_PREFIX)) return null
                   return (
                     <div key={msg.id} id={`msg-${msg.id}`}
                       className={`chat-mensaje ${esPropio ? 'own' : ''} ${msg.anclado ? 'anclado' : ''}`}
@@ -1157,38 +1299,28 @@ export default function Chat() {
                           : archivos.length > 0
                             ? <div className="chat-mensaje-text msg-solo-archivo"><i className="fas fa-paperclip"></i> {archivos.length === 1 ? 'Archivo adjunto' : `${archivos.length} archivos adjuntos`}</div>
                             : null}
-
-                        {/* FIX: navegar directamente al ticket usando router state */}
-                        {ticketData && (
-                          <div
-                            className="msg-ticket-ref"
-                            onClick={() => navigate('/tickets', { state: { abrirTicketId: ticketData.id } })}
-                            style={{ cursor: 'pointer' }}
-                          >
+                        {msg.tickets && (
+                          <div className="msg-ticket-ref" style={{ cursor: 'pointer' }}
+                            onClick={() => navigate('/tickets', { state: { abrirTicketId: msg.tickets.id } })}>
                             <div className="msg-ticket-ref-header">
                               <i className="fas fa-ticket-alt"></i>
-                              <span>Ticket #{ticketData.numero}</span>
-                              {ticketData.estado && (() => {
-                                const ec = ESTADO_COLORS[ticketData.estado] || { bg: '#f0f0f0', color: '#666' }
-                                return <span className="msg-ticket-estado" style={{ background: ec.bg, color: ec.color }}>{ticketData.estado}</span>
+                              <span>Ticket #{msg.tickets.numero}</span>
+                              {msg.tickets.estado && (() => {
+                                const ec = ESTADO_COLORS[msg.tickets.estado] || { bg: '#f0f0f0', color: '#666' }
+                                return <span className="msg-ticket-estado" style={{ background: ec.bg, color: ec.color }}>{msg.tickets.estado}</span>
                               })()}
                             </div>
-                            <div className="msg-ticket-asunto">{ticketData.asunto}</div>
+                            <div className="msg-ticket-asunto">{msg.tickets.asunto}</div>
                           </div>
                         )}
-
                         {archivos.length > 0 && (
                           <div className="msg-archivos">
                             {archivos.map(a => {
                               const isImg = a.mime_type?.startsWith('image/')
                               return isImg ? (
-                                <div key={a.id} className="msg-archivo-img-wrap" onClick={() => descargarArchivo(a.id, a.nombre_original)} title={`Ver/descargar ${a.nombre_original}`}>
-                                  <img
-                                    src={`/api/chat/archivos/${a.id}/preview`}
-                                    alt={a.nombre_original}
-                                    className="msg-archivo-img"
-                                    onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }}
-                                  />
+                                <div key={a.id} className="msg-archivo-img-wrap" onClick={() => descargarArchivo(a.id, a.nombre_original)}>
+                                  <img src={`/api/chat/archivos/${a.id}/preview`} alt={a.nombre_original} className="msg-archivo-img"
+                                    onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
                                   <div className="msg-archivo-chip" style={{ display: 'none' }}>
                                     <i className="fas fa-image"></i>
                                     <div className="msg-archivo-info">
@@ -1199,7 +1331,7 @@ export default function Chat() {
                                   </div>
                                 </div>
                               ) : (
-                                <div key={a.id} className="msg-archivo-chip" onClick={() => descargarArchivo(a.id, a.nombre_original)} title={`Descargar ${a.nombre_original}`}>
+                                <div key={a.id} className="msg-archivo-chip" onClick={() => descargarArchivo(a.id, a.nombre_original)}>
                                   <i className={`fas ${getFileIcon(a.mime_type)}`}></i>
                                   <div className="msg-archivo-info">
                                     <span className="msg-archivo-nombre">{a.nombre_original}</span>
@@ -1218,7 +1350,6 @@ export default function Chat() {
                 <div ref={mensajesEndRef} />
               </div>
 
-              {/* ── Input area ── */}
               <div className="chat-input">
                 {ticketRef && (
                   <div className="pending-ticket-ref">
@@ -1243,108 +1374,63 @@ export default function Chat() {
                     {pendingImages.map((img, i) => (
                       <div key={i} className="pending-image-item">
                         <img src={img.previewUrl} alt={img.file.name} className="pending-image-thumb" />
-                        <button className="pending-image-remove" onClick={() => removePendingImage(i)} title="Eliminar imagen">
-                          <i className="fas fa-times"></i>
-                        </button>
+                        <button className="pending-image-remove" onClick={() => removePendingImage(i)}><i className="fas fa-times"></i></button>
                         <span className="pending-image-name">{img.file.name}</span>
                       </div>
                     ))}
                   </div>
                 )}
                 {showTicketPicker && (
-                  <TicketPicker
-                    tickets={allTickets}
-                    onSelect={t => { setTicketRef(t); setShowTicketPicker(false) }}
-                    onClose={() => setShowTicketPicker(false)}
+                  <TicketPicker tickets={allTickets} onSelect={t => { setTicketRef(t); setShowTicketPicker(false) }} onClose={() => setShowTicketPicker(false)} />
+                )}
+                {showMentionPicker && (
+                  <MentionPicker
+                    personas={getCanalMiembros()}
+                    initialQuery={mentionInlineQuery}
+                    onSelect={insertMention}
+                    onClose={() => { setShowMentionPicker(false); mentionQueryRef.current = null; setMentionInlineQuery('') }}
                   />
                 )}
 
                 <div className="chat-editor-wrap">
                   <div className="chat-editor-toolbar">
                     <div className="toolbar-group">
-                      <button type="button" className="chat-editor-btn" title="Negrita (Ctrl+B)"
-                        onMouseDown={e => { e.preventDefault(); execFormat('bold') }}>
-                        <i className="fas fa-bold"></i>
-                      </button>
-                      <button type="button" className="chat-editor-btn" title="Cursiva (Ctrl+I)"
-                        onMouseDown={e => { e.preventDefault(); execFormat('italic') }}>
-                        <i className="fas fa-italic"></i>
-                      </button>
-                      <button type="button" className="chat-editor-btn" title="Subrayado (Ctrl+U)"
-                        onMouseDown={e => { e.preventDefault(); execFormat('underline') }}>
-                        <i className="fas fa-underline"></i>
-                      </button>
-                      <button type="button" className="chat-editor-btn" title="Tachado"
-                        onMouseDown={e => { e.preventDefault(); execFormat('strikeThrough') }}>
-                        <i className="fas fa-strikethrough"></i>
-                      </button>
+                      <button type="button" className="chat-editor-btn" title="Negrita" onMouseDown={e => { e.preventDefault(); execFormat('bold') }}><i className="fas fa-bold"></i></button>
+                      <button type="button" className="chat-editor-btn" title="Cursiva" onMouseDown={e => { e.preventDefault(); execFormat('italic') }}><i className="fas fa-italic"></i></button>
+                      <button type="button" className="chat-editor-btn" title="Subrayado" onMouseDown={e => { e.preventDefault(); execFormat('underline') }}><i className="fas fa-underline"></i></button>
+                      <button type="button" className="chat-editor-btn" title="Tachado" onMouseDown={e => { e.preventDefault(); execFormat('strikeThrough') }}><i className="fas fa-strikethrough"></i></button>
                     </div>
                     <div className="chat-editor-sep"></div>
                     <div className="toolbar-group">
-                      <button type="button" className="chat-editor-btn" title="Lista con viñetas"
-                        onMouseDown={e => { e.preventDefault(); execFormat('insertUnorderedList') }}>
-                        <i className="fas fa-list-ul"></i>
-                      </button>
-                      <button type="button" className="chat-editor-btn" title="Lista numerada"
-                        onMouseDown={e => { e.preventDefault(); execFormat('insertOrderedList') }}>
-                        <i className="fas fa-list-ol"></i>
-                      </button>
+                      <button type="button" className="chat-editor-btn" title="Lista" onMouseDown={e => { e.preventDefault(); execFormat('insertUnorderedList') }}><i className="fas fa-list-ul"></i></button>
+                      <button type="button" className="chat-editor-btn" title="Lista numerada" onMouseDown={e => { e.preventDefault(); execFormat('insertOrderedList') }}><i className="fas fa-list-ol"></i></button>
                     </div>
                     <div className="chat-editor-sep"></div>
                     <div className="toolbar-group">
-                      <button type="button" className="chat-editor-btn" title="Cita"
-                        onMouseDown={e => { e.preventDefault(); execFormat('formatBlock', 'blockquote') }}>
-                        <i className="fas fa-quote-right"></i>
-                      </button>
-                      <button type="button" className="chat-editor-btn" title="Código"
-                        onMouseDown={e => { e.preventDefault(); execFormat('formatBlock', 'pre') }}>
-                        <i className="fas fa-code"></i>
-                      </button>
-                      <button type="button" className="chat-editor-btn" title="Limpiar formato"
-                        onMouseDown={e => { e.preventDefault(); execFormat('removeFormat') }}>
-                        <i className="fas fa-remove-format"></i>
-                      </button>
+                      <button type="button" className="chat-editor-btn" title="Cita" onMouseDown={e => { e.preventDefault(); execFormat('formatBlock', 'blockquote') }}><i className="fas fa-quote-right"></i></button>
+                      <button type="button" className="chat-editor-btn" title="Código" onMouseDown={e => { e.preventDefault(); execFormat('formatBlock', 'pre') }}><i className="fas fa-code"></i></button>
+                      <button type="button" className="chat-editor-btn" title="Limpiar" onMouseDown={e => { e.preventDefault(); execFormat('removeFormat') }}><i className="fas fa-remove-format"></i></button>
                     </div>
                     <div style={{ flex: 1 }}></div>
                     <div className="toolbar-group toolbar-actions">
-                      <button
-                        type="button"
-                        className={`chat-editor-btn toolbar-action-btn ${ticketRef ? 'active' : ''}`}
-                        title="Referenciar ticket"
-                        onClick={() => setShowTicketPicker(v => !v)}
-                      >
-                        <i className="fas fa-ticket-alt"></i>
-                        <span className="toolbar-btn-label">Ticket</span>
+                      <button type="button" className={`chat-editor-btn toolbar-action-btn ${showMentionPicker ? 'active' : ''}`} onClick={() => { setShowTicketPicker(false); setShowMentionPicker(v => !v) }}>
+                        <i className="fas fa-at"></i><span className="toolbar-btn-label">Mencionar</span>
                       </button>
-                      <button
-                        type="button"
-                        className="chat-editor-btn toolbar-action-btn"
-                        title="Adjuntar archivo o imagen"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <i className="fas fa-paperclip"></i>
-                        <span className="toolbar-btn-label">Adjuntar</span>
+                      <button type="button" className={`chat-editor-btn toolbar-action-btn ${ticketRef ? 'active' : ''}`} onClick={() => { setShowMentionPicker(false); setShowTicketPicker(v => !v) }}>
+                        <i className="fas fa-ticket-alt"></i><span className="toolbar-btn-label">Ticket</span>
+                      </button>
+                      <button type="button" className="chat-editor-btn toolbar-action-btn" onClick={() => fileInputRef.current?.click()}>
+                        <i className="fas fa-paperclip"></i><span className="toolbar-btn-label">Adjuntar</span>
                       </button>
                     </div>
                   </div>
 
                   {editingMsg ? (
                     <div className="chat-edit-row">
-                      <textarea
-                        ref={textareaRef}
-                        className="chat-edit-textarea"
-                        placeholder="Editar mensaje..."
-                        value={editingMsgText}
-                        onChange={e => setEditingMsgText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        rows={2}
-                      />
-                      <button className="chat-send-btn" onClick={guardarEdicionMsg} title="Guardar (Enter)">
-                        <i className="fas fa-check"></i>
-                      </button>
-                      <button className="chat-cancel-btn" onClick={() => { setEditingMsg(null); setEditingMsgText('') }} title="Cancelar (Esc)">
-                        <i className="fas fa-times"></i>
-                      </button>
+                      <textarea ref={textareaRef} className="chat-edit-textarea" placeholder="Editar mensaje..."
+                        value={editingMsgText} onChange={e => setEditingMsgText(e.target.value)} onKeyDown={handleKeyDown} rows={2} />
+                      <button className="chat-send-btn" onClick={guardarEdicionMsg}><i className="fas fa-check"></i></button>
+                      <button className="chat-cancel-btn" onClick={() => { setEditingMsg(null); setEditingMsgText('') }}><i className="fas fa-times"></i></button>
                     </div>
                   ) : (
                     <div className="chat-editor-body-row">
@@ -1353,14 +1439,12 @@ export default function Chat() {
                         className="chat-editor-content"
                         contentEditable
                         suppressContentEditableWarning
-                        data-placeholder="Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)"
-                        onInput={e => setMensajeText(e.currentTarget.innerText)}
+                        data-placeholder="Escribe un mensaje… (@ para mencionar, Enter para enviar)"
+                        onInput={handleEditorInput}
                         onKeyDown={handleKeyDownEditor}
                         onPaste={handlePaste}
                       />
-                      <button className="chat-send-btn" onClick={enviarMensaje} title="Enviar (Enter)">
-                        <i className="fas fa-paper-plane"></i>
-                      </button>
+                      <button className="chat-send-btn" onClick={enviarMensaje}><i className="fas fa-paper-plane"></i></button>
                     </div>
                   )}
                 </div>
@@ -1372,19 +1456,14 @@ export default function Chat() {
 
       {msgCtxMenu && (
         <MsgContextMenu x={msgCtxMenu.x} y={msgCtxMenu.y} msg={msgCtxMenu.msg}
-          userId={user?.id} isAdmin={isAdmin()}
-          onClose={() => setMsgCtxMenu(null)}
-          onEdit={iniciarEdicionMsg} onDelete={eliminarMensaje} onPin={anclarMensaje}
-        />
+          userId={user?.id} isAdmin={isAdmin()} onClose={() => setMsgCtxMenu(null)}
+          onEdit={iniciarEdicionMsg} onDelete={eliminarMensaje} onPin={anclarMensaje} />
       )}
       {canalCtxMenu && (
         <CanalContextMenu x={canalCtxMenu.x} y={canalCtxMenu.y} canal={canalCtxMenu.canal}
-          prefs={prefs} isAdmin={isAdmin()}
-          onClose={() => setCanalCtxMenu(null)}
-          onPin={handlePin} onMute={handleMute}
-          onHide={handleHide} onUnhide={handleUnhide}
-          onEdit={openEditModalForCanal} onDelete={eliminarCanalObj}
-        />
+          prefs={prefs} isAdmin={isAdmin()} onClose={() => setCanalCtxMenu(null)}
+          onPin={handlePin} onMute={handleMute} onHide={handleHide} onUnhide={handleUnhide}
+          onEdit={openEditModalForCanal} onDelete={eliminarCanalObj} />
       )}
 
       {showCanalModal && (
@@ -1396,18 +1475,9 @@ export default function Chat() {
             </div>
             <form onSubmit={crearCanal}>
               <div className="modal-body">
-                <div className="form-group">
-                  <label>Nombre del canal *</label>
-                  <input type="text" placeholder="ej: soporte, proyectos, general..." required value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Descripción</label>
-                  <input type="text" placeholder="¿Para qué se usará este canal?" value={nuevoDesc} onChange={e => setNuevoDesc(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Miembros</label>
-                  <MiembrosSelector operarios={operarios} userId={user?.id} selected={selectedMiembros} onChange={setSelectedMiembros} showQuickFilters />
-                </div>
+                <div className="form-group"><label>Nombre *</label><input type="text" placeholder="ej: soporte, general..." required value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} /></div>
+                <div className="form-group"><label>Descripción</label><input type="text" placeholder="¿Para qué se usará?" value={nuevoDesc} onChange={e => setNuevoDesc(e.target.value)} /></div>
+                <div className="form-group"><label>Miembros</label><MiembrosSelector operarios={operarios} userId={user?.id} selected={selectedMiembros} onChange={setSelectedMiembros} showQuickFilters /></div>
               </div>
               <div className="modal-buttons">
                 <button type="submit" className="btn-primary"><i className="fas fa-plus"></i> Crear canal</button>
@@ -1426,18 +1496,9 @@ export default function Chat() {
             </div>
             <form onSubmit={guardarEdicion}>
               <div className="modal-body">
-                <div className="form-group">
-                  <label>Nombre *</label>
-                  <input type="text" required value={editNombre} onChange={e => setEditNombre(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Descripción</label>
-                  <input type="text" placeholder="Descripción del canal" value={editDesc} onChange={e => setEditDesc(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Miembros</label>
-                  <MiembrosSelector operarios={operarios} userId={user?.id} selected={editMiembros} onChange={setEditMiembros} showQuickFilters />
-                </div>
+                <div className="form-group"><label>Nombre *</label><input type="text" required value={editNombre} onChange={e => setEditNombre(e.target.value)} /></div>
+                <div className="form-group"><label>Descripción</label><input type="text" value={editDesc} onChange={e => setEditDesc(e.target.value)} /></div>
+                <div className="form-group"><label>Miembros</label><MiembrosSelector operarios={operarios} userId={user?.id} selected={editMiembros} onChange={setEditMiembros} showQuickFilters /></div>
               </div>
               <div className="modal-buttons">
                 <button type="submit" className="btn-primary" disabled={editLoading}>

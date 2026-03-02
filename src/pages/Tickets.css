@@ -33,10 +33,11 @@
   white-space: nowrap;
 }
 
-.estado-Pendiente  { background: #fef3c7; color: #d97706; }
-.estado-En-curso   { background: #dbeafe; color: #2563eb; }
-.estado-Completado { background: #d1fae5; color: #059669; }
-.estado-Facturado  { background: #ede9fe; color: #7c3aed; }
+.estado-Pendiente              { background: #fef3c7; color: #d97706; }
+.estado-En-curso               { background: #dbeafe; color: #2563eb; }
+.estado-Completado             { background: #d1fae5; color: #059669; }
+.estado-Pendiente-de-facturar  { background: #fff7ed; color: #ea580c; }
+.estado-Facturado              { background: #ede9fe; color: #7c3aed; }
 
 /* ============================================================
    TICKET NÚMERO (en tabla y cards)
@@ -331,7 +332,6 @@
   overflow-y: auto;
   height: calc(100vh - 124px);
   max-height: calc(100vh - 124px);
-  /* Scrollbar estilizada */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
@@ -683,7 +683,7 @@
 }
 
 /* ============================================================
-   HISTORIAL — items (sidebar legacy, mantenido por compatibilidad)
+   HISTORIAL — items (sidebar legacy)
    ============================================================ */
 .historial-item {
   display: flex;
@@ -788,7 +788,7 @@
 }
 
 /* ============================================================
-   TAB NOTAS — textarea ocupa todo el espacio disponible
+   TAB NOTAS
    ============================================================ */
 .tab-panel-notas {
   overflow: hidden;
@@ -838,13 +838,12 @@
 }
 
 /* ============================================================
-   TAB COMENTARIOS — lista con scroll + formulario fijo abajo
+   TAB COMENTARIOS
    ============================================================ */
 .tab-panel-comentarios {
   overflow: hidden;
 }
 
-/* Lista de comentarios: crece y hace scroll */
 .comentarios-lista {
   flex: 1;
   overflow-y: auto;
@@ -984,7 +983,6 @@
   width: 100%;
 }
 
-/* ── Formulario nuevo comentario — FIJO AL FONDO, nunca se corta ── */
 .comentario-nuevo {
   border-top: 1px solid var(--border);
   padding-top: 10px;
@@ -1052,7 +1050,6 @@
   font-size: 0.86rem;
 }
 
-/* Fila acciones */
 .comentario-nuevo-acciones {
   display: flex;
   justify-content: space-between;
@@ -1153,7 +1150,6 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Timeline compacta para sidebar */
 .sidebar-timeline .historial-timeline-content {
   padding-bottom: 14px;
 }
@@ -1425,7 +1421,6 @@
   margin: 6px 0;
 }
 
-/* Estilos también en los comentarios ya publicados */
 .comentario-texto b, .comentario-texto strong { font-weight: 700; }
 .comentario-texto i, .comentario-texto em { font-style: italic; }
 .comentario-texto u { text-decoration: underline; }
@@ -1555,7 +1550,6 @@
     gap: 6px;
   }
 
-  /* Estado select ancho completo en móvil */
   .estado-select {
     flex: 1;
     min-width: 0;
@@ -1580,7 +1574,6 @@
     font-size: 16px;
   }
 
-  /* Tabs con scroll */
   .detalle-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1600,22 +1593,15 @@
     padding-bottom: 16px;
   }
 
-  /* Sidebar info compacta */
   .sidebar-card { padding: 10px 12px; }
   .info-row { font-size: 0.82rem; }
-
-  /* Chips de operarios compactos */
   .operario-chip { padding: 5px 8px; }
-
-  /* Lista de archivos */
   .archivo-item { padding: 6px 8px; }
-
-  /* Prioridad badge más compacto */
   .prioridad-badge { padding: 2px 7px; font-size: 0.72rem; }
 }
 
 /* ============================================================
-   OPERARIOS SELECTOR (filtros rápidos por rol)
+   OPERARIOS SELECTOR
    ============================================================ */
 .miembros-quick-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .qf-btn {
@@ -1658,7 +1644,7 @@
 .selected-count { font-size: 0.78rem; color: #0047b3; font-weight: 600; margin-top: 7px; min-height: 17px; }
 
 /* ============================================================
-   SEARCHABLE SELECT (combobox — input siempre visible)
+   SEARCHABLE SELECT
    ============================================================ */
 .ss-wrap { position: relative; width: 100%; }
 
@@ -1708,7 +1694,6 @@
 .ss-opt-check { color: #0047b3; font-size: 0.75rem; flex-shrink: 0; margin-left: 8px; }
 .ss-empty { padding: 12px 14px; color: #9aa4bc; font-size: 0.85rem; text-align: center; }
 
-/* Buscador dentro del OperariosSelector */
 .ss-search-wrap {
   display: flex; align-items: center; gap: 8px;
   padding: 0 10px; border-radius: 8px; margin-bottom: 8px;

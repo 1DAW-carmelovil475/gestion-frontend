@@ -31,7 +31,6 @@ const TIPO_SUGERENCIAS = {
   servidor: ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
   nas:      ['NAS Synology', 'NAS QNAP'],
   red:      ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
-  otro:     ['Otro'],
 }
 
 const CAMPOS = {
@@ -69,9 +68,6 @@ const CAMPOS = {
   ],
   otro: [
     { key: 'tipo',     label: 'Tipo' },
-    { key: 'ip',       label: 'IP' },
-    { key: 'usuario',  label: 'Usuario' },
-    { key: 'password', label: 'Contraseña', password: true },
   ],
 }
 
@@ -311,13 +307,6 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
                 <div className="form-group"><label>Correo</label><input type="email" name="correo_cliente" defaultValue={editingITItem?.correo_cliente} placeholder="juan@empresa.com" /></div>
                 <div className="form-group"><label>Contraseña</label><input type="text" name="password_cliente" defaultValue={editingITItem?.password_cliente} placeholder="••••••••" /></div>
               </div>
-            </>)}
-            {cat === 'otro' && (<>
-              <div className="form-row">
-                <div className="form-group"><label>IP</label><input type="text" name="ip" defaultValue={editingITItem?.ip} placeholder="192.168.1.x" /></div>
-                <div className="form-group"><label>Usuario</label><input type="text" name="usuario" defaultValue={editingITItem?.usuario} placeholder="admin" /></div>
-              </div>
-              <div className="form-group"><label>Contraseña</label><input type="text" name="password" defaultValue={editingITItem?.password} placeholder="••••••••" /></div>
             </>)}
 
             <div style={{ borderTop: '1px dashed #e2e8f0', margin: '12px 0 14px', paddingTop: '14px' }}>

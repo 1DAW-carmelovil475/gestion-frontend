@@ -2,7 +2,7 @@ import { tryRefreshToken } from './auth-helpers'
 
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
-  : 'https://TU_BACKEND_URL_AQUI'
+  : `http://${window.location.hostname}:3000`
 
 export async function apiFetch(path, options = {}, _isRetry = false) {
   const token = sessionStorage.getItem('hola_token')

@@ -68,9 +68,13 @@ const SISTEMA_PREFIX     = '__SISTEMA__:'
 
 // ── MiembrosSelector ──────────────────────────────────────────────────────────
 function MiembrosSelector({ operarios, userId, selected, onChange, showQuickFilters = false }) {
+  const [query, setQuery] = useState('')
   const lista   = operarios.filter(o => o.id !== userId)
   const admins  = lista.filter(o => o.rol === 'admin')
   const workers = lista.filter(o => o.rol !== 'admin')
+  const filtered = query.trim()
+    ? lista.filter(o => (o.nombre || o.email || '').toLowerCase().includes(query.toLowerCase()))
+    : lista
   function toggle(id) { onChange(selected.includes(id) ? selected.filter(s => s !== id) : [...selected, id]) }
   return (
     <div>
@@ -82,9 +86,27 @@ function MiembrosSelector({ operarios, userId, selected, onChange, showQuickFilt
           {selected.length > 0 && <button type="button" className="qf-btn qf-clear" onClick={() => onChange([])}><i className="fas fa-times"></i> Limpiar</button>}
         </div>
       )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 0 8px', borderBottom: '1px solid #2d3250', marginBottom: 8 }}>
+        <i className="fas fa-search" style={{ color: '#6b7290', fontSize: '0.78rem', flexShrink: 0 }}></i>
+        <input
+          type="text"
+          placeholder="Buscar miembro..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          style={{
+            flex: 1, border: 'none', outline: 'none', background: 'transparent',
+            fontSize: '0.85rem', color: '#c8cde0', fontFamily: 'inherit',
+          }}
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery('')} style={{ border: 'none', background: 'none', color: '#6b7290', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+      </div>
       <div className="operarios-checkboxes">
-        {lista.length === 0 && <p style={{ color: '#6c757d', fontSize: '0.85rem' }}>No hay otros operarios.</p>}
-        {lista.map(op => {
+        {filtered.length === 0 && <p style={{ color: '#6c757d', fontSize: '0.85rem' }}>No hay resultados.</p>}
+        {filtered.map(op => {
           const isSel = selected.includes(op.id)
           return (
             <div key={op.id} className={`operario-checkbox-item ${isSel ? 'selected' : ''}`} onClick={() => toggle(op.id)}>

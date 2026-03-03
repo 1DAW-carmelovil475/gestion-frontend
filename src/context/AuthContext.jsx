@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { apiFetch } from '../services/api'
 import { 
-  SUPABASE_URL, 
-  SUPABASE_ANON_KEY, 
   getTokenExp, 
   tryRefreshToken 
 } from '../services/auth-helpers'
+
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : `http://${window.location.hostname}:3000`
 
 const AuthContext = createContext(null)
 
@@ -85,12 +87,11 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const res = await fetch(
-      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      `${API_URL}/api/auth/login`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ email, password }),
       }
@@ -100,8 +101,7 @@ export function AuthProvider({ children }) {
 
     if (!res.ok) {
       throw new Error(
-        data.error_description ||
-        data.msg ||
+        data.error ||
         'Email o contraseña incorrectos.'
       )
     }
@@ -111,10 +111,9 @@ export function AuthProvider({ children }) {
 
     scheduleRefresh(data.access_token)
 
-    const userData = await apiFetch('/api/auth/me')
-    setUser(userData)
+    setUser(data.user)
 
-    return userData
+    return data.user
   }
 
   function logout() {

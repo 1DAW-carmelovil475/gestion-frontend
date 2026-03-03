@@ -264,15 +264,39 @@ function OperariosSelector({ operarios, selected, onChange }) {
 // ============================================================
 function TicketModal({
   editingTicket, empresas, operarios,
-  modalEmprId, modalDispId, modalDispositivos,
-  modalAsunto, modalDesc, modalPrioridad, modalEstado,
+  modalEmprId, modalDispIds, modalDispositivos,
+  modalAsunto, modalDesc, modalContactoIdx, empresaContactos,
+  modalPrioridad, modalEstado,
   selectedOperarios,
   onClose, onSave,
-  onEmpresaChange, onDispChange,
+  onEmpresaChange,
+  onDispIdsChange,
   onAsuntoChange, onDescChange,
+  onContactoIdxChange,
   onPrioridadChange, onEstadoChange,
   onOperariosChange,
 }) {
+  const [dispSearch, setDispSearch] = useState('')
+
+  function toggleDisp(id) {
+    onDispIdsChange(
+      modalDispIds.includes(id)
+        ? modalDispIds.filter(d => d !== id)
+        : [...modalDispIds, id]
+    )
+  }
+
+  const filteredDisps = dispSearch.trim()
+    ? modalDispositivos.filter(d =>
+        d.nombre?.toLowerCase().includes(dispSearch.toLowerCase()) ||
+        (d.tipo || d.categoria || '').toLowerCase().includes(dispSearch.toLowerCase())
+      )
+    : modalDispositivos
+
+  const selectedContacto = modalContactoIdx !== '' && empresaContactos[Number(modalContactoIdx)]
+    ? empresaContactos[Number(modalContactoIdx)]
+    : null
+
   return (
     <div
       className="modal"
@@ -302,13 +326,154 @@ function TicketModal({
                 required
               />
             </div>
-            <div className="form-group">
-              <label><i className="fas fa-desktop"></i> Dispositivo</label>
-              <select name="dispositivo_id" value={modalDispId} onChange={e => onDispChange(e.target.value)}>
-                <option value="">Sin dispositivo</option>
-                {modalDispositivos.map(d => (<option key={d.id} value={d.id}>[{d.tipo || d.categoria}] {d.nombre}</option>))}
-              </select>
-            </div>
+
+            {/* Contacto de la empresa */}
+            {modalEmprId && (
+              <div className="form-group">
+                <label><i className="fas fa-user-tie"></i> Contacto <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional)</span></label>
+                {empresaContactos.length === 0 ? (
+                  <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene contactos registrados.</p>
+                ) : (
+                  <>
+                    <select
+                      value={modalContactoIdx}
+                      onChange={e => onContactoIdxChange(e.target.value)}
+                      style={{ marginBottom: selectedContacto ? 6 : 0 }}
+                    >
+                      <option value="">— Sin contacto —</option>
+                      {empresaContactos.map((c, i) => (
+                        <option key={i} value={i}>
+                          {c.nombre}{c.cargo ? ` · ${c.cargo}` : ''}{c.telefono ? ` · ${c.telefono}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedContacto && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 12px', background: '#f0f6ff',
+                        border: '1px solid #b8dcf8', borderRadius: 8,
+                        fontSize: '0.82rem',
+                      }}>
+                        <div style={{
+                          width: 30, height: 30, borderRadius: '50%',
+                          background: '#0047b3', color: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: '0.72rem', flexShrink: 0,
+                        }}>
+                          {(selectedContacto.nombre || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, color: '#1e293b' }}>{selectedContacto.nombre}</div>
+                          {selectedContacto.cargo && <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{selectedContacto.cargo}</div>}
+                        </div>
+                        {selectedContacto.telefono && (
+                          <a href={`tel:${selectedContacto.telefono}`}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#0047b3', textDecoration: 'none', fontWeight: 500, fontSize: '0.8rem', flexShrink: 0 }}
+                            onClick={e => e.stopPropagation()}>
+                            <i className="fas fa-phone" style={{ fontSize: '0.7rem' }}></i>
+                            {selectedContacto.telefono}
+                          </a>
+                        )}
+                        {selectedContacto.email && (
+                          <a href={`mailto:${selectedContacto.email}`}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b', textDecoration: 'none', fontSize: '0.8rem', flexShrink: 0 }}
+                            onClick={e => e.stopPropagation()}>
+                            <i className="fas fa-envelope" style={{ fontSize: '0.7rem' }}></i>
+                            {selectedContacto.email}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Dispositivos — búsqueda + selección múltiple */}
+            {modalEmprId && (
+              <div className="form-group">
+                <label><i className="fas fa-desktop"></i> Dispositivos <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional, múltiple)</span></label>
+                {modalDispositivos.length === 0 ? (
+                  <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene dispositivos registrados.</p>
+                ) : (
+                  <>
+                    {/* Buscador */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 10px', marginBottom: 4,
+                      border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
+                      background: 'white', transition: 'border-color 0.15s',
+                    }}
+                      onFocus={() => {}} // css :focus-within handles border
+                    >
+                      <i className="fas fa-search" style={{ color: '#94a3b8', fontSize: '0.78rem', flexShrink: 0 }}></i>
+                      <input
+                        type="text"
+                        value={dispSearch}
+                        onChange={e => setDispSearch(e.target.value)}
+                        placeholder="Buscar dispositivo..."
+                        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#2a3a5a', fontFamily: 'inherit' }}
+                      />
+                      {dispSearch && (
+                        <button type="button" onClick={() => setDispSearch('')}
+                          style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
+                          <i className="fas fa-times"></i>
+                        </button>
+                      )}
+                    </div>
+                    {/* Lista */}
+                    <div style={{
+                      border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
+                      maxHeight: 160, overflowY: 'auto', background: 'white',
+                    }}>
+                      {filteredDisps.length === 0 ? (
+                        <div style={{ padding: '10px 12px', fontSize: '0.82rem', color: '#94a3b8', textAlign: 'center' }}>Sin resultados</div>
+                      ) : filteredDisps.map(d => {
+                        const sel = modalDispIds.includes(d.id)
+                        return (
+                          <div key={d.id}
+                            onClick={() => toggleDisp(d.id)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '8px 12px', cursor: 'pointer',
+                              background: sel ? '#e8f0fe' : 'white',
+                              borderBottom: '1px solid #f0f4f8',
+                              transition: 'background 0.12s',
+                              userSelect: 'none',
+                            }}
+                          >
+                            <div style={{
+                              width: 18, height: 18, borderRadius: 4,
+                              border: `2px solid ${sel ? '#0047b3' : '#cbd5e1'}`,
+                              background: sel ? '#0047b3' : 'white',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, transition: 'all 0.12s',
+                            }}>
+                              {sel && <i className="fas fa-check" style={{ color: 'white', fontSize: '0.6rem' }}></i>}
+                            </div>
+                            <span style={{ fontSize: '0.85rem', color: sel ? '#0047b3' : '#2a3a5a', fontWeight: sel ? 600 : 400 }}>
+                              [{d.tipo || d.categoria}] {d.nombre}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {modalDispIds.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                        <span style={{ fontSize: '0.76rem', color: '#0047b3', fontWeight: 600 }}>
+                          {modalDispIds.length} dispositivo{modalDispIds.length > 1 ? 's' : ''} seleccionado{modalDispIds.length > 1 ? 's' : ''}
+                        </span>
+                        <button type="button" onClick={() => onDispIdsChange([])}
+                          style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.76rem' }}>
+                          <i className="fas fa-times"></i> Limpiar
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="form-group">
               <label><i className="fas fa-tag"></i> Asunto *</label>
               <input
@@ -400,9 +565,12 @@ export default function Tickets() {
   const [showTicketModal, setShowTicketModal]         = useState(false)
   const [editingTicket, setEditingTicket]             = useState(null)
   const [modalEmprId, setModalEmprId]                 = useState('')
-  const [modalDispId, setModalDispId]                 = useState('')
+  const [modalDispIds, setModalDispIds]               = useState([])   // array de IDs (multi)
+  const [modalDispId, setModalDispId]                 = useState('')   // legacy compat
   const [modalAsunto, setModalAsunto]                 = useState('')
   const [modalDesc, setModalDesc]                     = useState('')
+  const [modalContactoIdx, setModalContactoIdx]       = useState('')   // índice en empresaContactos
+  const [empresaContactos, setEmpresaContactos]       = useState([])
   const [modalPrioridad, setModalPrioridad]           = useState('Media')
   const [modalEstado, setModalEstado]                 = useState('Pendiente')
   const [modalDispositivos, setModalDispositivos]     = useState([])
@@ -698,9 +866,12 @@ export default function Tickets() {
   async function abrirModalNuevoTicket() {
     setEditingTicket(null)
     setModalEmprId('')
+    setModalDispIds([])
     setModalDispId('')
     setModalAsunto('')
     setModalDesc('')
+    setModalContactoIdx('')
+    setEmpresaContactos([])
     setModalPrioridad('Media')
     setModalEstado('Pendiente')
     setModalDispositivos([])
@@ -712,9 +883,24 @@ export default function Tickets() {
   async function abrirModalEditarTicket(t) {
     setEditingTicket(t)
     setModalEmprId(t.empresa_id || '')
+    const dispIds = t.dispositivos_ids?.length
+      ? t.dispositivos_ids
+      : (t.dispositivo_id ? [t.dispositivo_id] : [])
+    setModalDispIds(dispIds)
     setModalDispId(t.dispositivo_id || '')
     setModalAsunto(t.asunto || '')
     setModalDesc(t.descripcion || '')
+    // Resolver contactos: primero del ticket, si no desde el array de empresas ya cargado
+    const contactos = t.empresas?.contactos?.length
+      ? t.empresas.contactos
+      : (empresas.find(e => e.id === t.empresa_id)?.contactos || [])
+    setEmpresaContactos(contactos)
+    if (t.contacto_nombre && contactos.length > 0) {
+      const idx = contactos.findIndex(c => c.nombre === t.contacto_nombre)
+      setModalContactoIdx(idx >= 0 ? String(idx) : '')
+    } else {
+      setModalContactoIdx('')
+    }
     setModalPrioridad(t.prioridad || 'Media')
     setModalEstado(t.estado || 'Pendiente')
     const asignadosIds = (t.ticket_asignaciones || []).map(a => a.user_id)
@@ -731,9 +917,14 @@ export default function Tickets() {
 
   async function onModalEmpresaChange(empresaId) {
     setModalEmprId(empresaId)
+    setModalDispIds([])
     setModalDispId('')
     setModalDispositivos([])
-    if (!empresaId) return
+    setModalContactoIdx('')
+    if (!empresaId) { setEmpresaContactos([]); return }
+    // Cargar contactos desde la lista ya cargada de empresas
+    const empresa = empresas.find(e => e.id === empresaId)
+    setEmpresaContactos(empresa?.contactos || [])
     try {
       const dispositivos = await getDispositivos(empresaId)
       setModalDispositivos(dispositivos?.filter(d => d.categoria !== 'correo') || [])
@@ -743,12 +934,16 @@ export default function Tickets() {
   // ── GUARDAR TICKET + ENVIAR EMAIL si hay nuevos operarios ──
   async function saveTicket(e) {
     e.preventDefault()
-    const empresa_id     = modalEmprId
-    const dispositivo_id = modalDispId || null
-    const asunto         = modalAsunto.trim()
-    const descripcion    = modalDesc.trim() || null
-    const prioridad      = modalPrioridad
-    const estado         = modalEstado
+    const empresa_id      = modalEmprId
+    const dispositivo_id  = modalDispIds[0] || null
+    const asunto          = modalAsunto.trim()
+    const descripcion     = modalDesc.trim() || null
+    const prioridad       = modalPrioridad
+    const estado          = modalEstado
+    // Guardar nombre y teléfono del contacto seleccionado
+    const contactoSeleccionado = modalContactoIdx !== '' ? empresaContactos[Number(modalContactoIdx)] : null
+    const contacto_nombre = contactoSeleccionado?.nombre || null
+    const telefono_cliente = contactoSeleccionado?.telefono || null
 
     if (!empresa_id || !asunto) { showToast('error', 'Error', 'Empresa y asunto son obligatorios'); return }
 
@@ -758,31 +953,33 @@ export default function Tickets() {
 
     try {
       if (editingTicket) {
-        await updateTicket(editingTicket.id, { asunto, descripcion, prioridad, estado, dispositivo_id })
+        await updateTicket(editingTicket.id, { asunto, descripcion, prioridad, estado, dispositivo_id, dispositivos_ids: modalDispIds, telefono_cliente, contacto_nombre })
+        // Operarios: sincronizar — añadir nuevos y borrar los desmarcados
+        const asignadosPrevios = (editingTicket.ticket_asignaciones || []).map(a => a.user_id)
+        const nuevosAsignados   = operariosSeleccionados.filter(id => !asignadosPrevios.includes(id))
+        const eliminados        = asignadosPrevios.filter(id => !operariosSeleccionados.includes(id))
         if (operariosSeleccionados.length > 0) {
-          const asignadosPrevios = (editingTicket.ticket_asignaciones || []).map(a => a.user_id)
           await assignOperarios(editingTicket.id, operariosSeleccionados)
-          const nuevosAsignados = operariosSeleccionados.filter(id => !asignadosPrevios.includes(id))
-          if (nuevosAsignados.length > 0) {
-            try {
-              await fetch(`${import.meta.env.VITE_API_URL || ''}/api/tickets/${editingTicket.id}/notificar-asignacion`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ operarioIds: nuevosAsignados }),
-              })
-            } catch (emailErr) { console.warn('Email no enviado:', emailErr) }
-          }
+        }
+        for (const uid of eliminados) {
+          await removeOperario(editingTicket.id, uid)
+        }
+        if (nuevosAsignados.length > 0) {
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL || ''}/api/tickets/${editingTicket.id}/notificar-asignacion`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ operarioIds: nuevosAsignados }),
+            })
+          } catch (emailErr) { console.warn('Email no enviado:', emailErr) }
         }
         showToast('success', 'Ticket actualizado', '')
-        if (ticketActual?.id === editingTicket.id) {
-          const updated = await getTicket(editingTicket.id)
-          setTicketActual(updated)
-        }
+        const updated = await getTicket(editingTicket.id)
+        if (ticketActual?.id === editingTicket.id) setTicketActual(updated)
       } else {
-        const nuevoTicket = await createTicket({ empresa_id, dispositivo_id, asunto, descripcion, prioridad, estado, operarios: operariosSeleccionados })
+        const nuevoTicket = await createTicket({ empresa_id, dispositivo_id, dispositivos_ids: modalDispIds, asunto, descripcion, telefono_cliente, contacto_nombre, prioridad, estado, operarios: operariosSeleccionados })
         showToast('success', 'Ticket creado', asunto)
-        // Notificar a operarios asignados en la creación
         if (operariosSeleccionados.length > 0 && nuevoTicket?.id) {
           try {
             await fetch(`${import.meta.env.VITE_API_URL || ''}/api/tickets/${nuevoTicket.id}/notificar-asignacion`, {
@@ -1003,14 +1200,46 @@ export default function Tickets() {
                 <div className="sidebar-card">
                   <h4><i className="fas fa-info-circle"></i> Información</h4>
                   <div className="info-row"><span className="info-row-label">Empresa</span><span className="info-row-value">{ticketActual.empresas?.nombre || '—'}</span></div>
+                  <div className="info-row">
+                    <span className="info-row-label">Contacto cliente</span>
+                    <span className="info-row-value" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {ticketActual.contacto_nombre ? (
+                        <>
+                          <span style={{ fontWeight: 600, color: '#1e293b' }}>{ticketActual.contacto_nombre}</span>
+                          {ticketActual.telefono_cliente && (
+                            <a href={`tel:${ticketActual.telefono_cliente}`}
+                              style={{ color: '#0047b3', textDecoration: 'none', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <i className="fas fa-phone" style={{ fontSize: '0.68rem' }}></i>
+                              {ticketActual.telefono_cliente}
+                            </a>
+                          )}
+                        </>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.82rem' }}>No ha seleccionado contacto de cliente</span>
+                      )}
+                    </span>
+                  </div>
                   <div className="info-row"><span className="info-row-label">Prioridad</span><span className="info-row-value"><PrioridadBadge p={ticketActual.prioridad} /></span></div>
                   <div className="info-row"><span className="info-row-label">Estado</span><span className="info-row-value"><EstadoBadge e={ticketActual.estado} /></span></div>
-                  {ticketActual.dispositivos && (
-                    <div className="info-row">
-                      <span className="info-row-label">Equipo</span>
-                      <span className="info-row-value"><i className="fas fa-desktop" style={{ color: 'var(--primary)' }}></i> {ticketActual.dispositivos.nombre}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const disps = ticketActual.dispositivos_extra?.length
+                      ? [ticketActual.dispositivos, ...ticketActual.dispositivos_extra].filter(Boolean)
+                      : ticketActual.dispositivos ? [ticketActual.dispositivos] : []
+                    if (disps.length === 0) return null
+                    return (
+                      <div className="info-row">
+                        <span className="info-row-label">{disps.length === 1 ? 'Equipo' : 'Equipos'}</span>
+                        <span className="info-row-value" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {disps.map((d, i) => (
+                            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <i className="fas fa-desktop" style={{ color: 'var(--primary)', fontSize: '0.75rem' }}></i>
+                              {d.nombre}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                    )
+                  })()}
                   <div className="info-row">
                     <span className="info-row-label">⏱ Tiempo</span>
                     <span className="info-row-value">
@@ -1283,7 +1512,7 @@ export default function Tickets() {
         </main>
 
         {showAsignarModal && <AsignarModal />}
-        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispId={modalDispId} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispChange={setModalDispId} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
+        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
       </div>
     )
   }
@@ -1463,7 +1692,7 @@ export default function Tickets() {
         </div>
 
       </main>
-      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispId={modalDispId} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispChange={setModalDispId} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
+      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
     </div>
   )
 }

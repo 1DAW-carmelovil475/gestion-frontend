@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -494,8 +494,19 @@ export default function Dashboard() {
     if (confirm('¿Cerrar sesión?')) { logout(); navigate('/login') }
   }
 
+  const [expandedMatrices, setExpandedMatrices] = useState({})
+  function toggleMatriz(id) {
+    setExpandedMatrices(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  function getFiliales(matrizId) {
+    return empresas.filter(e => e.empresa_matriz_id === matrizId)
+  }
+
   function getFilteredCompanies() {
     return empresas.filter(c => {
+      // Ocultar filiales cuando no hay filtros activos (se muestran bajo su matriz)
+      if (c.empresa_matriz_id && !searchTerm && statusFilter === 'all' && serviceFilter === 'all') return false
       const cts = c.contactos || []
       const matchSearch = !searchTerm ||
         c.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -508,7 +519,13 @@ export default function Dashboard() {
     })
   }
 
-  const filteredCompanies  = getFilteredCompanies()
+  const filteredCompanies = getFilteredCompanies().sort((a, b) => {
+    const aIsMatriz = empresas.some(e => e.empresa_matriz_id === a.id)
+    const bIsMatriz = empresas.some(e => e.empresa_matriz_id === b.id)
+    if (aIsMatriz && !bIsMatriz) return -1
+    if (!aIsMatriz && bIsMatriz) return 1
+    return 0
+  })
   const totalPages         = Math.ceil(filteredCompanies.length / itemsPerPage)
   const paginatedCompanies = filteredCompanies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
@@ -1113,21 +1130,57 @@ export default function Dashboard() {
                   <i className="fas fa-search" style={{ fontSize: '2rem', opacity: 0.3, display: 'block', marginBottom: '10px' }}></i>
                   No se encontraron empresas
                 </td></tr>
-              ) : paginatedCompanies.map(c => (
-                <tr key={c.id}>
-                  <td onClick={() => viewCompany(c.id)} style={{ cursor: 'pointer' }}><strong>{c.nombre}</strong></td>
-                  <td>{c.cif || '—'}</td>
-                  <td>{c.email || '—'}</td>
-                  <td>{c.telefono || '—'}</td>
-                  <td><div className="services-tags">{(c.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
-                  <td><span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span></td>
-                  <td>
-                    <button className="btn-action btn-view"   onClick={() => viewCompany(c.id)}       title="Ver IT"><i className="fas fa-server"></i></button>
-                    <button className="btn-action btn-edit"   onClick={() => openCompanyModal(c)}     title="Editar"><i className="fas fa-edit"></i></button>
-                    <button className="btn-action btn-delete" onClick={() => handleDeleteCompany(c.id)} title="Eliminar"><i className="fas fa-trash"></i></button>
-                  </td>
-                </tr>
-              ))}
+              ) : paginatedCompanies.map(c => {
+                const filiales = getFiliales(c.id)
+                const isExpanded = !!expandedMatrices[c.id]
+                return (
+                  <React.Fragment key={c.id}>
+                    <tr className={filiales.length > 0 ? 'tr-matriz' : ''}>
+                      <td onClick={() => viewCompany(c.id)} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {filiales.length > 0 && (
+                            <button className="btn-expand-matriz" onClick={e => { e.stopPropagation(); toggleMatriz(c.id) }} title={isExpanded ? 'Colapsar filiales' : 'Ver filiales'}>
+                              <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'}`}></i>
+                            </button>
+                          )}
+                          <strong>{c.nombre}</strong>
+                          {filiales.length > 0 && <span className="badge-filiales">{filiales.length}</span>}
+                        </div>
+                      </td>
+                      <td>{c.cif || '—'}</td>
+                      <td>{c.email || '—'}</td>
+                      <td>{c.telefono || '—'}</td>
+                      <td><div className="services-tags">{(c.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
+                      <td><span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span></td>
+                      <td>
+                        <button className="btn-action btn-view"   onClick={() => viewCompany(c.id)}         title="Ver IT"><i className="fas fa-server"></i></button>
+                        <button className="btn-action btn-edit"   onClick={() => openCompanyModal(c)}       title="Editar"><i className="fas fa-edit"></i></button>
+                        <button className="btn-action btn-delete" onClick={() => handleDeleteCompany(c.id)} title="Eliminar"><i className="fas fa-trash"></i></button>
+                      </td>
+                    </tr>
+                    {filiales.length > 0 && isExpanded && filiales.map(f => (
+                      <tr key={f.id} className="tr-filial">
+                        <td onClick={() => viewCompany(f.id)} style={{ cursor: 'pointer' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 28 }}>
+                            <i className="fas fa-level-up-alt fa-rotate-90" style={{ color: '#94a3b8', fontSize: '0.7rem' }}></i>
+                            <span>{f.nombre}</span>
+                          </div>
+                        </td>
+                        <td>{f.cif || '—'}</td>
+                        <td>{f.email || '—'}</td>
+                        <td>{f.telefono || '—'}</td>
+                        <td><div className="services-tags">{(f.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
+                        <td><span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span></td>
+                        <td>
+                          <button className="btn-action btn-view"   onClick={() => viewCompany(f.id)}         title="Ver IT"><i className="fas fa-server"></i></button>
+                          <button className="btn-action btn-edit"   onClick={() => openCompanyModal(f)}       title="Editar"><i className="fas fa-edit"></i></button>
+                          <button className="btn-action btn-delete" onClick={() => handleDeleteCompany(f.id)} title="Eliminar"><i className="fas fa-trash"></i></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -1138,33 +1191,74 @@ export default function Dashboard() {
               <i className="fas fa-search" style={{ fontSize: '2.5rem', opacity: 0.25, display: 'block', marginBottom: '12px' }}></i>
               <p>No se encontraron empresas</p>
             </div>
-          ) : paginatedCompanies.map(c => (
-            <div className="company-card" key={c.id}>
-              <div className="company-card-header" onClick={() => viewCompany(c.id)}>
-                <div className="company-card-header-left">
-                  <div className="company-card-name">{c.nombre}</div>
-                  <div className="company-card-cif">{c.cif || '—'}</div>
-                </div>
-                <span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span>
-              </div>
-              <div className="company-card-body">
-                <div className="company-card-info">
-                  {c.email    && <div className="company-card-info-item"><i className="fas fa-envelope"></i> {c.email}</div>}
-                  {c.telefono && <div className="company-card-info-item"><i className="fas fa-phone"></i> {c.telefono}</div>}
-                </div>
-                {(c.servicios || []).length > 0 && (
-                  <div className="services-tags" style={{ marginBottom: '12px' }}>
-                    {c.servicios.map(s => <span className="service-tag" key={s}>{s}</span>)}
+          ) : paginatedCompanies.map(c => {
+            const filiales = getFiliales(c.id)
+            const isExpanded = !!expandedMatrices[c.id]
+            return (
+              <React.Fragment key={c.id}>
+                <div className="company-card">
+                  <div className="company-card-header" onClick={() => viewCompany(c.id)}>
+                    <div className="company-card-header-left" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {filiales.length > 0 && (
+                        <button className="btn-expand-matriz" onClick={e => { e.stopPropagation(); toggleMatriz(c.id) }}>
+                          <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'}`}></i>
+                        </button>
+                      )}
+                      <div>
+                        <div className="company-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {c.nombre}
+                          {filiales.length > 0 && <span className="badge-filiales">{filiales.length}</span>}
+                        </div>
+                        <div className="company-card-cif">{c.cif || '—'}</div>
+                      </div>
+                    </div>
+                    <span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span>
                   </div>
-                )}
-                <div className="company-card-actions">
-                  <button className="btn-action btn-view"   onClick={() => viewCompany(c.id)}><i className="fas fa-server"></i> Ver IT</button>
-                  <button className="btn-action btn-edit"   onClick={() => openCompanyModal(c)}><i className="fas fa-edit"></i> Editar</button>
-                  <button className="btn-action btn-delete" onClick={() => handleDeleteCompany(c.id)}><i className="fas fa-trash"></i></button>
+                  <div className="company-card-body">
+                    <div className="company-card-info">
+                      {c.email    && <div className="company-card-info-item"><i className="fas fa-envelope"></i> {c.email}</div>}
+                      {c.telefono && <div className="company-card-info-item"><i className="fas fa-phone"></i> {c.telefono}</div>}
+                    </div>
+                    {(c.servicios || []).length > 0 && (
+                      <div className="services-tags" style={{ marginBottom: '12px' }}>
+                        {c.servicios.map(s => <span className="service-tag" key={s}>{s}</span>)}
+                      </div>
+                    )}
+                    <div className="company-card-actions">
+                      <button className="btn-action btn-view"   onClick={() => viewCompany(c.id)}><i className="fas fa-server"></i> Ver IT</button>
+                      <button className="btn-action btn-edit"   onClick={() => openCompanyModal(c)}><i className="fas fa-edit"></i> Editar</button>
+                      <button className="btn-action btn-delete" onClick={() => handleDeleteCompany(c.id)}><i className="fas fa-trash"></i></button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+                {filiales.length > 0 && isExpanded && filiales.map(f => (
+                  <div className="company-card company-card-filial" key={f.id}>
+                    <div className="company-card-header" onClick={() => viewCompany(f.id)}>
+                      <div className="company-card-header-left">
+                        <div className="company-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <i className="fas fa-level-up-alt fa-rotate-90" style={{ color: '#94a3b8', fontSize: '0.7rem' }}></i>
+                          {f.nombre}
+                        </div>
+                        <div className="company-card-cif">{f.cif || '—'}</div>
+                      </div>
+                      <span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span>
+                    </div>
+                    <div className="company-card-body">
+                      <div className="company-card-info">
+                        {f.email    && <div className="company-card-info-item"><i className="fas fa-envelope"></i> {f.email}</div>}
+                        {f.telefono && <div className="company-card-info-item"><i className="fas fa-phone"></i> {f.telefono}</div>}
+                      </div>
+                      <div className="company-card-actions">
+                        <button className="btn-action btn-view"   onClick={() => viewCompany(f.id)}><i className="fas fa-server"></i> Ver IT</button>
+                        <button className="btn-action btn-edit"   onClick={() => openCompanyModal(f)}><i className="fas fa-edit"></i> Editar</button>
+                        <button className="btn-action btn-delete" onClick={() => handleDeleteCompany(f.id)}><i className="fas fa-trash"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </React.Fragment>
+            )
+          })}
         </div>
 
         {totalPages > 1 && (

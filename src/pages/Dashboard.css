@@ -986,3 +986,58 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
 }
+
+/* ============================================================
+   EMPRESAS — ÁRBOL MATRIZ / FILIALES
+   ============================================================ */
+.btn-expand-matriz {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--gray);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn-expand-matriz:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.badge-filiales {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #dbeafe; color: #1d4ed8;
+  font-size: 0.7rem; font-weight: 700;
+  padding: 1px 7px; border-radius: 20px;
+  line-height: 1.6;
+}
+
+/* Fila matriz en tabla desktop */
+tr.tr-matriz > td:first-child strong {
+  color: var(--dark);
+}
+
+/* Fila filial en tabla desktop */
+tr.tr-filial {
+  background: #f8fafc;
+}
+tr.tr-filial td {
+  font-size: 0.875rem;
+  color: #475569;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* Card filial mobile */
+.company-card-filial {
+  margin-left: 16px;
+  background: #f8fafc !important;
+}
+.company-card-filial .company-card-name {
+  font-size: 0.875rem;
+  color: #475569;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -110,12 +110,38 @@ const SERVICIO_COLORS = {
 // ============================================================
 // MODAL: EMPRESA
 // ============================================================
-function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose, SERVICIOS }) {
+function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose, SERVICIOS, empresas }) {
   const [activeTab, setActiveTab] = useState('datos')
+  const [matrizQuery, setMatrizQuery]   = useState('')
+  const [matrizOpen,  setMatrizOpen]    = useState(false)
+  const [matrizId,    setMatrizId]      = useState(editingCompany?.empresa_matriz_id || null)
+  const matrizRef = useRef(null)
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (matrizRef.current && !matrizRef.current.contains(e.target)) setMatrizOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Empresas disponibles para ser matriz (excluir la propia empresa y las que ya son filiales de esta)
+  const empresasDisponibles = (empresas || []).filter(e =>
+    e.id !== editingCompany?.id
+  )
+
+  const empresasFiltradas = matrizQuery.trim()
+    ? empresasDisponibles.filter(e => e.nombre.toLowerCase().includes(matrizQuery.toLowerCase()))
+    : empresasDisponibles
+
+  const matrizSeleccionada = empresasDisponibles.find(e => e.id === matrizId)
 
   function addContacto() {
     setContactos(prev => [...prev, { nombre: '', telefono: '', email: '', cargo: '' }])
   }
+
+  // Exponer matrizId al formulario padre via hidden input está hecho abajo
 
   function updateContacto(index, field, value) {
     setContactos(prev => {
@@ -176,6 +202,84 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
               </div>
             </div>
             <div className="form-group"><label><i className="fas fa-sticky-note"></i> Notas</label><textarea name="notas" defaultValue={editingCompany?.notas} placeholder="Observaciones internas sobre la empresa..."></textarea></div>
+
+            {/* Empresa Matriz */}
+            <div className="form-group" ref={matrizRef} style={{ position: 'relative' }}>
+              <label><i className="fas fa-sitemap"></i> Empresa matriz</label>
+              <input type="hidden" name="empresa_matriz_id" value={matrizId || ''} />
+              <div
+                className={`matriz-selector ${matrizOpen ? 'open' : ''}`}
+                onClick={() => setMatrizOpen(v => !v)}
+              >
+                {matrizSeleccionada ? (
+                  <span className="matriz-selected-name">
+                    <i className="fas fa-building" style={{ color: 'var(--primary)', marginRight: 6 }}></i>
+                    {matrizSeleccionada.nombre}
+                  </span>
+                ) : (
+                  <span className="matriz-placeholder">Sin empresa matriz (es independiente)</span>
+                )}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {matrizId && (
+                    <button type="button" className="matriz-clear-btn"
+                      onClick={e => { e.stopPropagation(); setMatrizId(null); setMatrizQuery('') }}>
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                  <i className={`fas fa-chevron-${matrizOpen ? 'up' : 'down'}`} style={{ fontSize: '0.75rem', color: 'var(--gray)' }}></i>
+                </div>
+              </div>
+              {matrizOpen && (
+                <div className="matriz-dropdown">
+                  <div className="matriz-search-wrap">
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <i className="fas fa-search" style={{ position: 'absolute', left: 10, color: '#94a3b8', fontSize: '0.8rem', pointerEvents: 'none', zIndex: 1 }}></i>
+                    <input
+                      className="matriz-search"
+                      style={{ paddingLeft: 30 }}
+                      placeholder="Buscar empresa..."
+                      value={matrizQuery}
+                      onChange={e => setMatrizQuery(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                      autoFocus
+                    />
+                    {matrizQuery && (
+                      <button type="button" className="matriz-clear-query" onClick={e => { e.stopPropagation(); setMatrizQuery('') }}>
+                        <i className="fas fa-times"></i>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                  <div className="matriz-options">
+                    <div
+                      className={`matriz-option matriz-option-none ${!matrizId ? 'selected' : ''}`}
+                      onClick={e => { e.stopPropagation(); setMatrizId(null); setMatrizOpen(false); setMatrizQuery('') }}
+                    >
+                      <i className="fas fa-ban" style={{ opacity: 0.4 }}></i>
+                      <span>Sin empresa matriz</span>
+                      {!matrizId && <i className="fas fa-check matriz-check"></i>}
+                    </div>
+                    {empresasFiltradas.length === 0 && (
+                      <p className="matriz-no-results">Sin resultados para "{matrizQuery}"</p>
+                    )}
+                    {empresasFiltradas.map(emp => (
+                      <div
+                        key={emp.id}
+                        className={`matriz-option ${matrizId === emp.id ? 'selected' : ''}`}
+                        onClick={e => { e.stopPropagation(); setMatrizId(emp.id); setMatrizOpen(false); setMatrizQuery('') }}
+                      >
+                        <div className="matriz-option-avatar">{(emp.nombre || '?').charAt(0).toUpperCase()}</div>
+                        <div className="matriz-option-info">
+                          <span className="matriz-option-nombre">{emp.nombre}</span>
+                          {emp.cif && <span className="matriz-option-cif">{emp.cif}</span>}
+                        </div>
+                        {matrizId === emp.id && <i className="fas fa-check matriz-check"></i>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className={`form-tab-content ${activeTab === 'servicios' ? 'active' : ''}`}>
@@ -473,13 +577,14 @@ export default function Dashboard() {
     const servicios = [...document.querySelectorAll('input[name="services"]:checked')].map(cb => cb.value)
     const contactosFiltrados = contactos.filter(c => c.nombre.trim())
     const payload = {
-      nombre:    formData.get('nombre'),
-      cif:       formData.get('cif'),
-      email:     formData.get('email')     || null,
-      telefono:  formData.get('telefono')  || null,
-      direccion: formData.get('direccion') || null,
-      estado:    formData.get('estado'),
-      notas:     formData.get('notas')     || null,
+      nombre:            formData.get('nombre'),
+      cif:               formData.get('cif'),
+      email:             formData.get('email')            || null,
+      telefono:          formData.get('telefono')         || null,
+      direccion:         formData.get('direccion')        || null,
+      estado:            formData.get('estado'),
+      notas:             formData.get('notas')            || null,
+      empresa_matriz_id: formData.get('empresa_matriz_id') || null,
       servicios,
       contactos: contactosFiltrados,
     }
@@ -714,6 +819,55 @@ export default function Dashboard() {
           </div>
 
           <div className="emp-info-row">
+            {/* Empresa Matriz / Filiales */}
+            {(() => {
+              const empresaMatriz = company?.empresa_matriz_id
+                ? empresas.find(e => e.id === company.empresa_matriz_id)
+                : null
+              const filiales = empresas.filter(e => e.empresa_matriz_id === company?.id)
+              if (!empresaMatriz && filiales.length === 0) return null
+              return (
+                <div className="emp-card emp-matriz-card">
+                  {empresaMatriz ? (
+                    <div className="emp-matriz-info">
+                      <i className="fas fa-sitemap emp-matriz-icon"></i>
+                      <div>
+                        <span className="emp-matriz-label">Empresa unida a</span>
+                        <button
+                          className="emp-matriz-link"
+                          onClick={() => viewCompany(empresaMatriz.id)}
+                        >
+                          {empresaMatriz.nombre}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="emp-matriz-info">
+                        <i className="fas fa-sitemap emp-matriz-icon emp-matriz-icon--main"></i>
+                        <div>
+                          <span className="emp-matriz-label emp-matriz-label--main">Empresa matriz</span>
+                          <span className="emp-matriz-sublabel">{filiales.length} empresa{filiales.length !== 1 ? 's' : ''} vinculada{filiales.length !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                      <div className="emp-filiales-list">
+                        {filiales.length === 0 ? (
+                          <span className="emp-filiales-empty">No tiene ninguna empresa añadida</span>
+                        ) : filiales.map(f => (
+                          <button key={f.id} className="emp-filial-pill" onClick={() => viewCompany(f.id)}>
+                            <span className="emp-filial-avatar">{(f.nombre || '?').charAt(0).toUpperCase()}</span>
+                            {f.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })()}
+          </div>
+
+          <div className="emp-info-row">
             {company?.notas && (
               <div className="emp-card emp-notas-card">
                 <div className="emp-card-title"><i className="fas fa-sticky-note"></i> Notas internas</div>
@@ -868,7 +1022,7 @@ export default function Dashboard() {
         )}
         {showCompanyModal && (
           <CompanyModal editingCompany={editingCompany} contactos={contactos} setContactos={setContactos}
-            onSave={saveCompany} onClose={() => setShowCompanyModal(false)} SERVICIOS={SERVICIOS} />
+            onSave={saveCompany} onClose={() => setShowCompanyModal(false)} SERVICIOS={SERVICIOS} empresas={empresas} />
         )}
       </div>
     )
@@ -1024,7 +1178,7 @@ export default function Dashboard() {
 
       {showCompanyModal && (
         <CompanyModal editingCompany={editingCompany} contactos={contactos} setContactos={setContactos}
-          onSave={saveCompany} onClose={() => setShowCompanyModal(false)} SERVICIOS={SERVICIOS} />
+          onSave={saveCompany} onClose={() => setShowCompanyModal(false)} SERVICIOS={SERVICIOS} empresas={empresas} />
       )}
     </div>
   )

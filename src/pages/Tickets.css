@@ -1709,3 +1709,151 @@
 }
 .ss-search::placeholder { color: #9aa4bc; }
 .os-search-wrap { margin-bottom: 8px; }
+
+/* ============================================================
+   TICKET MODAL — PANEL LATERAL CON ANIMACIÓN
+   ============================================================ */
+
+/* Keyframe: panel lateral entra deslizando desde la derecha */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Contenedor de paneles */
+.ticket-panels-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  /* Ancho solo con formulario de ticket */
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  transition: width 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cuando hay panel lateral, el contenedor crece */
+.ticket-panels-container.with-panel {
+  width: 1148px; /* 560px + 16px gap + 572px */
+  max-width: calc(100vw - 32px);
+}
+
+/* Anular el max-width global de .modal-content para los paneles del ticket */
+.ticket-panels-container .modal-content {
+  max-width: none;
+}
+
+/* Formulario principal del ticket */
+.ticket-panels-container .ticket-modal-main {
+  flex: 0 0 640px;
+  width: 640px;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  /* Transición suave al encogerse cuando se abre el panel */
+  transition: flex-basis 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Formulario principal más estrecho cuando hay panel abierto */
+.ticket-panels-container.with-panel .ticket-modal-main {
+  flex: 0 0 560px;
+  width: 560px;
+}
+
+/* Panel lateral (contacto o dispositivo) */
+.ticket-side-panel {
+  flex: 0 0 572px;
+  width: 572px;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  /* Desliza desde la derecha al aparecer */
+  animation: slideInFromRight 0.38s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Botones de acción de panel (Crear contacto / Añadir dispositivo) */
+.btn-panel-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border: 1.5px solid #0047b3;
+  border-radius: 7px;
+  background: white;
+  color: #0047b3;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-panel-action:hover  { background: #e8f0ff; }
+.btn-panel-action.active { background: #0047b3; color: white; }
+
+/* Selector de tipo de dispositivo */
+.device-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.device-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 16px;
+  border: 2px solid var(--border, #dde3f0);
+  border-radius: 14px;
+  background: white;
+  color: #334155;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s;
+}
+.device-type-btn i {
+  font-size: 1.8rem;
+  color: #0047b3;
+  transition: transform 0.18s;
+}
+.device-type-btn:hover {
+  border-color: #0047b3;
+  background: #f0f6ff;
+  color: #0047b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,71,179,0.12);
+}
+.device-type-btn:hover i {
+  transform: scale(1.12);
+}
+
+/* Ajuste responsive — paneles en columna en pantallas pequeñas */
+@media (max-width: 1100px) {
+  .ticket-panels-container,
+  .ticket-panels-container.with-panel {
+    width: min(95vw, 640px);
+    flex-direction: column;
+  }
+  .ticket-panels-container .ticket-modal-main,
+  .ticket-panels-container.with-panel .ticket-modal-main,
+  .ticket-side-panel {
+    flex: none;
+    width: 100%;
+    max-height: 80vh;
+  }
+  @keyframes slideInFromRight {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}

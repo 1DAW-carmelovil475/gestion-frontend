@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../services/api'
@@ -24,6 +24,8 @@ function getInitials(nombre) {
 // MODAL: USUARIO
 // ============================================================
 function UserModal({ editingUser, onSave, onClose }) {
+  const [showPwd, setShowPwd] = useState(false)
+
   return (
     <div
       className="modal"
@@ -89,26 +91,47 @@ function UserModal({ editingUser, onSave, onClose }) {
               </div>
             )}
 
-            {/* Contraseña — solo en creación */}
-            {!editingUser && (
-              <div className="form-group">
-                <label><i className="fas fa-lock"></i> Contraseña *</label>
+            {/* Contraseña */}
+            <div className="form-group">
+              <label>
+                <i className="fas fa-lock"></i>{' '}
+                {editingUser ? 'Nueva contraseña' : 'Contraseña *'}
+                {editingUser && (
+                  <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem', marginLeft: 6 }}>
+                    (dejar vacío para no cambiar)
+                  </span>
+                )}
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
-                  type="password"
+                  type={showPwd ? 'text' : 'password'}
                   name="password"
-                  placeholder="Mínimo 8 caracteres recomendado"
-                  required
+                  placeholder={editingUser ? 'Nueva contraseña...' : 'Mínimo 8 caracteres recomendado'}
+                  required={!editingUser}
+                  style={{ paddingRight: 40 }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(v => !v)}
+                  style={{
+                    position: 'absolute', right: 10,
+                    background: 'none', border: 'none',
+                    color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem', padding: 0,
+                  }}
+                  title={showPwd ? 'Ocultar' : 'Mostrar'}
+                >
+                  <i className={`fas ${showPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                </button>
               </div>
-            )}
+            </div>
 
             {/* Hint info */}
-            {!editingUser && (
-              <div className="user-modal-hint">
-                <i className="fas fa-info-circle"></i>
-                Recuerda que la contraseña debe ser segura.
-              </div>
-            )}
+            <div className="user-modal-hint">
+              <i className="fas fa-info-circle"></i>
+              {editingUser
+                ? 'La contraseña solo se cambiará si introduces un valor. Mínimo 6 caracteres.'
+                : 'Recuerda que la contraseña debe ser segura.'}
+            </div>
           </div>
 
           <div className="modal-buttons">
@@ -178,6 +201,9 @@ export default function Usuarios() {
     if (!editingUser) {
       payload.email    = formData.get('email')
       payload.password = formData.get('password')
+    } else {
+      const pwd = formData.get('password')?.trim()
+      if (pwd) payload.password = pwd
     }
     try {
       if (editingUser) {

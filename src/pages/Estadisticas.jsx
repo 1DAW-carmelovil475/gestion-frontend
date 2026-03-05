@@ -504,8 +504,8 @@ export default function Estadisticas() {
                           <span className="stat-mini-label">Pendientes</span>
                         </div>
                         <div className="stat-mini">
-                          <span className="stat-mini-value" style={{ color: PRIMARY }}>{op.horas_totales || 0}h</span>
-                          <span className="stat-mini-label">Horas</span>
+                          <span className="stat-mini-value" style={{ color: PRIMARY }}>{op.media_horas != null ? op.media_horas.toFixed(1) + 'h' : '—'}</span>
+                          <span className="stat-mini-label">Media horas</span>
                         </div>
                       </div>
                     </div>

@@ -118,6 +118,11 @@ export async function uploadTicketArchivo(ticketId, files) {
 
 export async function deleteArchivo(archivoId) { return apiFetch(`/api/v2/archivos/${archivoId}`, { method: 'DELETE' }) }
 
+// ── Horas de ticket ───────────────────────────────────────────────────────
+export async function addTicketHoras(ticketId, data) {
+  return apiFetch(`/api/v2/tickets/${ticketId}/horas`, { method: 'POST', body: JSON.stringify(data) })
+}
+
 // ── Operarios / Usuarios ──────────────────────────────────────────────────
 export async function getOperarios()           { return apiFetch('/api/v2/operarios') }
 export async function getUsuarios()            { return apiFetch('/api/usuarios') }

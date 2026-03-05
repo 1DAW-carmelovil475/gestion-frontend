@@ -5,6 +5,7 @@ import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
   getTickets, getTicket, createTicket, updateTicket, deleteTicket,
   getEmpresas, getOperarios, getDispositivos,
+  updateEmpresa, createDispositivo,
   assignOperarios, removeOperario,
   getTicketComentarios, createTicketComentario, deleteTicketComentario,
   uploadTicketArchivo, deleteArchivo, getArchivoUrl,
@@ -14,6 +15,27 @@ import ChatNavLink from '../components/ChatNavLink'
 import './Tickets.css'
 
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
+
+const DEVICE_TIPO_SUGERENCIAS = {
+  equipo:   ['PC', 'Portátil', 'Cámara de Seguridad', 'Impresora', 'Tablet', 'All-in-One'],
+  servidor: ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
+  nas:      ['NAS Synology', 'NAS QNAP'],
+  red:      ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
+}
+
+const DEVICE_CAT_LABELS = {
+  equipo:   'Equipos',
+  servidor: 'Servidores',
+  nas:      'NAS',
+  red:      'Redes',
+}
+
+const DEVICE_ICONOS = {
+  equipo:   'fa-desktop',
+  servidor: 'fa-server',
+  nas:      'fa-hdd',
+  red:      'fa-network-wired',
+}
 
 function getAvatarColor(str) {
   if (!str) return AVATAR_COLORS[0]
@@ -222,15 +244,20 @@ function OperariosSelector({ operarios, selected, onChange }) {
         <button type="button" className="qf-btn qf-workers" onClick={() => onChange(workers.map(o => o.id))}><i className="fas fa-hard-hat"></i> Trabajadores</button>
         {selected.length > 0 && <button type="button" className="qf-btn qf-clear" onClick={() => onChange([])}><i className="fas fa-times"></i> Limpiar</button>}
       </div>
-      <div className="ss-search-wrap os-search-wrap">
-        <i className="fas fa-search ss-search-icon"></i>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 0 8px', borderBottom: '1px solid #dde3f0', marginBottom: 8 }}>
+        <i className="fas fa-search" style={{ color: '#9aa4bc', fontSize: '0.78rem', flexShrink: 0 }}></i>
         <input
-          className="ss-search"
+          type="text"
           placeholder="Buscar operario..."
           value={query}
           onChange={e => setQuery(e.target.value)}
+          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#2a3a5a', fontFamily: 'inherit' }}
         />
-        {query && <button type="button" className="ss-clear-query" onClick={() => setQuery('')}><i className="fas fa-times"></i></button>}
+        {query && (
+          <button type="button" onClick={() => setQuery('')} style={{ border: 'none', background: 'none', color: '#9aa4bc', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
+            <i className="fas fa-times"></i>
+          </button>
+        )}
       </div>
       <div className="operarios-checkboxes">
         {filtered.length === 0 && <p style={{ color: 'var(--gray)', fontSize: '0.85rem', padding: '8px' }}>Sin resultados.</p>}
@@ -275,8 +302,92 @@ function TicketModal({
   onContactoIdxChange,
   onPrioridadChange, onEstadoChange,
   onOperariosChange,
+  onSaveContact,
+  onSaveDevice,
 }) {
   const [dispSearch, setDispSearch] = useState('')
+
+  // Panel state
+  const [showContactPanel, setShowContactPanel] = useState(false)
+  const [showDevicePanel, setShowDevicePanel]   = useState(false)
+  const [devicePanelStep, setDevicePanelStep]   = useState('select') // 'select' | 'form'
+  const [deviceCategory, setDeviceCategory]     = useState('')
+  const [contactSaving, setContactSaving]       = useState(false)
+  const [deviceSaving, setDeviceSaving]         = useState(false)
+
+  // Contact panel form
+  const [contNombre,   setContNombre]   = useState('')
+  const [contTelefono, setContTelefono] = useState('')
+  const [contEmail,    setContEmail]    = useState('')
+  const [contCargo,    setContCargo]    = useState('')
+
+  // Device panel extra fields
+  const [deviceExtraFields, setDeviceExtraFields] = useState([])
+  const deviceFormRef = useRef(null)
+
+  const panelOpen = showContactPanel || showDevicePanel
+
+  function openContactPanel() {
+    setShowContactPanel(true)
+    setShowDevicePanel(false)
+    setContNombre(''); setContTelefono(''); setContEmail(''); setContCargo('')
+  }
+
+  function openDevicePanel() {
+    setShowDevicePanel(true)
+    setShowContactPanel(false)
+    setDevicePanelStep('select')
+    setDeviceCategory('')
+    setDeviceExtraFields([])
+  }
+
+  function closeSidePanel() {
+    setShowContactPanel(false)
+    setShowDevicePanel(false)
+    setDevicePanelStep('select')
+    setDeviceCategory('')
+  }
+
+  async function saveContact(e) {
+    e.preventDefault()
+    if (!contNombre.trim()) return
+    setContactSaving(true)
+    try {
+      await onSaveContact({ nombre: contNombre.trim(), telefono: contTelefono.trim(), email: contEmail.trim(), cargo: contCargo.trim() })
+      setShowContactPanel(false)
+    } catch { /* error handled by parent */ }
+    finally { setContactSaving(false) }
+  }
+
+  async function saveDevice(e) {
+    e.preventDefault()
+    const form = deviceFormRef.current
+    if (!form) return
+    const fd = new FormData(form)
+    const g  = key => fd.get(key) || null
+    const campos_extra = {}
+    deviceExtraFields.forEach(({ key, val }) => { if (key.trim() && val) campos_extra[key.trim()] = val })
+    const payload = {
+      categoria:         deviceCategory,
+      nombre:            g('nombre') || '',
+      tipo:              g('tipo'),
+      ip:                g('ip'),
+      usuario:           g('usuario'),
+      password:          g('password'),
+      anydesk_id:        g('anydesk_id'),
+      sistema_operativo: g('sistema_operativo'),
+      capacidad:         g('capacidad'),
+      modelo:            g('modelo'),
+      numero_serie:      g('numero_serie'),
+      campos_extra,
+    }
+    setDeviceSaving(true)
+    try {
+      await onSaveDevice(payload, deviceCategory)
+      setShowDevicePanel(false)
+    } catch { /* error handled by parent */ }
+    finally { setDeviceSaving(false) }
+  }
 
   function toggleDisp(id) {
     onDispIdsChange(
@@ -297,237 +408,446 @@ function TicketModal({
     ? empresaContactos[Number(modalContactoIdx)]
     : null
 
+  // ── Device panel form renderer ──────────────────────────────
+  function renderDeviceForm() {
+    const cat        = deviceCategory
+    const sugerencias = DEVICE_TIPO_SUGERENCIAS[cat] || []
+    return (
+      <form ref={deviceFormRef} onSubmit={saveDevice} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div className="modal-body" style={{ flex: 1, overflowY: 'auto' }}>
+          {cat !== 'correo' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Nombre *</label>
+                <input type="text" name="nombre" required placeholder="Nombre del dispositivo" />
+              </div>
+              <div className="form-group">
+                <label>Tipo</label>
+                <input type="text" name="tipo" list="ticket-dev-tipo-list" placeholder="Selecciona o escribe..." />
+                <datalist id="ticket-dev-tipo-list">{sugerencias.map(s => <option key={s} value={s} />)}</datalist>
+              </div>
+            </div>
+          )}
+          {cat === 'equipo' && (<>
+            <div className="form-group"><label>Número de Serie *</label><input type="text" name="numero_serie" placeholder="Ej: SN-2024-ABC123" required /></div>
+            <div className="form-row">
+              <div className="form-group"><label>IP</label><input type="text" name="ip" placeholder="192.168.1.10" /></div>
+              <div className="form-group"><label>AnyDesk ID</label><input type="text" name="anydesk_id" placeholder="123456789" /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Usuario</label><input type="text" name="usuario" placeholder="admin" /></div>
+              <div className="form-group"><label>Contraseña</label><input type="text" name="password" placeholder="••••••••" /></div>
+            </div>
+          </>)}
+          {cat === 'servidor' && (<>
+            <div className="form-row">
+              <div className="form-group"><label>IP</label><input type="text" name="ip" placeholder="192.168.1.5" /></div>
+              <div className="form-group"><label>S.O.</label><input type="text" name="sistema_operativo" placeholder="Windows Server 2022" /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Usuario</label><input type="text" name="usuario" placeholder="admin" /></div>
+              <div className="form-group"><label>Contraseña</label><input type="text" name="password" placeholder="••••••••" /></div>
+            </div>
+          </>)}
+          {cat === 'nas' && (<>
+            <div className="form-row">
+              <div className="form-group"><label>IP</label><input type="text" name="ip" placeholder="192.168.1.20" /></div>
+              <div className="form-group"><label>Capacidad</label><input type="text" name="capacidad" placeholder="4TB" /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Usuario</label><input type="text" name="usuario" placeholder="admin" /></div>
+              <div className="form-group"><label>Contraseña</label><input type="text" name="password" placeholder="••••••••" /></div>
+            </div>
+          </>)}
+          {cat === 'red' && (<>
+            <div className="form-row">
+              <div className="form-group"><label>IP</label><input type="text" name="ip" placeholder="192.168.1.1" /></div>
+              <div className="form-group"><label>Modelo</label><input type="text" name="modelo" placeholder="Cisco RV340" /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Usuario</label><input type="text" name="usuario" placeholder="admin" /></div>
+              <div className="form-group"><label>Contraseña</label><input type="text" name="password" placeholder="••••••••" /></div>
+            </div>
+          </>)}
+
+          {/* Campos personalizados */}
+          <div style={{ borderTop: '1px dashed #e2e8f0', margin: '12px 0 14px', paddingTop: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem', color: '#475569' }}>
+                <i className="fas fa-plus-circle" style={{ color: 'var(--primary)', marginRight: '5px' }}></i>Campos personalizados
+              </label>
+              <button type="button"
+                onClick={() => setDeviceExtraFields(prev => [...prev, { key: '', val: '' }])}
+                style={{ background: 'none', border: '1px solid #e2e8f0', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', padding: '5px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'inherit' }}>
+                <i className="fas fa-plus"></i> Añadir
+              </button>
+            </div>
+            {deviceExtraFields.map((ef, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                <input type="text" value={ef.key} onChange={e => { const u = [...deviceExtraFields]; u[i] = { ...u[i], key: e.target.value }; setDeviceExtraFields(u) }} placeholder="Campo" style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontFamily: 'inherit', fontSize: '0.88rem' }} />
+                <input type="text" value={ef.val} onChange={e => { const u = [...deviceExtraFields]; u[i] = { ...u[i], val: e.target.value }; setDeviceExtraFields(u) }} placeholder="Valor" style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontFamily: 'inherit', fontSize: '0.88rem' }} />
+                <button type="button" onClick={() => setDeviceExtraFields(prev => prev.filter((_, j) => j !== i))} style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="modal-buttons">
+          <button type="submit" className="btn-primary" disabled={deviceSaving}>
+            <i className={`fas ${deviceSaving ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> {deviceSaving ? 'Guardando...' : 'Guardar'}
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => setDevicePanelStep('select')}>
+            <i className="fas fa-arrow-left"></i> Atrás
+          </button>
+        </div>
+      </form>
+    )
+  }
+
+  // ── Main ticket form ────────────────────────────────────────
+  const ticketFormContent = (
+    <>
+      <div className="modal-header">
+        <h2>
+          <i className="fas fa-ticket-alt"></i>{' '}
+          {editingTicket ? `Editar Ticket #${editingTicket.numero}` : 'Nuevo Ticket'}
+        </h2>
+        <button className="modal-close" onClick={onClose}>
+          <i className="fas fa-times"></i>
+        </button>
+      </div>
+      <form onSubmit={onSave} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div className="modal-body" style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="form-group">
+            <label><i className="fas fa-building"></i> Empresa *</label>
+            <SearchableSelect
+              name="empresa_id"
+              value={modalEmprId}
+              onChange={onEmpresaChange}
+              options={empresas.map(e => ({ value: e.id, label: e.nombre }))}
+              placeholder="Seleccionar empresa..."
+              required
+            />
+          </div>
+
+          {/* Contacto de la empresa */}
+          {modalEmprId && (
+            <div className="form-group">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label style={{ margin: 0 }}><i className="fas fa-user-tie"></i> Contacto <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional)</span></label>
+                <button
+                  type="button"
+                  onClick={openContactPanel}
+                  className={`btn-panel-action${showContactPanel ? ' active' : ''}`}
+                >
+                  <i className="fas fa-user-plus"></i> Crear contacto
+                </button>
+              </div>
+              {empresaContactos.length === 0 ? (
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene contactos registrados.</p>
+              ) : (
+                <>
+                  <select
+                    value={modalContactoIdx}
+                    onChange={e => onContactoIdxChange(e.target.value)}
+                    style={{ marginBottom: selectedContacto ? 6 : 0 }}
+                  >
+                    <option value="">— Sin contacto —</option>
+                    {empresaContactos.map((c, i) => (
+                      <option key={i} value={i}>
+                        {c.nombre}{c.cargo ? ` · ${c.cargo}` : ''}{c.telefono ? ` · ${c.telefono}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedContacto && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 12px', background: '#f0f6ff',
+                      border: '1px solid #b8dcf8', borderRadius: 8,
+                      fontSize: '0.82rem',
+                    }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: '50%',
+                        background: '#0047b3', color: 'white',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '0.72rem', flexShrink: 0,
+                      }}>
+                        {(selectedContacto.nombre || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{selectedContacto.nombre}</div>
+                        {selectedContacto.cargo && <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{selectedContacto.cargo}</div>}
+                      </div>
+                      {selectedContacto.telefono && (
+                        <a href={`tel:${selectedContacto.telefono}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#0047b3', textDecoration: 'none', fontWeight: 500, fontSize: '0.8rem', flexShrink: 0 }}
+                          onClick={e => e.stopPropagation()}>
+                          <i className="fas fa-phone" style={{ fontSize: '0.7rem' }}></i>
+                          {selectedContacto.telefono}
+                        </a>
+                      )}
+                      {selectedContacto.email && (
+                        <a href={`mailto:${selectedContacto.email}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b', textDecoration: 'none', fontSize: '0.8rem', flexShrink: 0 }}
+                          onClick={e => e.stopPropagation()}>
+                          <i className="fas fa-envelope" style={{ fontSize: '0.7rem' }}></i>
+                          {selectedContacto.email}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Dispositivos — búsqueda + selección múltiple */}
+          {modalEmprId && (
+            <div className="form-group">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label style={{ margin: 0 }}><i className="fas fa-desktop"></i> Dispositivos <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional, múltiple)</span></label>
+                <button
+                  type="button"
+                  onClick={openDevicePanel}
+                  className={`btn-panel-action${showDevicePanel ? ' active' : ''}`}
+                >
+                  <i className="fas fa-plus"></i> Añadir dispositivo
+                </button>
+              </div>
+              {modalDispositivos.length === 0 ? (
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene dispositivos registrados.</p>
+              ) : (
+                <>
+                  {/* Buscador */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 10px', marginBottom: 4,
+                    border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
+                    background: 'white', transition: 'border-color 0.15s',
+                  }}>
+                    <i className="fas fa-search" style={{ color: '#94a3b8', fontSize: '0.78rem', flexShrink: 0 }}></i>
+                    <input
+                      type="text"
+                      value={dispSearch}
+                      onChange={e => setDispSearch(e.target.value)}
+                      placeholder="Buscar dispositivo..."
+                      style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#2a3a5a', fontFamily: 'inherit' }}
+                    />
+                    {dispSearch && (
+                      <button type="button" onClick={() => setDispSearch('')}
+                        style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
+                        <i className="fas fa-times"></i>
+                      </button>
+                    )}
+                  </div>
+                  {/* Lista */}
+                  <div style={{
+                    border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
+                    maxHeight: 140, overflowY: 'auto', background: 'white',
+                  }}>
+                    {filteredDisps.length === 0 ? (
+                      <div style={{ padding: '10px 12px', fontSize: '0.82rem', color: '#94a3b8', textAlign: 'center' }}>Sin resultados</div>
+                    ) : filteredDisps.map(d => {
+                      const sel = modalDispIds.includes(d.id)
+                      return (
+                        <div key={d.id}
+                          onClick={() => toggleDisp(d.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '8px 12px', cursor: 'pointer',
+                            background: sel ? '#e8f0fe' : 'white',
+                            borderBottom: '1px solid #f0f4f8',
+                            transition: 'background 0.12s',
+                            userSelect: 'none',
+                          }}
+                        >
+                          <div style={{
+                            width: 18, height: 18, borderRadius: 4,
+                            border: `2px solid ${sel ? '#0047b3' : '#cbd5e1'}`,
+                            background: sel ? '#0047b3' : 'white',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0, transition: 'all 0.12s',
+                          }}>
+                            {sel && <i className="fas fa-check" style={{ color: 'white', fontSize: '0.6rem' }}></i>}
+                          </div>
+                          <span style={{ fontSize: '0.85rem', color: sel ? '#0047b3' : '#2a3a5a', fontWeight: sel ? 600 : 400 }}>
+                            [{d.tipo || d.categoria}] {d.nombre}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {modalDispIds.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                      <span style={{ fontSize: '0.76rem', color: '#0047b3', fontWeight: 600 }}>
+                        {modalDispIds.length} dispositivo{modalDispIds.length > 1 ? 's' : ''} seleccionado{modalDispIds.length > 1 ? 's' : ''}
+                      </span>
+                      <button type="button" onClick={() => onDispIdsChange([])}
+                        style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.76rem' }}>
+                        <i className="fas fa-times"></i> Limpiar
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="form-group">
+            <label><i className="fas fa-tag"></i> Asunto *</label>
+            <input
+              type="text"
+              value={modalAsunto}
+              onChange={e => onAsuntoChange(e.target.value)}
+              required
+              placeholder="Describe brevemente el problema..."
+            />
+          </div>
+          <div className="form-group">
+            <label><i className="fas fa-align-left"></i> Descripción</label>
+            <textarea
+              value={modalDesc}
+              onChange={e => onDescChange(e.target.value)}
+              rows={3}
+              placeholder="Detalles adicionales..."
+            />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label><i className="fas fa-exclamation-triangle"></i> Prioridad</label>
+              <select value={modalPrioridad} onChange={e => onPrioridadChange(e.target.value)}>
+                <option value="Baja">Baja</option>
+                <option value="Media">Media</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label><i className="fas fa-tasks"></i> Estado</label>
+              <select value={modalEstado} onChange={e => onEstadoChange(e.target.value)}>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En curso">En curso</option>
+                <option value="Completado">Completado</option>
+                <option value="Pendiente de facturar">Pendiente de facturar</option>
+                <option value="Facturado">Facturado</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label><i className="fas fa-user-check"></i> Asignar operarios</label>
+            <OperariosSelector
+              operarios={operarios}
+              selected={selectedOperarios}
+              onChange={onOperariosChange}
+            />
+          </div>
+        </div>
+        <div className="modal-buttons">
+          <button type="submit" className="btn-primary"><i className="fas fa-save"></i> Guardar</button>
+          <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+        </div>
+      </form>
+    </>
+  )
+
+  // ── Contact side panel ──────────────────────────────────────
+  const contactPanel = (
+    <div className="ticket-side-panel modal-content">
+      <div className="modal-header">
+        <h2><i className="fas fa-user-plus"></i> Nuevo Contacto</h2>
+        <button className="modal-close" onClick={closeSidePanel}><i className="fas fa-times"></i></button>
+      </div>
+      <form onSubmit={saveContact} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div className="modal-body" style={{ flex: 1, overflowY: 'auto' }}>
+          <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 14px', padding: '8px 12px', background: '#f0f6ff', borderRadius: 8, border: '1px solid #b8dcf8' }}>
+            <i className="fas fa-info-circle" style={{ color: '#0047b3', marginRight: 6 }}></i>
+            Se añadirá un contacto a la empresa seleccionada
+          </p>
+          <div className="form-group">
+            <label>Nombre *</label>
+            <input type="text" value={contNombre} onChange={e => setContNombre(e.target.value)} required placeholder="Nombre del contacto" />
+          </div>
+          <div className="form-group">
+            <label>Teléfono</label>
+            <input type="tel" value={contTelefono} onChange={e => setContTelefono(e.target.value)} placeholder="612 345 678" />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input type="email" value={contEmail} onChange={e => setContEmail(e.target.value)} placeholder="contacto@empresa.com" />
+          </div>
+          <div className="form-group">
+            <label>Cargo</label>
+            <input type="text" value={contCargo} onChange={e => setContCargo(e.target.value)} placeholder="Ej: Responsable IT, Gerente..." />
+          </div>
+        </div>
+        <div className="modal-buttons">
+          <button type="submit" className="btn-primary" disabled={contactSaving}>
+            <i className={`fas ${contactSaving ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> {contactSaving ? 'Guardando...' : 'Guardar'}
+          </button>
+          <button type="button" className="btn-secondary" onClick={closeSidePanel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  )
+
+  // ── Device side panel ───────────────────────────────────────
+  const devicePanel = (
+    <div className="ticket-side-panel modal-content">
+      <div className="modal-header">
+        <h2><i className="fas fa-desktop"></i> Añadir Dispositivo</h2>
+        <button className="modal-close" onClick={closeSidePanel}><i className="fas fa-times"></i></button>
+      </div>
+      {devicePanelStep === 'select' ? (
+        <div className="modal-body">
+          <p style={{ fontSize: '0.84rem', color: '#64748b', marginBottom: 16 }}>
+            Selecciona el tipo de dispositivo que quieres crear:
+          </p>
+          <div className="device-type-grid">
+            {Object.entries(DEVICE_CAT_LABELS).map(([cat, label]) => (
+              <button
+                key={cat}
+                type="button"
+                className="device-type-btn"
+                onClick={() => { setDeviceCategory(cat); setDevicePanelStep('form'); setDeviceExtraFields([]) }}
+              >
+                <i className={`fas ${DEVICE_ICONOS[cat]}`}></i>
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button type="button" onClick={() => setDevicePanelStep('select')}
+              style={{ background: 'none', border: 'none', color: '#0047b3', cursor: 'pointer', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <i className="fas fa-arrow-left"></i> Volver
+            </button>
+            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+              <i className={`fas ${DEVICE_ICONOS[deviceCategory]}`} style={{ marginRight: 4 }}></i>
+              {DEVICE_CAT_LABELS[deviceCategory]}
+            </span>
+          </div>
+          {renderDeviceForm()}
+        </>
+      )}
+    </div>
+  )
+
+  // ── Render ──────────────────────────────────────────────────
   return (
     <div
       className="modal"
       style={{ display: 'flex' }}
       onClick={e => e.target.classList.contains('modal') && onClose()}
     >
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>
-            <i className="fas fa-ticket-alt"></i>{' '}
-            {editingTicket ? `Editar Ticket #${editingTicket.numero}` : 'Nuevo Ticket'}
-          </h2>
-          <button className="modal-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
+      <div className={`ticket-panels-container${panelOpen ? ' with-panel' : ''}`}>
+        <div className="modal-content ticket-modal-main">
+          {ticketFormContent}
         </div>
-        <form onSubmit={onSave}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label><i className="fas fa-building"></i> Empresa *</label>
-              <SearchableSelect
-                name="empresa_id"
-                value={modalEmprId}
-                onChange={onEmpresaChange}
-                options={empresas.map(e => ({ value: e.id, label: e.nombre }))}
-                placeholder="Seleccionar empresa..."
-                required
-              />
-            </div>
-
-            {/* Contacto de la empresa */}
-            {modalEmprId && (
-              <div className="form-group">
-                <label><i className="fas fa-user-tie"></i> Contacto <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional)</span></label>
-                {empresaContactos.length === 0 ? (
-                  <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene contactos registrados.</p>
-                ) : (
-                  <>
-                    <select
-                      value={modalContactoIdx}
-                      onChange={e => onContactoIdxChange(e.target.value)}
-                      style={{ marginBottom: selectedContacto ? 6 : 0 }}
-                    >
-                      <option value="">— Sin contacto —</option>
-                      {empresaContactos.map((c, i) => (
-                        <option key={i} value={i}>
-                          {c.nombre}{c.cargo ? ` · ${c.cargo}` : ''}{c.telefono ? ` · ${c.telefono}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedContacto && (
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 12px', background: '#f0f6ff',
-                        border: '1px solid #b8dcf8', borderRadius: 8,
-                        fontSize: '0.82rem',
-                      }}>
-                        <div style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: '#0047b3', color: 'white',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontWeight: 700, fontSize: '0.72rem', flexShrink: 0,
-                        }}>
-                          {(selectedContacto.nombre || '?').charAt(0).toUpperCase()}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: '#1e293b' }}>{selectedContacto.nombre}</div>
-                          {selectedContacto.cargo && <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{selectedContacto.cargo}</div>}
-                        </div>
-                        {selectedContacto.telefono && (
-                          <a href={`tel:${selectedContacto.telefono}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#0047b3', textDecoration: 'none', fontWeight: 500, fontSize: '0.8rem', flexShrink: 0 }}
-                            onClick={e => e.stopPropagation()}>
-                            <i className="fas fa-phone" style={{ fontSize: '0.7rem' }}></i>
-                            {selectedContacto.telefono}
-                          </a>
-                        )}
-                        {selectedContacto.email && (
-                          <a href={`mailto:${selectedContacto.email}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b', textDecoration: 'none', fontSize: '0.8rem', flexShrink: 0 }}
-                            onClick={e => e.stopPropagation()}>
-                            <i className="fas fa-envelope" style={{ fontSize: '0.7rem' }}></i>
-                            {selectedContacto.email}
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Dispositivos — búsqueda + selección múltiple */}
-            {modalEmprId && (
-              <div className="form-group">
-                <label><i className="fas fa-desktop"></i> Dispositivos <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional, múltiple)</span></label>
-                {modalDispositivos.length === 0 ? (
-                  <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene dispositivos registrados.</p>
-                ) : (
-                  <>
-                    {/* Buscador */}
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '6px 10px', marginBottom: 4,
-                      border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
-                      background: 'white', transition: 'border-color 0.15s',
-                    }}
-                      onFocus={() => {}} // css :focus-within handles border
-                    >
-                      <i className="fas fa-search" style={{ color: '#94a3b8', fontSize: '0.78rem', flexShrink: 0 }}></i>
-                      <input
-                        type="text"
-                        value={dispSearch}
-                        onChange={e => setDispSearch(e.target.value)}
-                        placeholder="Buscar dispositivo..."
-                        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#2a3a5a', fontFamily: 'inherit' }}
-                      />
-                      {dispSearch && (
-                        <button type="button" onClick={() => setDispSearch('')}
-                          style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
-                          <i className="fas fa-times"></i>
-                        </button>
-                      )}
-                    </div>
-                    {/* Lista */}
-                    <div style={{
-                      border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
-                      maxHeight: 160, overflowY: 'auto', background: 'white',
-                    }}>
-                      {filteredDisps.length === 0 ? (
-                        <div style={{ padding: '10px 12px', fontSize: '0.82rem', color: '#94a3b8', textAlign: 'center' }}>Sin resultados</div>
-                      ) : filteredDisps.map(d => {
-                        const sel = modalDispIds.includes(d.id)
-                        return (
-                          <div key={d.id}
-                            onClick={() => toggleDisp(d.id)}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 10,
-                              padding: '8px 12px', cursor: 'pointer',
-                              background: sel ? '#e8f0fe' : 'white',
-                              borderBottom: '1px solid #f0f4f8',
-                              transition: 'background 0.12s',
-                              userSelect: 'none',
-                            }}
-                          >
-                            <div style={{
-                              width: 18, height: 18, borderRadius: 4,
-                              border: `2px solid ${sel ? '#0047b3' : '#cbd5e1'}`,
-                              background: sel ? '#0047b3' : 'white',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0, transition: 'all 0.12s',
-                            }}>
-                              {sel && <i className="fas fa-check" style={{ color: 'white', fontSize: '0.6rem' }}></i>}
-                            </div>
-                            <span style={{ fontSize: '0.85rem', color: sel ? '#0047b3' : '#2a3a5a', fontWeight: sel ? 600 : 400 }}>
-                              [{d.tipo || d.categoria}] {d.nombre}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    {modalDispIds.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-                        <span style={{ fontSize: '0.76rem', color: '#0047b3', fontWeight: 600 }}>
-                          {modalDispIds.length} dispositivo{modalDispIds.length > 1 ? 's' : ''} seleccionado{modalDispIds.length > 1 ? 's' : ''}
-                        </span>
-                        <button type="button" onClick={() => onDispIdsChange([])}
-                          style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.76rem' }}>
-                          <i className="fas fa-times"></i> Limpiar
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            <div className="form-group">
-              <label><i className="fas fa-tag"></i> Asunto *</label>
-              <input
-                type="text"
-                value={modalAsunto}
-                onChange={e => onAsuntoChange(e.target.value)}
-                required
-                placeholder="Describe brevemente el problema..."
-              />
-            </div>
-            <div className="form-group">
-              <label><i className="fas fa-align-left"></i> Descripción</label>
-              <textarea
-                value={modalDesc}
-                onChange={e => onDescChange(e.target.value)}
-                rows={3}
-                placeholder="Detalles adicionales..."
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label><i className="fas fa-exclamation-triangle"></i> Prioridad</label>
-                <select value={modalPrioridad} onChange={e => onPrioridadChange(e.target.value)}>
-                  <option value="Baja">Baja</option>
-                  <option value="Media">Media</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Urgente">Urgente</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label><i className="fas fa-tasks"></i> Estado</label>
-                <select value={modalEstado} onChange={e => onEstadoChange(e.target.value)}>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En curso">En curso</option>
-                  <option value="Completado">Completado</option>
-                  <option value="Pendiente de facturar">Pendiente de facturar</option>
-                  <option value="Facturado">Facturado</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-group">
-              <label><i className="fas fa-user-check"></i> Asignar operarios</label>
-              <OperariosSelector
-                operarios={operarios}
-                selected={selectedOperarios}
-                onChange={onOperariosChange}
-              />
-            </div>
-          </div>
-          <div className="modal-buttons">
-            <button type="submit" className="btn-primary"><i className="fas fa-save"></i> Guardar</button>
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-          </div>
-        </form>
+        {showContactPanel && contactPanel}
+        {showDevicePanel  && devicePanel}
       </div>
     </div>
   )
@@ -929,6 +1249,37 @@ export default function Tickets() {
       const dispositivos = await getDispositivos(empresaId)
       setModalDispositivos(dispositivos?.filter(d => d.categoria !== 'correo') || [])
     } catch { setModalDispositivos([]) }
+  }
+
+  // ── CREAR CONTACTO desde el panel lateral ──────────────────
+  async function handleSaveContact(contactData) {
+    const empresa = empresas.find(e => e.id === modalEmprId)
+    const nuevosContactos = [...(empresa?.contactos || []), contactData]
+    try {
+      await updateEmpresa(modalEmprId, { ...empresa, contactos: nuevosContactos })
+      const nuevaEmpresa = { ...empresa, contactos: nuevosContactos }
+      setEmpresas(prev => prev.map(e => e.id === modalEmprId ? nuevaEmpresa : e))
+      setEmpresaContactos(nuevosContactos)
+      setModalContactoIdx(String(nuevosContactos.length - 1))
+      showToast('success', 'Contacto creado', contactData.nombre)
+    } catch (error) {
+      showToast('error', 'Error', error.message)
+      throw error
+    }
+  }
+
+  // ── CREAR DISPOSITIVO desde el panel lateral ────────────────
+  async function handleSaveDevice(payload, categoria) {
+    try {
+      const newDevice = await createDispositivo({ ...payload, empresa_id: modalEmprId, categoria })
+      const updatedDevices = await getDispositivos(modalEmprId)
+      setModalDispositivos(updatedDevices?.filter(d => d.categoria !== 'correo') || [])
+      if (newDevice?.id) setModalDispIds(prev => [...prev, newDevice.id])
+      showToast('success', 'Dispositivo creado', payload.nombre || '')
+    } catch (error) {
+      showToast('error', 'Error', error.message)
+      throw error
+    }
   }
 
   // ── GUARDAR TICKET + ENVIAR EMAIL si hay nuevos operarios ──
@@ -1512,7 +1863,7 @@ export default function Tickets() {
         </main>
 
         {showAsignarModal && <AsignarModal />}
-        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
+        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}
       </div>
     )
   }
@@ -1692,7 +2043,7 @@ export default function Tickets() {
         </div>
 
       </main>
-      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} />}
+      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}
     </div>
   )
 }

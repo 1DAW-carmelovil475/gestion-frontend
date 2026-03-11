@@ -70,8 +70,8 @@ const SISTEMA_PREFIX     = '__SISTEMA__:'
 function MiembrosSelector({ operarios, userId, selected, onChange, showQuickFilters = false }) {
   const [query, setQuery] = useState('')
   const lista   = operarios.filter(o => o.id !== userId)
-  const admins  = lista.filter(o => o.rol === 'admin')
-  const workers = lista.filter(o => o.rol !== 'admin')
+  const admins  = lista.filter(o => o.rol === 'admin' || o.rol === 'gestor')
+  const workers = lista.filter(o => o.rol === 'trabajador')
   const filtered = query.trim()
     ? lista.filter(o => (o.nombre || o.email || '').toLowerCase().includes(query.toLowerCase()))
     : lista
@@ -113,7 +113,11 @@ function MiembrosSelector({ operarios, userId, selected, onChange, showQuickFilt
               <div className="avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
               <div className="operario-info">
                 <span className="nombre">{op.nombre || op.email}</span>
-                {op.rol === 'admin' ? <span className="badge-rol admin">Admin</span> : <span className="badge-rol worker">Trabajador</span>}
+                {op.rol === 'admin'
+                  ? <span className="badge-rol admin">Admin</span>
+                  : op.rol === 'gestor'
+                  ? <span className="badge-rol gestor">Gestor</span>
+                  : <span className="badge-rol worker">Trabajador</span>}
               </div>
               <span className="check-icon"><i className="fas fa-check"></i></span>
             </div>

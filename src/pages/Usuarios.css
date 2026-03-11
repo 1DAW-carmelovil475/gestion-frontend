@@ -67,6 +67,16 @@
   color: #1d4ed8;
 }
 
+.badge-rol.gestor {
+  background: #cffafe;
+  color: #0e7490;
+}
+
+.badge-rol.cliente {
+  background: #dcfce7;
+  color: #15803d;
+}
+
 .badge-rol i { font-size: 0.7rem; }
 
 /* ── Badge de estado ─────────────────────────── */

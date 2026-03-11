@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ChatNotificationsProvider } from './context/ChatNotificationsContext'
 import ChatToasts from './components/ChatToasts'
@@ -8,10 +8,12 @@ import Usuarios from './pages/Usuarios'
 import Tickets from './pages/Tickets'
 import Estadisticas from './pages/Estadisticas'
 import Chat from './pages/Chat'
+import ClienteIncidencias from './pages/ClienteIncidencias'
 import './App.css'
 
-function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, loading, isAdmin } = useAuth()
+function ProtectedRoute({ children, adminOnly = false, clienteOnly = false }) {
+  const { user, loading, isAdmin, isCliente, isGestor } = useAuth()
+  const location = useLocation()
 
   if (loading) {
     return (
@@ -23,19 +25,35 @@ function ProtectedRoute({ children, adminOnly = false }) {
   }
 
   if (!user) return <Navigate to="/login" replace />
-  if (adminOnly && !isAdmin()) return <Navigate to="/tickets" replace />
+
+  // Clientes solo pueden acceder a /incidencias
+  if (isCliente() && !clienteOnly) return <Navigate to="/incidencias" replace />
+
+  // No-clientes no pueden acceder a rutas exclusivas de cliente
+  if (!isCliente() && clienteOnly) return <Navigate to="/tickets" replace />
+
+  if (adminOnly && !isAdmin() && !isGestor()) return <Navigate to="/tickets" replace />
 
   return children
 }
 
-// ChatToasts y ChatNotificationsProvider están al nivel de AppRoutes
-// para que los toasts sean visibles en CUALQUIER página de la app,
-// no solo cuando Chat.jsx está montado.
 function AppRoutes() {
   return (
     <ChatNotificationsProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+
+        {/* Ruta exclusiva para clientes */}
+        <Route
+          path="/incidencias"
+          element={
+            <ProtectedRoute clienteOnly>
+              <ClienteIncidencias />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Rutas para trabajadores, gestores y admins */}
         <Route
           path="/"
           element={

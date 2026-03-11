@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../services/api'
+import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, getEmpresas } from '../services/api'
 import ChatNavLink from '../components/ChatNavLink'
 import './Usuarios.css'
 
@@ -21,10 +21,77 @@ function getInitials(nombre) {
 }
 
 // ============================================================
+// SEARCHABLE SELECT (igual que en Tickets)
+// ============================================================
+function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar...', required = false, name }) {
+  const [query, setQuery]   = useState('')
+  const [open, setOpen]     = useState(false)
+  const [typing, setTyping] = useState(false)
+  const wrapRef             = useRef(null)
+  const inputRef            = useRef(null)
+
+  const selected     = options.find(o => o.value === value)
+  const displayValue = typing ? query : (selected?.label || '')
+  const filtered     = typing && query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options
+
+  useEffect(() => {
+    function handler(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false); setTyping(false); setQuery('')
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function handleInputChange(e) { setQuery(e.target.value); setTyping(true); setOpen(true) }
+  function handleFocus() { setOpen(true); setTyping(true); setQuery(''); setTimeout(() => inputRef.current?.select(), 0) }
+  function select(val) { onChange(val); setTyping(false); setQuery(''); setOpen(false) }
+  function handleClear() { onChange(''); setTyping(true); setQuery(''); setOpen(true); inputRef.current?.focus() }
+
+  return (
+    <div className="ss-wrap" ref={wrapRef}>
+      {required && <input type="text" name={name} value={value} onChange={() => {}} required style={{ display: 'none' }} />}
+      <div className={`ss-input-wrap ${open ? 'open' : ''}`}>
+        <i className="fas fa-search ss-input-icon"></i>
+        <input ref={inputRef} className="ss-input" value={displayValue} onChange={handleInputChange}
+          onFocus={handleFocus} placeholder={placeholder} autoComplete="off" />
+        {value && !typing && (
+          <button type="button" className="ss-clear-query" onMouseDown={e => { e.preventDefault(); handleClear() }}>
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+        <i className={`fas fa-chevron-down ss-arrow ${open ? 'open' : ''}`}></i>
+      </div>
+      {open && (
+        <div className="ss-dropdown">
+          <div className="ss-list">
+            {filtered.length === 0
+              ? <div className="ss-empty">Sin resultados</div>
+              : filtered.map(o => (
+                  <div key={o.value} className={`ss-option ${value === o.value ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); select(o.value) }}>
+                    <span className="ss-opt-label">{o.label}</span>
+                    {value === o.value && <i className="fas fa-check ss-opt-check"></i>}
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
 // MODAL: USUARIO
 // ============================================================
-function UserModal({ editingUser, onSave, onClose }) {
+function UserModal({ editingUser, empresas, onSave, onClose }) {
   const [showPwd, setShowPwd] = useState(false)
+  const [rolSeleccionado, setRolSeleccionado] = useState(editingUser?.rol || 'trabajador')
+  const [empresaId, setEmpresaId] = useState(editingUser?.empresa_id || '')
 
   return (
     <div
@@ -65,7 +132,7 @@ function UserModal({ editingUser, onSave, onClose }) {
                 <input
                   type="email"
                   name="email"
-                  placeholder="Ej: maria.garcia@holainformatica.com"
+                  placeholder="Ej: maria.garcia@empresa.com"
                   required
                 />
               </div>
@@ -74,11 +141,32 @@ function UserModal({ editingUser, onSave, onClose }) {
             {/* Rol */}
             <div className="form-group">
               <label><i className="fas fa-user-tag"></i> Rol *</label>
-              <select name="rol" defaultValue={editingUser?.rol || 'trabajador'}>
+              <select
+                name="rol"
+                defaultValue={editingUser?.rol || 'trabajador'}
+                onChange={e => { setRolSeleccionado(e.target.value); if (e.target.value !== 'cliente') setEmpresaId('') }}
+              >
                 <option value="trabajador">Trabajador — acceso estándar</option>
+                <option value="gestor">Gestor — recibe incidencias de clientes</option>
                 <option value="admin">Administrador — acceso total</option>
+                <option value="cliente">Cliente — portal de incidencias</option>
               </select>
             </div>
+
+            {/* Empresa — solo para clientes */}
+            {rolSeleccionado === 'cliente' && (
+              <div className="form-group">
+                <label><i className="fas fa-building"></i> {editingUser ? 'Empresa asignada' : 'Añadir a empresa *'}</label>
+                <SearchableSelect
+                  name="empresa_id"
+                  value={empresaId}
+                  onChange={setEmpresaId}
+                  options={empresas.map(e => ({ value: e.id, label: e.nombre }))}
+                  placeholder="Buscar empresa..."
+                  required={!editingUser}
+                />
+              </div>
+            )}
 
             {/* Estado — solo en edición */}
             {editingUser && (
@@ -156,6 +244,7 @@ export default function Usuarios() {
   const navigate = useNavigate()
 
   const [usuarios, setUsuarios]       = useState([])
+  const [empresas, setEmpresas]       = useState([])
   const [loading, setLoading]         = useState(true)
   const [searchTerm, setSearchTerm]   = useState('')
   const [rolFilter, setRolFilter]     = useState('all')
@@ -172,8 +261,9 @@ export default function Usuarios() {
   async function loadData() {
     setLoading(true)
     try {
-      const data = await getUsuarios()
-      setUsuarios(data || [])
+      const [usersData, empresasData] = await Promise.all([getUsuarios(), getEmpresas()])
+      setUsuarios(usersData || [])
+      setEmpresas(empresasData || [])
     } catch (error) {
       showToast('error', 'Error', error.message)
     } finally {
@@ -193,17 +283,24 @@ export default function Usuarios() {
   async function saveUser(e) {
     e.preventDefault()
     const formData = new FormData(e.target)
+    const rolValue = formData.get('rol')
     const payload = {
       nombre: formData.get('nombre'),
-      rol:    formData.get('rol'),
+      rol:    rolValue,
       activo: formData.get('activo') === 'true',
     }
     if (!editingUser) {
       payload.email    = formData.get('email')
       payload.password = formData.get('password')
+      if (rolValue === 'cliente') {
+        payload.empresa_id = formData.get('empresa_id')
+      }
     } else {
       const pwd = formData.get('password')?.trim()
       if (pwd) payload.password = pwd
+      if (rolValue === 'cliente') {
+        payload.empresa_id = formData.get('empresa_id') || null
+      }
     }
     try {
       if (editingUser) {
@@ -257,12 +354,28 @@ export default function Usuarios() {
     return isNaN(d) ? str : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
+  function getRolLabel(rol) {
+    const labels = { admin: 'Admin', trabajador: 'Trabajador', gestor: 'Gestor', cliente: 'Cliente' }
+    return labels[rol] || rol
+  }
+
+  function getRolIcon(rol) {
+    const icons = { admin: 'fa-shield-alt', trabajador: 'fa-user', gestor: 'fa-user-tie', cliente: 'fa-user-tag' }
+    return icons[rol] || 'fa-user'
+  }
+
+  function getRolColor(rol) {
+    const colors = { admin: '#7c3aed', trabajador: '#0047b3', gestor: '#0891b2', cliente: '#16a34a' }
+    return colors[rol] || '#0047b3'
+  }
+
   // ── Filtrado ──────────────────────────────────────
   const filtered = usuarios.filter(u => {
     const s = searchTerm.toLowerCase()
     const matchSearch = !searchTerm ||
       u.nombre?.toLowerCase().includes(s) ||
-      u.email?.toLowerCase().includes(s)
+      u.email?.toLowerCase().includes(s) ||
+      u.empresa_nombre?.toLowerCase().includes(s)
     const matchRol    = rolFilter    === 'all' || u.rol === rolFilter
     const matchEstado = estadoFilter === 'all' ||
       (estadoFilter === 'activo'      && u.activo) ||
@@ -272,6 +385,8 @@ export default function Usuarios() {
 
   const totalAdmins      = usuarios.filter(u => u.rol === 'admin').length
   const totalTrabajadores = usuarios.filter(u => u.rol === 'trabajador').length
+  const totalGestores    = usuarios.filter(u => u.rol === 'gestor').length
+  const totalClientes    = usuarios.filter(u => u.rol === 'cliente').length
   const totalActivos     = usuarios.filter(u => u.activo).length
 
   if (loading) {
@@ -357,12 +472,21 @@ export default function Usuarios() {
               <i className="fas fa-user-tie"></i>
             </div>
             <div className="stat-info">
-              <h3>{totalTrabajadores}</h3>
-              <p>Trabajadores</p>
+              <h3>{totalTrabajadores + totalGestores}</h3>
+              <p>Trabajadores / Gestores</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon" style={{ background: '#dcfce7', color: '#16a34a' }}>
+              <i className="fas fa-user-tag"></i>
+            </div>
+            <div className="stat-info">
+              <h3>{totalClientes}</h3>
+              <p>Clientes</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#fef9c3', color: '#ca8a04' }}>
               <i className="fas fa-user-check"></i>
             </div>
             <div className="stat-info">
@@ -378,7 +502,7 @@ export default function Usuarios() {
             <i className="fas fa-search"></i>
             <input
               type="text"
-              placeholder="Buscar por nombre o email…"
+              placeholder="Buscar por nombre, email o empresa…"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -388,6 +512,8 @@ export default function Usuarios() {
               <option value="all">Todos los roles</option>
               <option value="admin">Administrador</option>
               <option value="trabajador">Trabajador</option>
+              <option value="gestor">Gestor</option>
+              <option value="cliente">Cliente</option>
             </select>
             <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
               <option value="all">Todos los estados</option>
@@ -404,6 +530,7 @@ export default function Usuarios() {
               <tr>
                 <th>Usuario</th>
                 <th>Email</th>
+                <th>Empresa</th>
                 <th>Rol</th>
                 <th>Estado</th>
                 <th>Alta</th>
@@ -413,7 +540,7 @@ export default function Usuarios() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="6">
+                  <td colSpan="7">
                     <div className="empty-state">
                       <i className="fas fa-user-slash"></i>
                       <p>No se encontraron usuarios</p>
@@ -426,7 +553,7 @@ export default function Usuarios() {
                     <div className="user-cell">
                       <div
                         className="user-cell-avatar"
-                        style={{ background: u.rol === 'admin' ? '#7c3aed' : '#0047b3' }}
+                        style={{ background: getRolColor(u.rol) }}
                       >
                         {(u.nombre || u.email || '?').charAt(0).toUpperCase()}
                       </div>
@@ -441,10 +568,13 @@ export default function Usuarios() {
                     </div>
                   </td>
                   <td className="u-email">{u.email}</td>
+                  <td style={{ color: u.empresa_nombre ? '#222' : '#aaa', fontSize: '0.9rem' }}>
+                    {u.empresa_nombre || '—'}
+                  </td>
                   <td>
                     <span className={`badge-rol ${u.rol}`}>
-                      <i className={`fas ${u.rol === 'admin' ? 'fa-shield-alt' : 'fa-user'}`}></i>
-                      {u.rol === 'admin' ? 'Admin' : 'Trabajador'}
+                      <i className={`fas ${getRolIcon(u.rol)}`}></i>
+                      {getRolLabel(u.rol)}
                     </span>
                   </td>
                   <td>
@@ -492,7 +622,7 @@ export default function Usuarios() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div
                     className="user-cell-avatar"
-                    style={{ background: u.rol === 'admin' ? '#7c3aed' : '#0047b3' }}
+                    style={{ background: getRolColor(u.rol) }}
                   >
                     {(u.nombre || '?').charAt(0).toUpperCase()}
                   </div>
@@ -502,6 +632,12 @@ export default function Usuarios() {
                       {u.id === user?.id && <span className="badge-yo">Tú</span>}
                     </div>
                     <div className="data-card-subtitle">{u.email}</div>
+                    {u.empresa_nombre && (
+                      <div className="data-card-subtitle" style={{ color: '#0047b3' }}>
+                        <i className="fas fa-building" style={{ marginRight: 4 }}></i>
+                        {u.empresa_nombre}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <span className={`badge-estado ${u.activo ? 'activo' : 'inactivo'}`}>
@@ -510,8 +646,8 @@ export default function Usuarios() {
               </div>
               <div className="data-card-meta">
                 <span>
-                  <i className={`fas ${u.rol === 'admin' ? 'fa-shield-alt' : 'fa-user'}`}></i>
-                  {u.rol === 'admin' ? 'Administrador' : 'Trabajador'}
+                  <i className={`fas ${getRolIcon(u.rol)}`}></i>
+                  {getRolLabel(u.rol)}
                 </span>
                 <span><i className="fas fa-calendar-alt"></i> {formatDate(u.created_at)}</span>
               </div>
@@ -534,6 +670,7 @@ export default function Usuarios() {
       {showUserModal && (
         <UserModal
           editingUser={editingUser}
+          empresas={empresas}
           onSave={saveUser}
           onClose={() => setShowUserModal(false)}
         />

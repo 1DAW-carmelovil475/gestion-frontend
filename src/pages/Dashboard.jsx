@@ -448,7 +448,7 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
 // DASHBOARD PRINCIPAL
 // ============================================================
 export default function Dashboard() {
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, isGestor } = useAuth()
   const navigate = useNavigate()
 
   const [empresas, setEmpresas]   = useState([])
@@ -771,7 +771,7 @@ export default function Dashboard() {
           </Link>
         )}
         <Link to="/tickets"      className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
-        {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
+        {(isAdmin() || isGestor()) && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
         <ChatNavLink mode="top" />
       </nav>
       <div className="user-area">
@@ -1065,7 +1065,7 @@ export default function Dashboard() {
           </Link>
         )}
         <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
-        {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
+        {(isAdmin() || isGestor()) && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
         <ChatNavLink mode="bottom" />
       </nav>
 

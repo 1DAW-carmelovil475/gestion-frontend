@@ -1,0 +1,589 @@
+/* ============================================================
+   CLIENTE INCIDENCIAS — Estilos
+   ============================================================ */
+
+.ci-page {
+  min-height: 100vh;
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+}
+
+/* El header usa las clases .topbar, .logo, .user-area, .btn-logout de App.css */
+
+/* ── Filas/cards clicables ───────────────────────────────── */
+.ci-row-clickable {
+  cursor: pointer;
+}
+
+.ci-ver {
+  color: #94a3b8;
+  text-align: right;
+  width: 32px;
+}
+
+.ci-table tbody tr.ci-row-clickable:hover .ci-ver {
+  color: #0047b3;
+}
+
+.ci-card-eye {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* ── Detalle de incidencia ───────────────────────────────── */
+.ci-detalle-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ci-detalle-field:last-child {
+  border-bottom: none;
+}
+
+.ci-detalle-field--col {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ci-detalle-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 110px;
+}
+
+.ci-detalle-value {
+  font-size: 0.92rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.ci-detalle-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.6;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+}
+
+/* ── Nav móvil ───────────────────────────────────────────── */
+.ci-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  z-index: 99;
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+}
+
+.ci-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  color: #64748b;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.ci-bottom-nav-item--active {
+  color: #0047b3;
+  font-weight: 600;
+}
+
+.ci-bottom-nav-item i {
+  font-size: 1.1rem;
+}
+
+/* ── Main ────────────────────────────────────────────────── */
+.ci-main {
+  flex: 1;
+  padding: 28px 28px 40px;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Section header ──────────────────────────────────────── */
+.ci-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ci-section-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ci-section-header h1 i {
+  color: #f59e0b;
+}
+
+.ci-section-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+/* ── Botones ─────────────────────────────────────────────── */
+.ci-btn-primary {
+  background: #0047b3;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.ci-btn-primary:hover:not(:disabled) {
+  background: #003a99;
+}
+
+.ci-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ci-btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ci-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.ci-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Estados badge ───────────────────────────────────────── */
+.ci-estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ── Tabla desktop ───────────────────────────────────────── */
+.ci-table-wrap {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.ci-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ci-table thead th {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ci-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+
+.ci-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.ci-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.ci-table td {
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.ci-num {
+  font-weight: 700;
+  color: #0047b3 !important;
+  width: 60px;
+}
+
+.ci-asunto {
+  font-weight: 500;
+}
+
+.ci-fecha {
+  color: #94a3b8 !important;
+  font-size: 0.82rem !important;
+  white-space: nowrap;
+}
+
+.ci-empresa-col {
+  white-space: nowrap;
+}
+
+.ci-empresa-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.ci-empresa-tag i {
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+.ci-card-empresa {
+  font-size: 0.78rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+/* ── Cards mobile ────────────────────────────────────────── */
+.ci-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ci-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+}
+
+.ci-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ci-card-num {
+  font-weight: 700;
+  color: #0047b3;
+  font-size: 0.9rem;
+}
+
+.ci-card-asunto {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.ci-card-fecha {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Loading ─────────────────────────────────────────────── */
+.ci-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+
+.ci-loading i {
+  font-size: 2rem;
+  color: #0047b3;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ── Empty ───────────────────────────────────────────────── */
+.ci-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.ci-empty i {
+  font-size: 3rem;
+  color: #10b981;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.ci-empty h3 {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.ci-empty p {
+  color: #64748b;
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.ci-toast {
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  animation: ci-toast-in 0.2s ease;
+}
+
+@keyframes ci-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ci-toast--success {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.ci-toast--error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.ci-toast button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  margin-left: auto;
+  padding: 0 4px;
+  opacity: 0.6;
+}
+
+.ci-toast button:hover {
+  opacity: 1;
+}
+
+/* ── Modal ───────────────────────────────────────────────── */
+.ci-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.ci-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.ci-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ci-modal-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ci-modal-header h2 i {
+  color: #0047b3;
+}
+
+.ci-modal-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.ci-modal-close:hover {
+  color: #1e293b;
+}
+
+.ci-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ci-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ci-form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ci-form-group input,
+.ci-form-group textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.ci-form-group input:focus,
+.ci-form-group textarea:focus {
+  border-color: #0047b3;
+  box-shadow: 0 0 0 3px rgba(0,71,179,0.1);
+}
+
+.ci-form-hint {
+  background: #f0f4ff;
+  border: 1px solid #c7d7f5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #3b5fad;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ci-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+.desktop-only { display: block; }
+.mobile-only  { display: none; }
+
+@media (max-width: 640px) {
+  .ci-main {
+    padding: 16px 16px 80px;
+  }
+
+  .ci-section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ci-btn-primary {
+    justify-content: center;
+  }
+
+  .ci-bottom-nav {
+    display: flex;
+  }
+
+  .ci-user-nombre {
+    display: none;
+  }
+
+  .ci-modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .desktop-only { display: none; }
+  .mobile-only  { display: block; }
+}

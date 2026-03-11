@@ -230,8 +230,8 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar
 // ============================================================
 function OperariosSelector({ operarios, selected, onChange }) {
   const [query, setQuery] = useState('')
-  const admins  = operarios.filter(o => o.rol === 'admin')
-  const workers = operarios.filter(o => o.rol !== 'admin')
+  const admins  = operarios.filter(o => o.rol === 'admin' || o.rol === 'gestor')
+  const workers = operarios.filter(o => o.rol === 'trabajador')
   const filtered = query.trim()
     ? operarios.filter(o => (o.nombre || o.email || '').toLowerCase().includes(query.toLowerCase()))
     : operarios
@@ -270,6 +270,8 @@ function OperariosSelector({ operarios, selected, onChange }) {
                 <span className="nombre">{op.nombre || op.email}</span>
                 {op.rol === 'admin'
                   ? <span className="badge-rol admin"><i className="fas fa-shield-alt"></i> Admin</span>
+                  : op.rol === 'gestor'
+                  ? <span className="badge-rol gestor"><i className="fas fa-user-tie"></i> Gestor</span>
                   : <span className="badge-rol worker"><i className="fas fa-hard-hat"></i> Trabajador</span>}
               </div>
               <span className="check-icon"><i className="fas fa-check"></i></span>

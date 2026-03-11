@@ -1633,6 +1633,7 @@
 .operario-info .nombre { font-size: 0.88rem; color: var(--dark); font-weight: 500; }
 .badge-rol { font-size: 0.67rem; font-weight: 600; padding: 2px 7px; border-radius: 9px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
 .badge-rol.admin  { background: #fff3cd; color: #856404; }
+.badge-rol.gestor { background: #cffafe; color: #0e7490; }
 .badge-rol.worker { background: #e8f5e9; color: #2e7d32; }
 .check-icon {
   width: 19px; height: 19px; border-radius: 50%;

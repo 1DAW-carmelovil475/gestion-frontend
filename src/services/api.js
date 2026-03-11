@@ -130,6 +130,12 @@ export async function createUsuario(data)      { return apiFetch('/api/usuarios'
 export async function updateUsuario(id, data)  { return apiFetch(`/api/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }) }
 export async function deleteUsuario(id)        { return apiFetch(`/api/usuarios/${id}`, { method: 'DELETE' }) }
 
+// ── Incidencias (Cliente) ─────────────────────────────────────────────────
+export async function getIncidenciasCliente() { return apiFetch('/api/v2/tickets') }
+export async function createIncidencia(data) {
+  return apiFetch('/api/v2/tickets/incidencia', { method: 'POST', body: JSON.stringify(data) })
+}
+
 // ── Estadísticas ──────────────────────────────────────────────────────────
 export async function getEstadisticasResumen()         { return apiFetch('/api/v2/estadisticas/resumen') }
 export async function getEstadisticasOperarios(p = {}) { return apiFetch(`/api/v2/estadisticas/operarios?${new URLSearchParams(p)}`) }

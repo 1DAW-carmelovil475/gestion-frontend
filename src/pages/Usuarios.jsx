@@ -92,6 +92,7 @@ function UserModal({ editingUser, empresas, onSave, onClose }) {
   const [showPwd, setShowPwd] = useState(false)
   const [rolSeleccionado, setRolSeleccionado] = useState(editingUser?.rol || 'trabajador')
   const [empresaId, setEmpresaId] = useState(editingUser?.empresa_id || '')
+  const [telefono, setTelefono] = useState(editingUser?.telefono || '')
 
   return (
     <div
@@ -164,6 +165,20 @@ function UserModal({ editingUser, empresas, onSave, onClose }) {
                   options={empresas.map(e => ({ value: e.id, label: e.nombre }))}
                   placeholder="Buscar empresa..."
                   required={!editingUser}
+                />
+              </div>
+            )}
+
+            {/* Teléfono — solo para clientes */}
+            {rolSeleccionado === 'cliente' && (
+              <div className="form-group">
+                <label><i className="fas fa-phone"></i> Teléfono de cliente <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem', marginLeft: 4 }}>(opcional)</span></label>
+                <input
+                  type="tel"
+                  name="telefono"
+                  value={telefono}
+                  onChange={e => setTelefono(e.target.value)}
+                  placeholder="Ej: +34 600 000 000"
                 />
               </div>
             )}
@@ -294,12 +309,14 @@ export default function Usuarios() {
       payload.password = formData.get('password')
       if (rolValue === 'cliente') {
         payload.empresa_id = formData.get('empresa_id')
+        payload.telefono   = formData.get('telefono') || ''
       }
     } else {
       const pwd = formData.get('password')?.trim()
       if (pwd) payload.password = pwd
       if (rolValue === 'cliente') {
         payload.empresa_id = formData.get('empresa_id') || null
+        payload.telefono   = formData.get('telefono') || ''
       }
     }
     try {

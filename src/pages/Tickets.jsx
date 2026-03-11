@@ -1295,8 +1295,12 @@ export default function Tickets() {
     const estado          = modalEstado
     // Guardar nombre y teléfono del contacto seleccionado
     const contactoSeleccionado = modalContactoIdx !== '' ? empresaContactos[Number(modalContactoIdx)] : null
-    const contacto_nombre = contactoSeleccionado?.nombre || null
-    const telefono_cliente = contactoSeleccionado?.telefono || null
+    const contacto_nombre = modalContactoIdx !== ''
+      ? (contactoSeleccionado?.nombre || null)
+      : (editingTicket ? editingTicket.contacto_nombre : null)
+    const telefono_cliente = modalContactoIdx !== ''
+      ? (contactoSeleccionado?.telefono || null)
+      : (editingTicket ? editingTicket.telefono_cliente : null)
 
     if (!empresa_id || !asunto) { showToast('error', 'Error', 'Empresa y asunto son obligatorios'); return }
 
@@ -1552,7 +1556,11 @@ export default function Tickets() {
 
                 <div className="sidebar-card">
                   <h4><i className="fas fa-info-circle"></i> Información</h4>
-                  <div className="info-row"><span className="info-row-label">Empresa</span><span className="info-row-value">{ticketActual.empresas?.nombre || '—'}</span></div>
+                  <div className="info-row"><span className="info-row-label">Empresa</span><span className="info-row-value">
+                    {ticketActual.empresas?.nombre
+                      ? <button style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', fontSize: 'inherit', fontFamily: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }} onClick={() => navigate('/', { state: { empresa_id: ticketActual.empresa_id } })}>{ticketActual.empresas.nombre}</button>
+                      : '—'}
+                  </span></div>
                   <div className="info-row">
                     <span className="info-row-label">Contacto cliente</span>
                     <span className="info-row-value" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1845,9 +1853,6 @@ export default function Tickets() {
                           />
                         </div>
                         <div className="comentario-nuevo-acciones">
-                          <span style={{ fontSize: '0.75rem', color: 'var(--gray)' }}>
-                            <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd>+<kbd>Enter</kbd> nueva línea
-                          </span>
                           <button className="btn-primary" onClick={enviarComentario}>
                             <i className="fas fa-paper-plane"></i> Comentar
                           </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getEmpresas, createEmpresa, updateEmpresa, deleteEmpresa,
@@ -450,6 +450,7 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
 export default function Dashboard() {
   const { user, logout, isAdmin, isGestor } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [empresas, setEmpresas]   = useState([])
   const [tickets, setTickets]     = useState([])
@@ -483,6 +484,11 @@ export default function Dashboard() {
       const [empresasData, ticketsData] = await Promise.all([getEmpresas(), getTickets()])
       setEmpresas(empresasData || [])
       setTickets(ticketsData || [])
+      // Si venimos desde Tickets con una empresa concreta, abrirla directamente
+      if (location.state?.empresa_id) {
+        viewCompany(location.state.empresa_id)
+        navigate('/', { replace: true, state: {} })
+      }
     } catch (error) {
       showToast('error', 'Error', error.message)
     } finally {
@@ -1198,14 +1204,14 @@ export default function Dashboard() {
               <React.Fragment key={c.id}>
                 <div className="company-card">
                   <div className="company-card-header" onClick={() => viewCompany(c.id)}>
-                    <div className="company-card-header-left" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="company-card-header-left">
                       {filiales.length > 0 && (
                         <button className="btn-expand-matriz" onClick={e => { e.stopPropagation(); toggleMatriz(c.id) }}>
                           <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'}`}></i>
                         </button>
                       )}
-                      <div>
-                        <div className="company-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div className="company-card-info-block">
+                        <div className="company-card-name">
                           {c.nombre}
                           {filiales.length > 0 && <span className="badge-filiales">{filiales.length}</span>}
                         </div>
@@ -1235,11 +1241,13 @@ export default function Dashboard() {
                   <div className="company-card company-card-filial" key={f.id}>
                     <div className="company-card-header" onClick={() => viewCompany(f.id)}>
                       <div className="company-card-header-left">
-                        <div className="company-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <i className="fas fa-level-up-alt fa-rotate-90" style={{ color: '#94a3b8', fontSize: '0.7rem' }}></i>
-                          {f.nombre}
+                        <div className="company-card-info-block">
+                          <div className="company-card-name">
+                            <i className="fas fa-level-up-alt fa-rotate-90" style={{ color: '#94a3b8', fontSize: '0.7rem' }}></i>
+                            {f.nombre}
+                          </div>
+                          <div className="company-card-cif">{f.cif || '—'}</div>
                         </div>
-                        <div className="company-card-cif">{f.cif || '—'}</div>
                       </div>
                       <span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span>
                     </div>

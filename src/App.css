@@ -942,43 +942,7 @@ select option {
 .ticket-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ticket-form-grid .form-group-full { grid-column: 1 / -1; }
 
-/* ============================================================
-   CARDS MOBILE
-   ============================================================ */
-.company-card {
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  margin-bottom: 10px;
-}
-
-.company-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border);
-}
-
-.company-card-header-left { display: flex; flex-direction: column; gap: 2px; }
-.company-card-name        { font-weight: 600; font-size: 0.95rem; color: var(--dark); }
-.company-card-cif         { font-size: 0.78rem; color: var(--gray); }
-
-.company-card-body        { padding: 10px 14px; }
-
-.company-card-info        { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-
-.company-card-info-item {
-  font-size: 0.82rem;
-  color: var(--gray);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.company-card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+/* company-card styles moved to Dashboard.css */
 
 .ticket-card-mobile {
   background: white;
@@ -1525,7 +1489,7 @@ select option {
   .detalle-header   { flex-direction: column; align-items: flex-start; }
   .detalle-titulo h2 { font-size: 1rem; }
 
-  .user-info span  { display: none; }
+  .user-info span  { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
   .btn-logout span { display: none; }
   .logo-text       { display: none; }
 

@@ -53,7 +53,7 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar
 
   return (
     <div className="ss-wrap" ref={wrapRef}>
-      {required && <input type="text" name={name} value={value} onChange={() => {}} required style={{ display: 'none' }} />}
+      {name && <input type="text" name={name} value={value} onChange={() => {}} required={required} style={{ display: 'none' }} />}
       <div className={`ss-input-wrap ${open ? 'open' : ''}`}>
         <i className="fas fa-search ss-input-icon"></i>
         <input ref={inputRef} className="ss-input" value={displayValue} onChange={handleInputChange}

@@ -747,41 +747,41 @@
 
 .detalle-tabs {
   display: flex;
-  gap: 0;
+  gap: 6px;
   background: white;
   border-radius: 0;
-  padding: 0 16px;
-  border-bottom: 2px solid var(--border);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 0;
   flex-shrink: 0;
 }
 
 .detalle-tab {
-  padding: 12px 18px;
-  border: none;
-  background: transparent;
-  color: var(--gray);
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: #64748b;
   font-weight: 500;
-  font-size: 0.88rem;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
+  font-size: 0.85rem;
   transition: all 0.18s;
   display: flex;
   align-items: center;
   gap: 7px;
   cursor: pointer;
   font-family: inherit;
-  border-radius: 0;
+  border-radius: 6px;
 }
 
 .detalle-tab:hover {
-  color: var(--primary);
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #94a3b8;
 }
 
 .detalle-tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  background: transparent;
+  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .tab-badge {
@@ -1624,14 +1624,14 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 6px 8px 0;
+    padding: 8px 8px;
     flex-wrap: nowrap;
   }
   .detalle-tabs::-webkit-scrollbar { display: none; }
 
   .detalle-tab {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    padding: 6px 10px;
+    font-size: 0.78rem;
     white-space: nowrap;
   }
 
@@ -1986,6 +1986,10 @@
 [data-theme="dark"] .badge-rol.gestor        { background: #164e63; color: #67e8f9; }
 [data-theme="dark"] .quick-filter            { background: #1e293b; border-color: #2d3f5c; }
 [data-theme="dark"] .ticket-detalle-full     { background: #1e293b; }
+[data-theme="dark"] .detalle-tabs           { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .detalle-tab            { background: #162032; border-color: #2d3f5c; color: #94a3b8; }
+[data-theme="dark"] .detalle-tab:hover      { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+[data-theme="dark"] .detalle-tab.active     { background: var(--primary); border-color: var(--primary); color: #fff; }
 [data-theme="dark"] .editor-rich            { background: #1e293b; border-color: #2d3f5c; }
 [data-theme="dark"] .editor-rich:focus-within { background: #1e293b; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
 [data-theme="dark"] .comentario-nuevo-textarea { background: #1e293b; border-color: #2d3f5c; color: #e2e8f0; }

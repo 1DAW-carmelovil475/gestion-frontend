@@ -545,19 +545,28 @@ select option {
    STATUS / BADGE
    ============================================================ */
 .status {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 3px 9px;
   border-radius: 20px;
   font-size: 0.78rem;
   font-weight: 500;
 }
 
-.status.Activo      { background: #dcfce7; color: #16a34a; }
+.status.Activo                { background: #dcfce7; color: #16a34a; }
 .status.Suspendido,
-.status.Desactivado { background: #fee2e2; color: #dc2626; }
-.status.En-revisión { background: #fef3c7; color: #d97706; }
-.status.admin       { background: #f3e8ff; color: #9333ea; }
-.status.trabajador  { background: #dbeafe; color: #2563eb; }
+.status.Desactivado           { background: #fee2e2; color: #dc2626; }
+.status.En-revisión           { background: #fef3c7; color: #d97706; }
+.status.admin                 { background: #f3e8ff; color: #9333ea; }
+.status.trabajador            { background: #dbeafe; color: #2563eb; }
+.status.gestor                { background: #cffafe; color: #0e7490; }
+.status.cliente               { background: #dcfce7; color: #15803d; }
+.status.Pendiente             { background: #fef3c7; color: #d97706; }
+.status.En-curso              { background: #dbeafe; color: #2563eb; }
+.status.Completado            { background: #d1fae5; color: #059669; }
+.status.Pendiente-de-facturar { background: #fff7ed; color: #ea580c; }
+.status.Facturado             { background: #ede9fe; color: #7c3aed; }
 
 .services-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 
@@ -1820,12 +1829,19 @@ body:not(.is-admin) [data-admin-only] { display: none !important; }
 [data-theme="dark"] .service-checkbox:hover  { background: #1e3a5f; }
 
 /* Badges */
-[data-theme="dark"] .status.Activo      { background: #14432a; color: #4ade80; }
+[data-theme="dark"] .status.Activo                { background: #14432a; color: #4ade80; }
 [data-theme="dark"] .status.Suspendido,
-[data-theme="dark"] .status.Desactivado { background: #4c1d1d; color: #f87171; }
-[data-theme="dark"] .status.En-revisión { background: #451a03; color: #fbbf24; }
-[data-theme="dark"] .status.admin       { background: #3b0764; color: #c084fc; }
-[data-theme="dark"] .status.trabajador  { background: #1e3a5f; color: #60a5fa; }
+[data-theme="dark"] .status.Desactivado           { background: #4c1d1d; color: #f87171; }
+[data-theme="dark"] .status.En-revisión           { background: #451a03; color: #fbbf24; }
+[data-theme="dark"] .status.admin                 { background: #3b0764; color: #c084fc; }
+[data-theme="dark"] .status.trabajador            { background: #1e3a5f; color: #60a5fa; }
+[data-theme="dark"] .status.gestor                { background: #164e63; color: #67e8f9; }
+[data-theme="dark"] .status.cliente               { background: #14432a; color: #4ade80; }
+[data-theme="dark"] .status.Pendiente             { background: #451a03; color: #fbbf24; }
+[data-theme="dark"] .status.En-curso              { background: #1e3a5f; color: #60a5fa; }
+[data-theme="dark"] .status.Completado            { background: #14432a; color: #4ade80; }
+[data-theme="dark"] .status.Pendiente-de-facturar { background: #431407; color: #fb923c; }
+[data-theme="dark"] .status.Facturado             { background: #3b0764; color: #c084fc; }
 [data-theme="dark"] .service-tag        { background: #164e63; color: #67e8f9; }
 
 /* SearchableSelect */

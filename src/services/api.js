@@ -133,6 +133,16 @@ export async function deleteUsuario(id)        { return apiFetch(`/api/usuarios/
 // ── Incidencias (Cliente) ─────────────────────────────────────────────────
 export async function getIncidenciasCliente() { return apiFetch('/api/v2/tickets') }
 export async function createIncidencia(data) {
+  if (data instanceof FormData) {
+    const token = sessionStorage.getItem('hola_token')
+    const res = await fetch(`${API_URL}/api/v2/tickets/incidencia`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: data,
+    })
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Error al crear incidencia') }
+    return res.json()
+  }
   return apiFetch('/api/v2/tickets/incidencia', { method: 'POST', body: JSON.stringify(data) })
 }
 

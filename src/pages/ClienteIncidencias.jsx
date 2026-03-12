@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getIncidenciasCliente, createIncidencia } from '../services/api'
+import { getIncidenciasCliente, createIncidencia, getTicket, getArchivoUrl } from '../services/api'
 import ThemeToggle from '../components/ThemeToggle'
 import './ClienteIncidencias.css'
 
-const ESTADO_CONFIG = {
-  'Pendiente':            { color: '#f59e0b', bg: '#fef3c7', icon: 'fa-clock' },
-  'En curso':             { color: '#3b82f6', bg: '#dbeafe', icon: 'fa-spinner' },
-  'Completado':           { color: '#10b981', bg: '#d1fae5', icon: 'fa-check-circle' },
-  'Pendiente de facturar':{ color: '#8b5cf6', bg: '#ede9fe', icon: 'fa-file-invoice' },
-  'Facturado':            { color: '#6b7280', bg: '#f3f4f6', icon: 'fa-receipt' },
-}
 
 function formatDate(str) {
   if (!str) return '—'
@@ -19,8 +12,31 @@ function formatDate(str) {
   return isNaN(d) ? str : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 // ── MODAL NUEVA INCIDENCIA ────────────────────────────────────────────────────
 function NuevaIncidenciaModal({ onSave, onClose, loading }) {
+  const [archivos, setArchivos] = useState([])
+
+  function handleFileChange(e) {
+    const nuevos = Array.from(e.target.files)
+    setArchivos(prev => [...prev, ...nuevos])
+    e.target.value = ''
+  }
+
+  function removeFile(idx) {
+    setArchivos(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    onSave(e, archivos)
+  }
+
   return (
     <div className="ci-modal-overlay" onClick={e => e.target.classList.contains('ci-modal-overlay') && onClose()}>
       <div className="ci-modal">
@@ -31,7 +47,7 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
           </button>
         </div>
 
-        <form onSubmit={onSave}>
+        <form onSubmit={handleSubmit}>
           <div className="ci-modal-body">
             <div className="ci-form-group">
               <label><i className="fas fa-tag"></i> Asunto *</label>
@@ -48,8 +64,37 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
               <textarea
                 name="descripcion"
                 placeholder="Explica con más detalle qué está ocurriendo, cuándo empezó, qué has intentado..."
-                rows={5}
+                rows={4}
               />
+            </div>
+            <div className="ci-form-group">
+              <label><i className="fas fa-paperclip"></i> Archivos adjuntos</label>
+              <label className="ci-file-label" htmlFor="ci-file-input">
+                <i className="fas fa-upload"></i>
+                Seleccionar archivos (imágenes, PDF, documentos...)
+              </label>
+              <input
+                id="ci-file-input"
+                type="file"
+                className="ci-file-input"
+                multiple
+                onChange={handleFileChange}
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip"
+              />
+              {archivos.length > 0 && (
+                <ul className="ci-file-list">
+                  {archivos.map((f, i) => (
+                    <li key={i} className="ci-file-item">
+                      <i className="fas fa-file"></i>
+                      <span title={f.name}>{f.name}</span>
+                      <span className="ci-file-size">{formatFileSize(f.size)}</span>
+                      <button type="button" className="ci-file-remove" onClick={() => removeFile(i)} title="Quitar">
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="ci-form-hint">
               <i className="fas fa-info-circle"></i>
@@ -74,10 +119,39 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
   )
 }
 
+function getFileIcon(mime) {
+  if (!mime) return 'fa-file'
+  if (mime.startsWith('image/'))                           return 'fa-file-image'
+  if (mime === 'application/pdf')                          return 'fa-file-pdf'
+  if (mime.includes('word'))                               return 'fa-file-word'
+  if (mime.includes('excel') || mime.includes('sheet'))    return 'fa-file-excel'
+  if (mime.includes('zip') || mime.includes('compressed')) return 'fa-file-archive'
+  if (mime.startsWith('video/'))                           return 'fa-file-video'
+  return 'fa-file'
+}
+
 // ── MODAL DETALLE INCIDENCIA ──────────────────────────────────────────────────
 function DetalleModal({ inc, onClose, showEmpresa }) {
+  const [archivos, setArchivos] = useState([])
+  const [loadingArchivos, setLoadingArchivos] = useState(false)
+
+  useEffect(() => {
+    if (!inc?.id) return
+    setLoadingArchivos(true)
+    getTicket(inc.id)
+      .then(data => setArchivos(data?.ticket_archivos || []))
+      .catch(() => {})
+      .finally(() => setLoadingArchivos(false))
+  }, [inc?.id])
+
+  async function handleDownload(archivo) {
+    try {
+      const { url } = await getArchivoUrl(archivo.id)
+      window.open(url, '_blank')
+    } catch {}
+  }
+
   if (!inc) return null
-  const cfg = ESTADO_CONFIG[inc.estado] || ESTADO_CONFIG['Pendiente']
   return (
     <div className="ci-modal-overlay" onClick={e => e.target.classList.contains('ci-modal-overlay') && onClose()}>
       <div className="ci-modal">
@@ -100,9 +174,7 @@ function DetalleModal({ inc, onClose, showEmpresa }) {
           )}
           <div className="ci-detalle-field">
             <span className="ci-detalle-label"><i className="fas fa-info-circle"></i> Estado</span>
-            <span className="ci-estado-badge" style={{ color: cfg.color, background: cfg.bg }}>
-              <i className={`fas ${cfg.icon}`}></i> {inc.estado}
-            </span>
+            <span className={`status ${inc.estado.replace(/ /g, '-')}`}>{inc.estado}</span>
           </div>
           <div className="ci-detalle-field">
             <span className="ci-detalle-label"><i className="fas fa-calendar-alt"></i> Fecha</span>
@@ -114,6 +186,25 @@ function DetalleModal({ inc, onClose, showEmpresa }) {
               <p className="ci-detalle-desc">{inc.descripcion}</p>
             </div>
           )}
+          <div className="ci-detalle-field ci-detalle-field--col">
+            <span className="ci-detalle-label"><i className="fas fa-paperclip"></i> Archivos adjuntos</span>
+            {loadingArchivos ? (
+              <span className="ci-archivos-loading"><i className="fas fa-spinner fa-spin"></i> Cargando...</span>
+            ) : archivos.length === 0 ? (
+              <span className="ci-archivos-empty">Sin archivos adjuntos</span>
+            ) : (
+              <ul className="ci-file-list">
+                {archivos.map(a => (
+                  <li key={a.id} className="ci-file-item ci-file-item--download" onClick={() => handleDownload(a)}>
+                    <i className={`fas ${getFileIcon(a.mime_type)}`}></i>
+                    <span title={a.nombre_original}>{a.nombre_original}</span>
+                    {a.tamanio && <span className="ci-file-size">{formatFileSize(a.tamanio)}</span>}
+                    <i className="fas fa-download ci-file-download-icon"></i>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
         <div className="ci-modal-footer">
           <button className="ci-btn-secondary" onClick={onClose}>Cerrar</button>
@@ -156,16 +247,16 @@ export default function ClienteIncidencias() {
     }
   }
 
-  async function handleSave(e) {
-    e.preventDefault()
-    const formData = new FormData(e.target)
-    const payload = {
-      asunto:      formData.get('asunto'),
-      descripcion: formData.get('descripcion') || null,
-    }
+  async function handleSave(e, archivos = []) {
+    const raw = new FormData(e.target)
+    const fd  = new FormData()
+    fd.append('asunto',      raw.get('asunto'))
+    fd.append('descripcion', raw.get('descripcion') || '')
+    fd.append('file_names',  JSON.stringify(archivos.map(f => f.name)))
+    archivos.forEach(f => fd.append('archivos', f, f.name))
     setSaving(true)
     try {
-      await createIncidencia(payload)
+      await createIncidencia(fd)
       setShowModal(false)
       showToast('success', 'Incidencia enviada correctamente. Nuestro equipo la atenderá pronto.')
       await loadIncidencias()
@@ -260,7 +351,6 @@ export default function ClienteIncidencias() {
                 </thead>
                 <tbody>
                   {incidencias.map(inc => {
-                    const cfg = ESTADO_CONFIG[inc.estado] || ESTADO_CONFIG['Pendiente']
                     return (
                       <tr key={inc.id} className="ci-row-clickable" onClick={() => setDetalle(inc)}>
                         <td className="ci-asunto">{inc.asunto}</td>
@@ -272,9 +362,7 @@ export default function ClienteIncidencias() {
                           </td>
                         )}
                         <td>
-                          <span className="ci-estado-badge" style={{ color: cfg.color, background: cfg.bg }}>
-                            <i className={`fas ${cfg.icon}`}></i> {inc.estado}
-                          </span>
+                          <span className={`status ${inc.estado.replace(/ /g, '-')}`}>{inc.estado}</span>
                         </td>
                         <td className="ci-fecha">{formatDate(inc.created_at)}</td>
                         <td className="ci-ver"><i className="fas fa-eye"></i></td>
@@ -288,13 +376,10 @@ export default function ClienteIncidencias() {
             {/* Mobile */}
             <div className="ci-cards mobile-only">
               {incidencias.map(inc => {
-                const cfg = ESTADO_CONFIG[inc.estado] || ESTADO_CONFIG['Pendiente']
                 return (
                   <div className="ci-card ci-row-clickable" key={inc.id} onClick={() => setDetalle(inc)}>
                     <div className="ci-card-top">
-                      <span className="ci-estado-badge" style={{ color: cfg.color, background: cfg.bg }}>
-                        <i className={`fas ${cfg.icon}`}></i> {inc.estado}
-                      </span>
+                      <span className={`status ${inc.estado.replace(/ /g, '-')}`}>{inc.estado}</span>
                       <i className="fas fa-eye ci-card-eye"></i>
                     </div>
                     <div className="ci-card-asunto">{inc.asunto}</div>

@@ -591,13 +591,13 @@ export default function Usuarios() {
                     {u.empresa_nombre || '—'}
                   </td>
                   <td>
-                    <span className={`badge-rol ${u.rol}`}>
+                    <span className={`status ${u.rol}`}>
                       <i className={`fas ${getRolIcon(u.rol)}`}></i>
                       {getRolLabel(u.rol)}
                     </span>
                   </td>
                   <td>
-                    <span className={`badge-estado ${u.activo ? 'activo' : 'inactivo'}`}>
+                    <span className={`status ${u.activo ? 'Activo' : 'Desactivado'}`}>
                       {u.activo ? 'Activo' : 'Desactivado'}
                     </span>
                   </td>
@@ -659,7 +659,7 @@ export default function Usuarios() {
                     )}
                   </div>
                 </div>
-                <span className={`badge-estado ${u.activo ? 'activo' : 'inactivo'}`}>
+                <span className={`status ${u.activo ? 'Activo' : 'Desactivado'}`}>
                   {u.activo ? 'Activo' : 'Desactivado'}
                 </span>
               </div>

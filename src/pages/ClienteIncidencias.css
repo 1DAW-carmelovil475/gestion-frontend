@@ -587,3 +587,20 @@
   .desktop-only { display: none; }
   .mobile-only  { display: block; }
 }
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+[data-theme="dark"] .cliente-incidencias-page { background: #0f172a; }
+[data-theme="dark"] .ci-table-wrap            { background: #1e293b; }
+[data-theme="dark"] .ci-table thead th        { background: #162032; border-bottom-color: #2d3f5c; color: #94a3b8; }
+[data-theme="dark"] .ci-table tbody tr:hover  { background: #263447; }
+[data-theme="dark"] .ci-table tbody td        { border-bottom-color: #2d3f5c; color: #e2e8f0; }
+[data-theme="dark"] .ci-card                  { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .ci-empty                 { background: #1e293b; }
+[data-theme="dark"] .ci-modal                 { background: #1e293b; }
+[data-theme="dark"] .ci-input                 { background: #1e293b; border-color: #2d3f5c; color: #e2e8f0; }
+[data-theme="dark"] .ci-textarea              { background: #1e293b; border-color: #2d3f5c; color: #e2e8f0; }
+[data-theme="dark"] .ci-btn-secondary         { background: #263447; color: #e2e8f0; }
+[data-theme="dark"] .ci-footer                { background: #1e293b; border-top-color: #2d3f5c; }
+[data-theme="dark"] .ci-detail-body           { background: #162032; border-color: #2d3f5c; }

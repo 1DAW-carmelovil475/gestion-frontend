@@ -8,6 +8,7 @@ import {
 } from '../services/api'
 import * as XLSX from 'xlsx'
 import ChatNavLink from '../components/ChatNavLink'
+import ThemeToggle from '../components/ThemeToggle'
 import './Dashboard.css'
 
 const SERVICIOS = ['Cloud', 'Soporte', 'Hardware', 'Redes', 'Seguridad', 'Backup']
@@ -782,6 +783,7 @@ export default function Dashboard() {
       </nav>
       <div className="user-area">
 <div className="user-info"><div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div><span>{user?.nombre || user?.email}</span></div>
+        <ThemeToggle />
         <button className="btn-logout" onClick={handleLogout}><i className="fas fa-sign-out-alt"></i><span>Salir</span></button>
       </div>
     </header>

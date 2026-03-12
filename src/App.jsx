@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { ChatNotificationsProvider } from './context/ChatNotificationsContext'
 import ChatToasts from './components/ChatToasts'
 import Login from './pages/Login'
@@ -10,6 +11,7 @@ import Estadisticas from './pages/Estadisticas'
 import Chat from './pages/Chat'
 import ClienteIncidencias from './pages/ClienteIncidencias'
 import './App.css'
+import './dark.css'
 
 function ProtectedRoute({ children, adminOnly = false, clienteOnly = false }) {
   const { user, loading, isAdmin, isCliente, isGestor } = useAuth()
@@ -105,11 +107,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

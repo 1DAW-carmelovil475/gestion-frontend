@@ -12,6 +12,7 @@ import {
   updateTicketNotas
 } from '../services/api'
 import ChatNavLink from '../components/ChatNavLink'
+import ThemeToggle from '../components/ThemeToggle'
 import './Tickets.css'
 
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
@@ -244,17 +245,17 @@ function OperariosSelector({ operarios, selected, onChange }) {
         <button type="button" className="qf-btn qf-workers" onClick={() => onChange(workers.map(o => o.id))}><i className="fas fa-hard-hat"></i> Trabajadores</button>
         {selected.length > 0 && <button type="button" className="qf-btn qf-clear" onClick={() => onChange([])}><i className="fas fa-times"></i> Limpiar</button>}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 0 8px', borderBottom: '1px solid #dde3f0', marginBottom: 8 }}>
-        <i className="fas fa-search" style={{ color: '#9aa4bc', fontSize: '0.78rem', flexShrink: 0 }}></i>
+      <div className="operario-search-bar">
+        <i className="fas fa-search operario-search-icon"></i>
         <input
           type="text"
           placeholder="Buscar operario..."
           value={query}
           onChange={e => setQuery(e.target.value)}
-          style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#2a3a5a', fontFamily: 'inherit' }}
+          className="operario-search-input"
         />
         {query && (
-          <button type="button" onClick={() => setQuery('')} style={{ border: 'none', background: 'none', color: '#9aa4bc', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
+          <button type="button" onClick={() => setQuery('')} className="operario-search-clear">
             <i className="fas fa-times"></i>
           </button>
         )}
@@ -563,27 +564,17 @@ function TicketModal({
                     ))}
                   </select>
                   {selectedContacto && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '8px 12px', background: '#f0f6ff',
-                      border: '1px solid #b8dcf8', borderRadius: 8,
-                      fontSize: '0.82rem',
-                    }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: '50%',
-                        background: '#0047b3', color: 'white',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: '0.72rem', flexShrink: 0,
-                      }}>
+                    <div className="contacto-card">
+                      <div className="contacto-card-avatar">
                         {(selectedContacto.nombre || '?').charAt(0).toUpperCase()}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{selectedContacto.nombre}</div>
-                        {selectedContacto.cargo && <div style={{ color: '#64748b', fontSize: '0.76rem' }}>{selectedContacto.cargo}</div>}
+                      <div className="contacto-card-info">
+                        <div className="contacto-card-nombre">{selectedContacto.nombre}</div>
+                        {selectedContacto.cargo && <div className="contacto-card-cargo">{selectedContacto.cargo}</div>}
                       </div>
                       {selectedContacto.telefono && (
                         <a href={`tel:${selectedContacto.telefono}`}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#0047b3', textDecoration: 'none', fontWeight: 500, fontSize: '0.8rem', flexShrink: 0 }}
+                          className="contacto-card-link"
                           onClick={e => e.stopPropagation()}>
                           <i className="fas fa-phone" style={{ fontSize: '0.7rem' }}></i>
                           {selectedContacto.telefono}
@@ -591,7 +582,7 @@ function TicketModal({
                       )}
                       {selectedContacto.email && (
                         <a href={`mailto:${selectedContacto.email}`}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b', textDecoration: 'none', fontSize: '0.8rem', flexShrink: 0 }}
+                          className="contacto-card-link contacto-card-link-muted"
                           onClick={e => e.stopPropagation()}>
                           <i className="fas fa-envelope" style={{ fontSize: '0.7rem' }}></i>
                           {selectedContacto.email}
@@ -622,58 +613,33 @@ function TicketModal({
               ) : (
                 <>
                   {/* Buscador */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '6px 10px', marginBottom: 4,
-                    border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
-                    background: 'white', transition: 'border-color 0.15s',
-                  }}>
-                    <i className="fas fa-search" style={{ color: '#94a3b8', fontSize: '0.78rem', flexShrink: 0 }}></i>
+                  <div className="disp-search-wrap">
+                    <i className="fas fa-search disp-search-icon"></i>
                     <input
                       type="text"
+                      className="disp-search-input"
                       value={dispSearch}
                       onChange={e => setDispSearch(e.target.value)}
                       placeholder="Buscar dispositivo..."
-                      style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', color: '#2a3a5a', fontFamily: 'inherit' }}
                     />
                     {dispSearch && (
-                      <button type="button" onClick={() => setDispSearch('')}
-                        style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0, fontSize: '0.75rem' }}>
+                      <button type="button" className="disp-search-clear" onClick={() => setDispSearch('')}>
                         <i className="fas fa-times"></i>
                       </button>
                     )}
                   </div>
                   {/* Lista */}
-                  <div style={{
-                    border: '1.5px solid var(--border, #dde3f0)', borderRadius: 8,
-                    maxHeight: 140, overflowY: 'auto', background: 'white',
-                  }}>
+                  <div className="disp-list">
                     {filteredDisps.length === 0 ? (
-                      <div style={{ padding: '10px 12px', fontSize: '0.82rem', color: '#94a3b8', textAlign: 'center' }}>Sin resultados</div>
+                      <div className="disp-empty">Sin resultados</div>
                     ) : filteredDisps.map(d => {
                       const sel = modalDispIds.includes(d.id)
                       return (
-                        <div key={d.id}
-                          onClick={() => toggleDisp(d.id)}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 10,
-                            padding: '8px 12px', cursor: 'pointer',
-                            background: sel ? '#e8f0fe' : 'white',
-                            borderBottom: '1px solid #f0f4f8',
-                            transition: 'background 0.12s',
-                            userSelect: 'none',
-                          }}
-                        >
-                          <div style={{
-                            width: 18, height: 18, borderRadius: 4,
-                            border: `2px solid ${sel ? '#0047b3' : '#cbd5e1'}`,
-                            background: sel ? '#0047b3' : 'white',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0, transition: 'all 0.12s',
-                          }}>
-                            {sel && <i className="fas fa-check" style={{ color: 'white', fontSize: '0.6rem' }}></i>}
+                        <div key={d.id} className={`disp-item ${sel ? 'selected' : ''}`} onClick={() => toggleDisp(d.id)}>
+                          <div className={`disp-checkbox ${sel ? 'checked' : ''}`}>
+                            {sel && <i className="fas fa-check"></i>}
                           </div>
-                          <span style={{ fontSize: '0.85rem', color: sel ? '#0047b3' : '#2a3a5a', fontWeight: sel ? 600 : 400 }}>
+                          <span className={`disp-label ${sel ? 'selected' : ''}`}>
                             [{d.tipo || d.categoria}] {d.nombre}
                           </span>
                         </div>
@@ -681,12 +647,11 @@ function TicketModal({
                     })}
                   </div>
                   {modalDispIds.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-                      <span style={{ fontSize: '0.76rem', color: '#0047b3', fontWeight: 600 }}>
+                    <div className="disp-footer">
+                      <span className="disp-count">
                         {modalDispIds.length} dispositivo{modalDispIds.length > 1 ? 's' : ''} seleccionado{modalDispIds.length > 1 ? 's' : ''}
                       </span>
-                      <button type="button" onClick={() => onDispIdsChange([])}
-                        style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.76rem' }}>
+                      <button type="button" className="disp-clear-btn" onClick={() => onDispIdsChange([])}>
                         <i className="fas fa-times"></i> Limpiar
                       </button>
                     </div>
@@ -1431,6 +1396,7 @@ export default function Tickets() {
               <div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div>
               <span>{user?.nombre || user?.email}</span>
             </div>
+            <ThemeToggle />
             <button className="btn-logout" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i><span>Salir</span>
             </button>

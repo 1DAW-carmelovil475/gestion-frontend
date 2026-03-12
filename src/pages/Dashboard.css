@@ -1053,3 +1053,31 @@ tr.tr-filial td {
   font-size: 0.875rem;
   color: #475569;
 }
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+[data-theme="dark"] .emp-header          { background: #1e293b; }
+[data-theme="dark"] .emp-card            { background: #1e293b; }
+[data-theme="dark"] .emp-contacto-row:hover { background: #263447; }
+[data-theme="dark"] .it-page-section     { background: #1e293b; }
+[data-theme="dark"] .it-tabs-wrapper     { background: #162032; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .it-item-card        { background: #162032; }
+[data-theme="dark"] .it-item-header      { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .it-item-row         { border-bottom-color: #1e293b; }
+[data-theme="dark"] .it-content          { background: #1e293b; }
+[data-theme="dark"] .service-checkbox:hover { background: #1e3a5f; }
+[data-theme="dark"] .company-card        { background: #1e293b; }
+[data-theme="dark"] .company-card-filial { background: #162032 !important; }
+[data-theme="dark"] .company-card-filial .company-card-name { color: #94a3b8; }
+[data-theme="dark"] .data-card           { background: #1e293b; }
+[data-theme="dark"] .emp-matriz-card     { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .empresa-detalle-tabs { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] tr.tr-filial         { background: #162032; }
+[data-theme="dark"] tr.tr-filial td      { color: #94a3b8; }
+[data-theme="dark"] .matriz-option:hover   { background: #263447; }
+[data-theme="dark"] .matriz-option.selected { background: #1e3a5f; }
+[data-theme="dark"] .btn-expand-matriz   { background: #263447; border-color: #2d3f5c; color: #94a3b8; }
+[data-theme="dark"] .emp-tags-input      { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .emp-tag-dropdown    { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .emp-tag-option:hover { background: #263447; }
+[data-theme="dark"] .empresa-detalle-tabs-wrap { background: #1e293b; }

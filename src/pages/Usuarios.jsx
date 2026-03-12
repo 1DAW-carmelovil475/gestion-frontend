@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, getEmpresas } from '../services/api'
 import ChatNavLink from '../components/ChatNavLink'
+import ThemeToggle from '../components/ThemeToggle'
 import './Usuarios.css'
 
 // Avatar helper functions
@@ -439,6 +440,7 @@ export default function Usuarios() {
             </div>
             <span>{user?.nombre || user?.email}</span>
           </div>
+          <ThemeToggle />
           <button className="btn-logout" onClick={handleLogout}>
             <i className="fas fa-sign-out-alt"></i><span>Salir</span>
           </button>
@@ -585,7 +587,7 @@ export default function Usuarios() {
                     </div>
                   </td>
                   <td className="u-email">{u.email}</td>
-                  <td style={{ color: u.empresa_nombre ? '#222' : '#aaa', fontSize: '0.9rem' }}>
+                  <td className={`u-empresa ${!u.empresa_nombre ? 'u-empresa-empty' : ''}`}>
                     {u.empresa_nombre || '—'}
                   </td>
                   <td>

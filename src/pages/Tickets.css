@@ -485,6 +485,23 @@
   color: white;
 }
 
+/* ── Operario search bar ───────────────────────────────────── */
+.operario-search-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.operario-search-icon { color: #9aa4bc; font-size: 0.78rem; flex-shrink: 0; }
+.operario-search-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 0.85rem; color: var(--dark); font-family: inherit;
+}
+.operario-search-clear {
+  border: none; background: none; color: #9aa4bc;
+  cursor: pointer; padding: 0; font-size: 0.75rem;
+}
+
 /* ============================================================
    OPERARIOS CHECKBOXES
    ============================================================ */
@@ -1074,6 +1091,35 @@
   color: var(--primary);
   background: #f0f4fb;
 }
+
+/* ── Contact card (selected contact preview) ──────────────── */
+.contacto-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f0f6ff;
+  border: 1px solid #b8dcf8;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+.contacto-card-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.72rem; flex-shrink: 0;
+}
+.contacto-card-info { flex: 1; min-width: 0; }
+.contacto-card-nombre { font-weight: 600; color: var(--dark); }
+.contacto-card-cargo  { color: var(--gray); font-size: 0.76rem; }
+.contacto-card-link {
+  display: flex; align-items: center; gap: 5px;
+  color: var(--primary);
+  text-decoration: none; font-weight: 500; font-size: 0.8rem; flex-shrink: 0;
+}
+.contacto-card-link-muted { color: var(--gray); font-weight: 400; }
 
 /* ============================================================
    HISTORIAL ACORDEÓN EN SIDEBAR
@@ -1711,6 +1757,55 @@
 .ss-search::placeholder { color: #9aa4bc; }
 .os-search-wrap { margin-bottom: 8px; }
 
+/* ── Dispositivos multi-selector ──────────────────────────── */
+.disp-search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; margin-bottom: 4px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  background: var(--card-bg); transition: border-color 0.15s;
+}
+.disp-search-wrap:focus-within { border-color: var(--primary); }
+.disp-search-icon { color: #94a3b8; font-size: 0.78rem; flex-shrink: 0; }
+.disp-search-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 0.85rem; color: var(--dark); font-family: inherit;
+}
+.disp-search-input::placeholder { color: #9aa4bc; }
+.disp-search-clear {
+  border: none; background: none; color: #94a3b8;
+  cursor: pointer; padding: 0; font-size: 0.75rem;
+}
+.disp-list {
+  border: 1.5px solid var(--border); border-radius: 8px;
+  max-height: 140px; overflow-y: auto; background: var(--card-bg);
+}
+.disp-empty { padding: 10px 12px; font-size: 0.82rem; color: #94a3b8; text-align: center; }
+.disp-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; cursor: pointer; user-select: none;
+  background: var(--card-bg); border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.disp-item:last-child { border-bottom: none; }
+.disp-item.selected { background: #e8f0fe; }
+.disp-item:hover:not(.selected) { background: #f0f6ff; }
+.disp-checkbox {
+  width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0;
+  border: 2px solid #cbd5e1; background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; font-size: 0.6rem; color: white;
+}
+.disp-checkbox.checked { background: var(--primary); border-color: var(--primary); }
+.disp-label { font-size: 0.85rem; color: var(--dark); font-weight: 400; }
+.disp-label.selected { color: var(--primary); font-weight: 600; }
+.disp-footer {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 4px;
+}
+.disp-count { font-size: 0.76rem; color: var(--primary); font-weight: 600; }
+.disp-clear-btn {
+  border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 0.76rem; font-family: inherit;
+}
+
 /* ============================================================
    TICKET MODAL — PANEL LATERAL CON ANIMACIÓN
    ============================================================ */
@@ -1858,3 +1953,47 @@
     to   { transform: translateY(0);    opacity: 1; }
   }
 }
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+[data-theme="dark"] .tickets-page.detalle-view-active { background: #0f172a !important; }
+[data-theme="dark"] .ticket-list-header        { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .ticket-list-panel         { background: #1e293b; border-right-color: #2d3f5c; }
+[data-theme="dark"] .ticket-detail-panel       { background: #1e293b; }
+[data-theme="dark"] .sidebar-card             { background: #1e293b; }
+[data-theme="dark"] .ticket-detail-header     { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .ticket-tabs-bar          { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .tab-panel                { background: #1e293b; }
+[data-theme="dark"] .ticket-modal-main        { background: #1e293b; }
+[data-theme="dark"] .ticket-panels-modal      { background: #1e293b; }
+[data-theme="dark"] .ticket-side-panel        { background: #162032; }
+[data-theme="dark"] .operario-check-item      { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .operario-check-item:hover   { background: #1e3a5f; }
+[data-theme="dark"] .operario-check-item.checked { background: #1e3a5f; }
+[data-theme="dark"] .historial-accordion-btn.open { background: #1e3a5f; }
+[data-theme="dark"] .editor-toolbar          { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .editor-btn:hover        { background: #1e3a5f; }
+[data-theme="dark"] .comment-toolbar-sep     { background: #2d3f5c; }
+[data-theme="dark"] .assignee-dropdown       { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .assignee-option:hover   { background: #263447; }
+[data-theme="dark"] .ticket-card-mobile      { background: #1e293b; }
+[data-theme="dark"] .comentario-input-wrap   { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .comentario-textarea     { background: #1e293b; color: #e2e8f0; }
+[data-theme="dark"] .comentario-nuevo-area   { background: #1e293b; border-top-color: #2d3f5c; }
+[data-theme="dark"] .info-row-value          { color: #e2e8f0; }
+[data-theme="dark"] .qf-admins               { background: #3d2b00; color: #fbbf24; border-color: #78450a; }
+[data-theme="dark"] .badge-rol.admin         { background: #3d2b00; color: #fbbf24; }
+[data-theme="dark"] .badge-rol.gestor        { background: #164e63; color: #67e8f9; }
+[data-theme="dark"] .quick-filter            { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .ticket-detalle-full     { background: #1e293b; }
+[data-theme="dark"] .editor-rich            { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .editor-rich:focus-within { background: #1e293b; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+[data-theme="dark"] .comentario-nuevo-textarea { background: #1e293b; border-color: #2d3f5c; color: #e2e8f0; }
+[data-theme="dark"] .comentario-nuevo-textarea:focus { background: #1e293b; }
+[data-theme="dark"] .comentario-nuevo-textarea::placeholder { color: #475569; }
+[data-theme="dark"] [contenteditable]       { background: transparent; color: #e2e8f0; }
+[data-theme="dark"] [contenteditable]:empty::before { color: #475569; }
+[data-theme="dark"] .ticket-detail-body     { background: #0f172a; }
+[data-theme="dark"] .ticket-top-bar         { background: #1e293b; border-bottom-color: #2d3f5c; }
+[data-theme="dark"] .historial-timeline-item .historial-content { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .sidebar-border         { background: #2d3f5c; }

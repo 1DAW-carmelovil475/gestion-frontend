@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getIncidenciasCliente, createIncidencia } from '../services/api'
+import ThemeToggle from '../components/ThemeToggle'
 import './ClienteIncidencias.css'
 
 const ESTADO_CONFIG = {
@@ -209,6 +210,7 @@ export default function ClienteIncidencias() {
             </div>
             <span>{user?.nombre}</span>
           </div>
+          <ThemeToggle />
           <button className="btn-logout" onClick={handleLogout} title="Cerrar sesión">
             <i className="fas fa-sign-out-alt"></i><span>Salir</span>
           </button>

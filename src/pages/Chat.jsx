@@ -8,6 +8,7 @@ import {
   getOperarios, getTickets, getChatArchivoUrl
 } from '../services/api'
 import ChatNavLink from '../components/ChatNavLink'
+import ThemeToggle from '../components/ThemeToggle'
 import './Chat.css'
 
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
@@ -1039,6 +1040,7 @@ export default function Chat() {
         </nav>
         <div className="user-area">
 <div className="user-info"><div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div><span>{user?.nombre || user?.email}</span></div>
+          <ThemeToggle />
           <button className="btn-logout" onClick={handleLogout}><i className="fas fa-sign-out-alt"></i><span>Salir</span></button>
         </div>
       </header>

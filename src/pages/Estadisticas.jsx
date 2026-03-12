@@ -9,6 +9,7 @@ import {
   RadialBarChart, RadialBar
 } from 'recharts'
 import ChatNavLink from '../components/ChatNavLink'
+import ThemeToggle from '../components/ThemeToggle'
 import './Estadisticas.css'
 
 // Avatar helper functions
@@ -193,6 +194,7 @@ export default function Estadisticas() {
             </div>
             <span>{user?.nombre || user?.email}</span>
           </div>
+          <ThemeToggle />
           <button className="btn-logout" onClick={handleLogout}>
             <i className="fas fa-sign-out-alt"></i><span>Salir</span>
           </button>

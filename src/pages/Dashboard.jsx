@@ -1273,9 +1273,16 @@ export default function Dashboard() {
 
         {totalPages > 1 && (
           <div className="pagination">
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+              <i className="fas fa-chevron-left"></i>
+            </button>
             {Array.from({ length: totalPages }, (_, i) => (
               <button key={i + 1} className={currentPage === i + 1 ? 'active' : ''} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
             ))}
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+              <i className="fas fa-chevron-right"></i>
+            </button>
+            <span className="pagination-info">{filteredCompanies.length} empresas</span>
           </div>
         )}
       </main>

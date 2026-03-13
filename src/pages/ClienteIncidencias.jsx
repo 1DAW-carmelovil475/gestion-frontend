@@ -198,8 +198,10 @@ function DetalleModal({ inc, onClose, showEmpresa }) {
                   <li key={a.id} className="ci-file-item ci-file-item--download" onClick={() => handleDownload(a)}>
                     <i className={`fas ${getFileIcon(a.mime_type)}`}></i>
                     <span title={a.nombre_original}>{a.nombre_original}</span>
-                    {a.tamanio && <span className="ci-file-size">{formatFileSize(a.tamanio)}</span>}
-                    <i className="fas fa-download ci-file-download-icon"></i>
+                    <span className="ci-file-meta">
+                      {a.tamanio && <span className="ci-file-size">{formatFileSize(a.tamanio)}</span>}
+                      <i className="fas fa-download ci-file-download-icon"></i>
+                    </span>
                   </li>
                 ))}
               </ul>

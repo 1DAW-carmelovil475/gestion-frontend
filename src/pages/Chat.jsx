@@ -1225,13 +1225,17 @@ export default function Chat() {
           )}
 
           {!canalActual ? (
-            <div className="chat-empty">
-              <button className="btn-sidebar-toggle btn-sidebar-toggle-empty" onClick={() => setSidebarOpen(v => !v)}>
-                <i className="fas fa-bars"></i>
-              </button>
-              <i className="fas fa-comments"></i>
-              <h2>Bienvenido al chat del equipo</h2>
-              <p>Selecciona un canal de la barra lateral para empezar</p>
+            <div className="chat-empty-wrapper">
+              <div className="chat-empty-mobile-header">
+                <button className="btn-sidebar-toggle" onClick={() => setSidebarOpen(v => !v)}>
+                  <i className="fas fa-bars"></i>
+                </button>
+              </div>
+              <div className="chat-empty">
+                <i className="fas fa-comments"></i>
+                <h2>Bienvenido al chat del equipo</h2>
+                <p>Selecciona un canal de la barra lateral para empezar</p>
+              </div>
             </div>
           ) : (
             <div className="chat-canal">

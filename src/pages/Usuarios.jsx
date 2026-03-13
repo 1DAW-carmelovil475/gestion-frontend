@@ -268,6 +268,8 @@ export default function Usuarios() {
 
   const [showUserModal, setShowUserModal] = useState(false)
   const [editingUser, setEditingUser]     = useState(null)
+  const [userPage, setUserPage]           = useState(1)
+  const USERS_PER_PAGE = 10
 
   useEffect(() => {
     if (!isAdmin()) { navigate('/'); return }
@@ -401,6 +403,12 @@ export default function Usuarios() {
     return matchSearch && matchRol && matchEstado
   })
 
+  const totalPages = Math.ceil(filtered.length / USERS_PER_PAGE)
+  const safePage   = Math.min(userPage, totalPages || 1)
+  const pagedUsers = filtered.slice((safePage - 1) * USERS_PER_PAGE, safePage * USERS_PER_PAGE)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setUserPage(1) }, [searchTerm, rolFilter, estadoFilter])
+
   const totalAdmins      = usuarios.filter(u => u.rol === 'admin').length
   const totalTrabajadores = usuarios.filter(u => u.rol === 'trabajador').length
   const totalGestores    = usuarios.filter(u => u.rol === 'gestor').length
@@ -467,7 +475,7 @@ export default function Usuarios() {
         </div>
 
         {/* ── KPI Cards ────────────────────────────── */}
-        <div className="stats">
+        <div className="stats u-stats">
           <div className="stat-card">
             <div className="stat-icon" style={{ background: '#dbeafe', color: '#2563eb' }}>
               <i className="fas fa-users"></i>
@@ -566,7 +574,7 @@ export default function Usuarios() {
                     </div>
                   </td>
                 </tr>
-              ) : filtered.map(u => (
+              ) : pagedUsers.map(u => (
                 <tr key={u.id}>
                   <td>
                     <div className="user-cell">
@@ -652,37 +660,52 @@ export default function Usuarios() {
                     </div>
                     <div className="data-card-subtitle">{u.email}</div>
                     {u.empresa_nombre && (
-                      <div className="data-card-subtitle" style={{ color: '#0047b3' }}>
+                      <div className="data-card-subtitle" style={{ color: '#3b82f6' }}>
                         <i className="fas fa-building" style={{ marginRight: 4 }}></i>
                         {u.empresa_nombre}
                       </div>
                     )}
+                    <div className="data-card-meta">
+                      <span className={`status ${u.rol}`}>
+                        <i className={`fas ${getRolIcon(u.rol)}`}></i>
+                        {getRolLabel(u.rol)}
+                      </span>
+                      <span><i className="fas fa-calendar-alt"></i> {formatDate(u.created_at)}</span>
+                    </div>
                   </div>
                 </div>
-                <span className={`status ${u.activo ? 'Activo' : 'Desactivado'}`}>
-                  {u.activo ? 'Activo' : 'Desactivado'}
-                </span>
-              </div>
-              <div className="data-card-meta">
-                <span>
-                  <i className={`fas ${getRolIcon(u.rol)}`}></i>
-                  {getRolLabel(u.rol)}
-                </span>
-                <span><i className="fas fa-calendar-alt"></i> {formatDate(u.created_at)}</span>
-              </div>
-              <div className="data-card-actions">
-                <button className="btn-action btn-edit" onClick={() => openUserModal(u)}>
-                  <i className="fas fa-edit"></i> Editar
-                </button>
-                {u.id !== user?.id && (
-                  <button className="btn-action btn-delete" onClick={() => handleDeleteUser(u.id, u.nombre)}>
-                    <i className="fas fa-trash"></i> Eliminar
+                <div className="u-card-right">
+                  <span className={`status ${u.activo ? 'Activo' : 'Desactivado'}`}>
+                    {u.activo ? 'Activo' : 'Desactivado'}
+                  </span>
+                  <button className="u-card-btn u-card-btn-edit" onClick={() => openUserModal(u)}>
+                    <i className="fas fa-edit"></i> Editar
                   </button>
-                )}
+                  {u.id !== user?.id && (
+                    <button className="u-card-btn u-card-btn-delete" onClick={() => handleDeleteUser(u.id, u.nombre)}>
+                      <i className="fas fa-trash"></i> Eliminar
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
+
+        {totalPages > 1 && (
+          <div className="pagination">
+            <button className="pagination-btn" onClick={() => setUserPage(p => Math.max(1, p - 1))} disabled={safePage === 1}>
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button key={p} className={`pagination-btn ${p === safePage ? 'active' : ''}`} onClick={() => setUserPage(p)}>{p}</button>
+            ))}
+            <button className="pagination-btn" onClick={() => setUserPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}>
+              <i className="fas fa-chevron-right"></i>
+            </button>
+            <span className="pagination-info">{filtered.length} usuarios</span>
+          </div>
+        )}
 
       </main>
 

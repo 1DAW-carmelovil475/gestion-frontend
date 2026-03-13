@@ -1,6 +1,66 @@
 /* Tickets.css — estilos específicos de la página de Tickets */
 
 /* ============================================================
+   FILTER CHIPS (mobile icon-only filters)
+   ============================================================ */
+
+/* Desktop: wrapper is invisible, icons hidden */
+.filter-chip { display: contents; }
+.filter-chip > i { display: none; }
+.filter-chip-reset { display: inline-flex; }
+
+@media (max-width: 768px) {
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 40px;
+    height: 36px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .filter-chip > i {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--gray);
+    pointer-events: none;
+    z-index: 1;
+  }
+  /* The select/input overlaid transparently so tap still works */
+  .filter-chip select,
+  .filter-chip input[type="date"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 16px; /* prevents iOS zoom */
+  }
+  /* Active state when filter != "all" / has value */
+  .filter-chip.filter-chip-active {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+  .filter-chip.filter-chip-active > i {
+    color: white;
+  }
+  /* Date chips slightly wider to hint they are dates */
+  .filter-chip.filter-chip-date { width: 40px; }
+  /* Reset button keeps normal look */
+  .filter-chip-reset { width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* ============================================================
    PRIORIDAD BADGES
    ============================================================ */
 .prioridad-badge {
@@ -139,6 +199,26 @@
   margin-bottom: 8px;
 }
 
+.ticket-card-id-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticket-prio-inline {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+}
+.ticket-prio-Baja    { background: #22c55e; }
+.ticket-prio-Media   { background: #3b82f6; }
+.ticket-prio-Alta    { background: #f59e0b; }
+.ticket-prio-Urgente { background: #dc2626; }
+
 .ticket-card-asunto {
   font-size: 0.9rem;
   font-weight: 600;
@@ -184,6 +264,13 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   height: 68px;
   min-height: 68px;
+}
+
+.detalle-header-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .detalle-header-titulo {
@@ -1576,74 +1663,252 @@
 }
 
 @media (max-width: 768px) {
-  .detalle-header {
-    height: auto;
-    min-height: 56px;
-    flex-wrap: wrap;
-    padding: 8px 10px;
-    position: static;
-    gap: 8px;
+
+  /* ── Full-height chat layout ── */
+  .main-content.detalle-ticket {
+    padding: 0 !important;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   .detalle-ticket-body-wrapper {
-    padding-top: 0;
-  }
-
-  .detalle-acciones {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .estado-select {
     flex: 1;
-    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
   }
 
-  .ticket-modal-grid {
-    grid-template-columns: 1fr;
+  .detalle-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
-  .ticket-modal-full {
-    grid-column: 1;
+  .detalle-main {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .detalle-tabs { flex-shrink: 0; }
+
+  .tab-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .tab-panel-comentarios {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .comentarios-lista {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    max-height: none;
+    padding: 8px 12px;
+  }
+
+  .comentario-nuevo {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    padding-bottom: calc(74px + 10px);
+  }
+
+  .tab-panel-notas {
+    flex: 1;
+    min-height: 0;
+    padding: 10px 12px;
+    padding-bottom: calc(74px + 10px);
   }
 
   .notas-textarea {
-    min-height: 250px;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
     font-size: 16px;
+    box-sizing: border-box;
   }
 
-  .comentario-nuevo-textarea {
-    min-height: 80px;
-    height: 80px;
-    font-size: 16px;
+  /* ── Header: column layout ── */
+  .detalle-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 10px 12px;
+    position: static;
+    height: auto;
+    min-height: unset;
+    flex-shrink: 0;
   }
 
+  /* Row 1: back + numero */
+  .detalle-header-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Row 2: title */
+  .detalle-header-titulo { min-width: 0; }
+  .detalle-header-asunto {
+    font-size: 0.88rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.35;
+    word-break: break-word;
+    flex-wrap: wrap;
+  }
+  .detalle-header-empresa-inline { font-size: 0.88rem; }
+
+  /* Row 3: estado + actions — left-aligned */
+  .detalle-acciones {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-left: 0;
+  }
+  .estado-select {
+    flex: none;
+    width: auto;
+    min-width: 130px;
+    font-size: 0.82rem;
+  }
+
+  /* ── Sidebar cards ── */
+  .sidebar-card {
+    padding: 10px 12px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  /* ── Info rows: fix cut-off values ── */
+  .info-row {
+    grid-template-columns: 82px 1fr;
+    font-size: 0.82rem;
+    max-width: 100%;
+  }
+  .info-row-value {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  /* ── Tabs ── */
   .detalle-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 8px 8px;
+    padding: 8px;
     flex-wrap: nowrap;
   }
   .detalle-tabs::-webkit-scrollbar { display: none; }
-
   .detalle-tab {
     padding: 6px 10px;
     font-size: 0.78rem;
     white-space: nowrap;
   }
 
-  .historial-timeline-content {
-    padding-bottom: 16px;
+  /* ── Comments & notes ── */
+  .notas-textarea {
+    min-height: 250px;
+    font-size: 16px;
   }
+  .comentario-nuevo-textarea {
+    min-height: 80px;
+    height: 80px;
+    font-size: 16px;
+  }
+  .comentarios-lista { max-height: none; }
 
-  .sidebar-card { padding: 10px 12px; }
-  .info-row { font-size: 0.82rem; }
+  /* ── History ── */
+  .historial-timeline-content { padding-bottom: 16px; }
+
+  /* ── Misc ── */
   .operario-chip { padding: 5px 8px; }
-  .archivo-item { padding: 6px 8px; }
+  .archivo-item  { padding: 6px 8px; }
   .prioridad-badge { padding: 2px 7px; font-size: 0.72rem; }
+
+  /* ── Modal ── */
+  .ticket-modal-grid { grid-template-columns: 1fr; }
+  .ticket-modal-full { grid-column: 1; }
+
+  /* ── Info drawer (mobile only) ── */
+  .detalle-sidebar {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 88vw;
+    max-width: 340px;
+    height: 100dvh;
+    height: 100vh;
+    z-index: 300;
+    overflow-y: auto;
+    transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  }
+  .detalle-sidebar.info-drawer-open {
+    right: 0;
+  }
+  .info-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 299;
+  }
+  .info-drawer-close {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--gray);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-info-drawer {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+  }
 }
 
 /* ============================================================
@@ -1956,6 +2221,8 @@
 /* ============================================================
    DARK MODE
    ============================================================ */
+[data-theme="dark"] .filter-chip { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .filter-chip.filter-chip-active { background: #3b82f6; border-color: #3b82f6; }
 [data-theme="dark"] .tickets-page.detalle-view-active { background: #0f172a !important; }
 [data-theme="dark"] .ticket-list-header        { background: #1e293b; border-bottom-color: #2d3f5c; }
 [data-theme="dark"] .ticket-list-panel         { background: #1e293b; border-right-color: #2d3f5c; }

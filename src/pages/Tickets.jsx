@@ -842,6 +842,8 @@ export default function Tickets() {
   const [filtroDesde, setFiltroDesde]         = useState('')
   const [filtroHasta, setFiltroHasta]         = useState('')
   const searchTimer = useRef(null)
+  const [ticketPage, setTicketPage]           = useState(1)
+  const TICKETS_PER_PAGE = 25
 
   const [vistaDetalle, setVistaDetalle]         = useState(false)
   const [ticketActual, setTicketActual]         = useState(null)
@@ -867,6 +869,7 @@ export default function Tickets() {
   const [showAsignarModal, setShowAsignarModal]           = useState(false)
   const [asignarOperariosCheck, setAsignarOperariosCheck] = useState([])
   const [historialAbierto, setHistorialAbierto]           = useState(false)
+  const [showInfoDrawer, setShowInfoDrawer]               = useState(false)
 
   const [comentarioText, setComentarioText] = useState('')
 
@@ -945,6 +948,7 @@ export default function Tickets() {
       filtered = filtered.filter(t => new Date(t.created_at) <= hasta)
     }
     setTickets(filtered)
+    setTicketPage(1)
   }
 
   function onSearchChange(e) { setSearchTerm(e.target.value) }
@@ -1481,10 +1485,15 @@ export default function Tickets() {
         <main className="main-content detalle-ticket">
 
           <div className="detalle-header">
-            <button className="btn-back" onClick={volverALista} style={{ padding: '6px 12px', fontSize: '0.85rem', flexShrink: 0 }}>
-              <i className="fas fa-arrow-left"></i> Tickets
-            </button>
-            <span className="ticket-numero" style={{ flexShrink: 0 }}>#{ticketActual.numero}</span>
+            <div className="detalle-header-top">
+              <button className="btn-back" onClick={volverALista} style={{ padding: '6px 12px', fontSize: '0.85rem', flexShrink: 0 }}>
+                <i className="fas fa-arrow-left"></i> Tickets
+              </button>
+              <span className="ticket-numero" style={{ flexShrink: 0 }}>#{ticketActual.numero}</span>
+              <button className="btn-info-drawer mobile-only" onClick={() => setShowInfoDrawer(true)}>
+                <i className="fas fa-info-circle"></i>
+              </button>
+            </div>
             <div className="detalle-header-titulo">
               <h2 className="detalle-header-asunto">
                 {ticketActual.empresas?.nombre && (
@@ -1517,8 +1526,13 @@ export default function Tickets() {
           <div className="detalle-ticket-body-wrapper">
             <div className="detalle-body">
 
-              {/* SIDEBAR */}
-              <aside className="detalle-sidebar">
+              {/* SIDEBAR — desktop always visible, mobile: drawer */}
+              {showInfoDrawer && <div className="info-drawer-overlay mobile-only" onClick={() => setShowInfoDrawer(false)} />}
+              <aside className={`detalle-sidebar${showInfoDrawer ? ' info-drawer-open' : ''}`}>
+
+                <button className="info-drawer-close mobile-only" onClick={() => setShowInfoDrawer(false)}>
+                  <i className="fas fa-times"></i> Cerrar
+                </button>
 
                 <div className="sidebar-card">
                   <h4><i className="fas fa-info-circle"></i> Información</h4>
@@ -1844,6 +1858,10 @@ export default function Tickets() {
   // ============================================================
   // VISTA LISTA
   // ============================================================
+  const tTotalPages  = Math.ceil(tickets.length / TICKETS_PER_PAGE)
+  const tSafePage    = Math.min(ticketPage, tTotalPages || 1)
+  const pagedTickets = tickets.slice((tSafePage - 1) * TICKETS_PER_PAGE, tSafePage * TICKETS_PER_PAGE)
+
   return (
     <div className="tickets-page">
       <div className="toast-container" id="toastContainer"></div>
@@ -1865,9 +1883,9 @@ export default function Tickets() {
             { id: 'statCompletados',       label: 'Completados',          val: stats.completados || 0,        icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', click: () => { setEstadoFilter('Completado'); setPrioridadFilter('all') } },
             { id: 'statPendFacturar',      label: 'Pend. facturar',       val: stats.pendiente_facturar || 0, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', click: () => { setEstadoFilter('Pendiente de facturar'); setPrioridadFilter('all') } },
             { id: 'statFacturados',        label: 'Facturados',           val: stats.facturados || 0,         icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => { setEstadoFilter('Facturado'); setPrioridadFilter('all') } },
-            { id: 'statUrgentes',          label: 'Urgentes',             val: stats.urgentes || 0,           icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => { setEstadoFilter('all'); setPrioridadFilter('Urgente') } },
+            { id: 'statUrgentes',          label: 'Urgentes',             val: stats.urgentes || 0,           icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => { setEstadoFilter('all'); setPrioridadFilter('Urgente') }, hideMobile: true },
           ].map(s => (
-            <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer' }}>
+            <div className={`stat-card${s.hideMobile ? ' stat-hide-mobile' : ''}`} key={s.id} onClick={s.click} style={{ cursor: 'pointer' }}>
               <div className="stat-icon" style={{ background: s.bg, color: s.col }}><i className={`fas ${s.icon}`}></i></div>
               <div className="stat-info"><h3>{s.val}</h3><p>{s.label}</p></div>
             </div>
@@ -1880,33 +1898,51 @@ export default function Tickets() {
             <input type="text" placeholder="Buscar tickets..." value={searchTerm} onChange={onSearchChange} />
           </div>
           <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
-              <option value="all">Todos los estados</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="En curso">En curso</option>
-              <option value="Completado">Completado</option>
-              <option value="Pendiente de facturar">Pendiente de facturar</option>
-              <option value="Facturado">Facturado</option>
-            </select>
-            <select value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
-              <option value="all">Prioridad</option>
-              <option value="Baja">Baja</option>
-              <option value="Media">Media</option>
-              <option value="Alta">Alta</option>
-              <option value="Urgente">Urgente</option>
-            </select>
-            <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
-              <option value="all">Operario</option>
-              {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
-            </select>
-            <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
-              <option value="all">Empresa</option>
-              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-            </select>
-            <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
-            <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+            <div className={`filter-chip${estadoFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Estado">
+              <i className="fas fa-tag"></i>
+              <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
+                <option value="all">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En curso">En curso</option>
+                <option value="Completado">Completado</option>
+                <option value="Pendiente de facturar">Pendiente de facturar</option>
+                <option value="Facturado">Facturado</option>
+              </select>
+            </div>
+            <div className={`filter-chip${prioridadFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Prioridad">
+              <i className="fas fa-flag"></i>
+              <select value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
+                <option value="all">Prioridad</option>
+                <option value="Baja">Baja</option>
+                <option value="Media">Media</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+              </select>
+            </div>
+            <div className={`filter-chip${operarioFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Operario">
+              <i className="fas fa-user"></i>
+              <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
+                <option value="all">Operario</option>
+                {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
+              </select>
+            </div>
+            <div className={`filter-chip${empresaFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Empresa">
+              <i className="fas fa-building"></i>
+              <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
+                <option value="all">Empresa</option>
+                {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+              </select>
+            </div>
+            <div className={`filter-chip filter-chip-date${filtroDesde ? ' filter-chip-active' : ''}`} title="Desde">
+              <i className="fas fa-calendar-alt"></i>
+              <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
+            </div>
+            <div className={`filter-chip filter-chip-date${filtroHasta ? ' filter-chip-active' : ''}`} title="Hasta">
+              <i className="fas fa-calendar-check"></i>
+              <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+            </div>
             {(filtroDesde || filtroHasta) && (
-              <button className="btn-secondary btn-sm" onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}>
+              <button className="btn-secondary btn-sm filter-chip-reset" onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}>
                 <i className="fas fa-undo"></i>
               </button>
             )}
@@ -1930,7 +1966,7 @@ export default function Tickets() {
                   </td>
                 </tr>
               ) : (
-                tickets.map(t => {
+                pagedTickets.map(t => {
                   const asignados     = t.ticket_asignaciones || []
                   const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado' || t.estado === 'Pendiente de facturar'
                   return (
@@ -1987,7 +2023,7 @@ export default function Tickets() {
           {tickets.length === 0 ? (
             <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets</div>
           ) : (
-            tickets.map(t => {
+            pagedTickets.map(t => {
               const asignados     = t.ticket_asignaciones || []
               const nombresOps    = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
               const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado' || t.estado === 'Pendiente de facturar'
@@ -1995,7 +2031,10 @@ export default function Tickets() {
                 <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
                   <div className="ticket-card-top">
                     <div>
-                      <span className="ticket-numero">#{t.numero}</span>
+                      <div className="ticket-card-id-row">
+                        <span className="ticket-numero">#{t.numero}</span>
+                        <span className={`ticket-prio-inline ticket-prio-${t.prioridad}`}>{t.prioridad}</span>
+                      </div>
                       <div className="ticket-card-asunto">{t.asunto}</div>
                     </div>
                     <EstadoBadge e={t.estado} />
@@ -2007,13 +2046,23 @@ export default function Tickets() {
                       <i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)}
                       {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '3px' }}></i>}
                     </span>
-                    <span className={`prioridad-badge prioridad-${t.prioridad}`} style={{ marginLeft: 'auto' }}>{t.prioridad}</span>
                   </div>
                 </div>
               )
             })
           )}
         </div>
+
+        {tTotalPages > 1 && (
+          <div className="pagination">
+            <button className="pagination-btn" onClick={() => setTicketPage(p => Math.max(1, p - 1))} disabled={tSafePage === 1}><i className="fas fa-chevron-left"></i></button>
+            {Array.from({ length: tTotalPages }, (_, i) => i + 1).map(p => (
+              <button key={p} className={`pagination-btn ${p === tSafePage ? 'active' : ''}`} onClick={() => setTicketPage(p)}>{p}</button>
+            ))}
+            <button className="pagination-btn" onClick={() => setTicketPage(p => Math.min(tTotalPages, p + 1))} disabled={tSafePage === tTotalPages}><i className="fas fa-chevron-right"></i></button>
+            <span className="pagination-info">{tickets.length} tickets</span>
+          </div>
+        )}
 
       </main>
       {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}

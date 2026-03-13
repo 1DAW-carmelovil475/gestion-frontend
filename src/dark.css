@@ -128,8 +128,9 @@ html[data-theme="dark"] .table-container td       { border-bottom-color: #2d3f5c
 html[data-theme="dark"] .table-container tr:hover td { background: #263447 !important; }
 
 /* ── Paginación ─────────────────────────────────────────────── */
-html[data-theme="dark"] .pagination button { background: #1e293b !important; border-color: #2d3f5c; color: #94a3b8; }
-html[data-theme="dark"] .pagination button:hover { border-color: #3b82f6; color: #60a5fa; }
+html[data-theme="dark"] .pagination-btn { background: #1e293b !important; border-color: #2d3f5c !important; color: #94a3b8 !important; }
+html[data-theme="dark"] .pagination-btn:hover:not(:disabled) { background: #3b82f6 !important; border-color: #3b82f6 !important; color: white !important; }
+html[data-theme="dark"] .pagination-btn.active { background: #3b82f6 !important; border-color: #3b82f6 !important; color: white !important; }
 
 /* ── Modal ──────────────────────────────────────────────────── */
 html[data-theme="dark"] .modal              { background: rgba(0,0,0,0.65) !important; }
@@ -431,6 +432,16 @@ html[data-theme="dark"] .ci-modal        { background: #1e293b !important; }
 html[data-theme="dark"] .ci-modal-header { background: #1e293b !important; border-bottom-color: #2d3f5c; }
 html[data-theme="dark"] .ci-modal-footer { background: #1e293b !important; border-top-color: #2d3f5c; }
 html[data-theme="dark"] .ci-btn-secondary { background: #263447 !important; color: #e2e8f0; border-color: #2d3f5c; }
+html[data-theme="dark"] .ci-detalle-field { border-bottom-color: #2d3f5c !important; }
+html[data-theme="dark"] .ci-detalle-label { color: #94a3b8 !important; }
+html[data-theme="dark"] .ci-detalle-value { color: #e2e8f0 !important; }
+html[data-theme="dark"] .ci-file-list    { background: #162032 !important; border-color: #2d3f5c !important; }
+html[data-theme="dark"] .ci-file-item    { color: #e2e8f0 !important; border-bottom-color: #2d3f5c !important; }
+html[data-theme="dark"] .ci-file-item i  { color: #94a3b8 !important; }
+html[data-theme="dark"] .ci-file-size    { color: #64748b !important; }
+html[data-theme="dark"] .ci-file-item--download:hover { background: #1e3a5f !important; }
+html[data-theme="dark"] .ci-file-download-icon        { color: #60a5fa !important; }
+html[data-theme="dark"] .ci-file-meta                 { color: #64748b !important; }
 html[data-theme="dark"] .ci-empresa-tag  { background: #1e3a5f !important; border-color: #2d3f5c; color: #93c5fd; }
 html[data-theme="dark"] .ci-form-hint    { background: #0c1f3f !important; color: #93c5fd; border-color: #1e3a5f; }
 html[data-theme="dark"] .ci-footer       { background: #1e293b !important; border-top-color: #2d3f5c; }
@@ -440,3 +451,14 @@ html[data-theme="dark"] .ci-footer       { background: #1e293b !important; borde
 ══════════════════════════════════════════════════════════════ */
 html[data-theme="dark"] .login-container { background: #1e293b !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
 html[data-theme="dark"] .login-page      { background: #0f172a !important; }
+/* Force logo blend surface on Login and ClienteIncidencias */
+html[data-theme="dark"] .login-container .logo,
+html[data-theme="dark"] .topbar .logo {
+  background: #1e293b;
+  isolation: isolate;
+}
+html[data-theme="dark"] .login-container .logo img,
+html[data-theme="dark"] .topbar .logo img {
+  filter: invert(1) hue-rotate(180deg) !important;
+  mix-blend-mode: screen !important;
+}

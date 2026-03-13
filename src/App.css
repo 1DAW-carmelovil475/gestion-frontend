@@ -583,7 +583,8 @@ select option {
 /* ============================================================
    PAGINATION
    ============================================================ */
-.pagination { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; }
+.pagination-info { font-size: 0.82rem; color: var(--gray); padding: 0 6px; }
 
 .pagination button {
   padding: 7px 13px;
@@ -596,8 +597,8 @@ select option {
   transition: all 0.18s;
   cursor: pointer;
 }
-
-.pagination button:hover  { border-color: var(--primary); color: var(--primary); }
+.pagination button:disabled { opacity: 0.35; cursor: default; }
+.pagination button:hover:not(:disabled)  { border-color: var(--primary); color: var(--primary); }
 .pagination button.active { background: var(--primary); border-color: var(--primary); color: white; }
 
 /* ============================================================
@@ -1489,9 +1490,7 @@ select option {
   .section-header h1     { font-size: 1.1rem; }
   .empresa-detalle-header { flex-direction: column; align-items: flex-start; }
 
-  .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .stat-card { padding: 10px 12px; }
-  .stat-info h3 { font-size: 1.2rem; }
+  .stats { display: none !important; }
 
   .ticket-form-grid { grid-template-columns: 1fr; }
 
@@ -1569,7 +1568,7 @@ select option {
   }
 
   /* Paginación táctil */
-  .pagination button { padding: 10px 14px; }
+  .pagination button { padding: 8px 12px; }
 
   /* Ocultar labels de botones en pantallas pequeñas */
   .btn-label { display: none; }
@@ -1614,6 +1613,9 @@ select option {
     gap: 5px;
     border-radius: 8px;
   }
+  .company-card-actions .btn-action.btn-view   { background: #dbeafe; color: #2563eb; }
+  .company-card-actions .btn-action.btn-edit   { background: #e0f2fe; color: #0369a1; }
+  .company-card-actions .btn-action.btn-delete { background: #fee2e2; color: #dc2626; }
 }
 
 @media (max-width: 480px) {
@@ -1735,6 +1737,11 @@ body:not(.is-admin) [data-admin-only] { display: none !important; }
 [data-theme="dark"] .btn-action.btn-edit:hover   { background: #1e3a5f; color: #60a5fa; }
 [data-theme="dark"] .btn-action.btn-delete:hover { background: #4c1d1d; color: #f87171; }
 [data-theme="dark"] .btn-action.btn-view:hover   { background: #14432a; color: #4ade80; }
+@media (max-width: 768px) {
+  [data-theme="dark"] .company-card-actions .btn-action.btn-view   { background: #1e3a5f; color: #60a5fa; }
+  [data-theme="dark"] .company-card-actions .btn-action.btn-edit   { background: #162032; color: #7dd3fc; }
+  [data-theme="dark"] .company-card-actions .btn-action.btn-delete { background: #4c1d1d; color: #f87171; }
+}
 
 /* Inputs / Selects / Textareas */
 [data-theme="dark"] select {

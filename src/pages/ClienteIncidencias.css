@@ -36,7 +36,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 0;
+  padding: 7px 0;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -452,6 +452,9 @@
   border-radius: 12px;
   width: 100%;
   max-width: 520px;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 
@@ -459,7 +462,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 14px 20px;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -493,10 +496,10 @@
 }
 
 .ci-modal-body {
-  padding: 24px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .ci-form-group {
@@ -589,9 +592,9 @@
 .ci-file-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  font-size: 0.82rem;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
   color: #475569;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -600,9 +603,10 @@
   border-bottom: none;
 }
 
-.ci-file-item i {
+.ci-file-item > i:first-child {
   color: #94a3b8;
   flex-shrink: 0;
+  font-size: 0.75rem;
 }
 
 .ci-file-item span {
@@ -613,7 +617,7 @@
 }
 
 .ci-file-size {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #94a3b8;
   flex-shrink: 0;
 }
@@ -642,11 +646,19 @@
   background: #f0f6ff;
 }
 
-.ci-file-download-icon {
-  color: #0047b3;
-  font-size: 0.8rem;
+/* Size + download icon grouped tightly */
+.ci-file-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+.ci-file-download-icon {
+  color: #0047b3;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .ci-archivos-loading,
@@ -660,7 +672,7 @@
 }
 
 .ci-modal-footer {
-  padding: 16px 24px;
+  padding: 10px 20px;
   border-top: 1px solid #e2e8f0;
   display: flex;
   gap: 10px;

@@ -209,11 +209,12 @@
 
 .data-card-meta {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   font-size: 0.8rem;
   color: var(--gray);
-  margin-bottom: 12px;
+  margin-top: 6px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .data-card-meta i { color: var(--primary); }
@@ -221,6 +222,37 @@
 .data-card-actions {
   display: flex;
   gap: 6px;
+}
+
+.u-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.u-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.u-card-btn-edit          { background: #dbeafe; color: #1d4ed8; }
+.u-card-btn-edit:hover    { background: #bfdbfe; }
+.u-card-btn-delete        { background: #fee2e2; color: #dc2626; }
+.u-card-btn-delete:hover  { background: #fecaca; }
+
+/* ── 5 cards: last spans full width on mobile ── */
+@media (max-width: 768px) {
+  .u-stats .stat-card:last-child { grid-column: 1 / -1; }
 }
 
 /* ── Responsive ──────────────────────────────── */
@@ -254,6 +286,8 @@
 /* ============================================================
    DARK MODE
    ============================================================ */
-[data-theme="dark"] .usuarios-page { background: #0f172a; }
-[data-theme="dark"] .data-card     { background: #1e293b; }
-[data-theme="dark"] .user-modal-hint { background: #162032; border-color: #2d3f5c; color: #94a3b8; }
+[data-theme="dark"] .usuarios-page    { background: #0f172a; }
+[data-theme="dark"] .data-card        { background: #1e293b; }
+[data-theme="dark"] .user-modal-hint  { background: #162032; border-color: #2d3f5c; color: #94a3b8; }
+[data-theme="dark"] .u-card-btn-edit  { background: #1e3a5f; color: #60a5fa; }
+[data-theme="dark"] .u-card-btn-delete { background: #4c1d1d; color: #f87171; }

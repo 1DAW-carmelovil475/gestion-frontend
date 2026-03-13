@@ -1546,10 +1546,10 @@ export default function Tickets() {
                     <span className="info-row-value" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       {ticketActual.contacto_nombre ? (
                         <>
-                          <span style={{ fontWeight: 600, color: '#1e293b' }}>{ticketActual.contacto_nombre}</span>
+                          <span style={{ fontWeight: 600 }}>{ticketActual.contacto_nombre}</span>
                           {ticketActual.telefono_cliente && (
                             <a href={`tel:${ticketActual.telefono_cliente}`}
-                              style={{ color: '#0047b3', textDecoration: 'none', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 4 }}>
                               <i className="fas fa-phone" style={{ fontSize: '0.68rem' }}></i>
                               {ticketActual.telefono_cliente}
                             </a>

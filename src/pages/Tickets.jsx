@@ -892,6 +892,18 @@ export default function Tickets() {
     if (!loading && allTickets.length > 0) applyFilters()
   }, [estadoFilter, prioridadFilter, operarioFilter, empresaFilter, filtroDesde, filtroHasta, searchTerm, allTickets])
 
+  useEffect(() => {
+    if (!vistaDetalle || !ticketActual?.id) return
+    const id = ticketActual.id
+    const interval = setInterval(async () => {
+      try {
+        const data = await getTicketComentarios(id)
+        setComentarios(data || [])
+      } catch {}
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [vistaDetalle, ticketActual?.id])
+
   async function loadData() {
     setLoading(true)
     try {

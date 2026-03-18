@@ -26,6 +26,11 @@ const CAT_ICONOS = {
 }
 
 
+function estadoCliente(estado) {
+  if (estado === 'Pendiente de facturar' || estado === 'Facturado') return 'Completado'
+  return estado
+}
+
 function formatDate(str) {
   if (!str) return '—'
   const d = new Date(str)
@@ -263,7 +268,7 @@ function DetalleModal({ inc, onClose, showEmpresa }) {
           )}
           <div className="ci-detalle-field">
             <span className="ci-detalle-label"><i className="fas fa-info-circle"></i> Estado</span>
-            <span className={`status ${inc.estado.replace(/ /g, '-')}`}>{inc.estado}</span>
+            <span className={`status ${estadoCliente(inc.estado).replace(/ /g, '-')}`}>{estadoCliente(inc.estado)}</span>
           </div>
           <div className="ci-detalle-field">
             <span className="ci-detalle-label"><i className="fas fa-calendar-alt"></i> Fecha</span>
@@ -468,7 +473,7 @@ export default function ClienteIncidencias() {
                           </td>
                         )}
                         <td>
-                          <span className={`status ${inc.estado.replace(/ /g, '-')}`}>{inc.estado}</span>
+                          <span className={`status ${estadoCliente(inc.estado).replace(/ /g, '-')}`}>{estadoCliente(inc.estado)}</span>
                         </td>
                         <td className="ci-fecha">{formatDate(inc.created_at)}</td>
                         <td className="ci-ver"><i className="fas fa-eye"></i></td>
@@ -485,7 +490,7 @@ export default function ClienteIncidencias() {
                 return (
                   <div className="ci-card ci-row-clickable" key={inc.id} onClick={() => setDetalle(inc)}>
                     <div className="ci-card-top">
-                      <span className={`status ${inc.estado.replace(/ /g, '-')}`}>{inc.estado}</span>
+                      <span className={`status ${estadoCliente(inc.estado).replace(/ /g, '-')}`}>{estadoCliente(inc.estado)}</span>
                       <i className="fas fa-eye ci-card-eye"></i>
                     </div>
                     <div className="ci-card-asunto">{inc.asunto}</div>

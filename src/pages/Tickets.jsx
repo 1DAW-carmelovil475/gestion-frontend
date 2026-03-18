@@ -22,6 +22,7 @@ const DEVICE_TIPO_SUGERENCIAS = {
   servidor: ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
   nas:      ['NAS Synology', 'NAS QNAP'],
   red:      ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
+  web:      ['Web corporativa', 'Tienda online', 'Portal', 'Aplicación web'],
 }
 
 const DEVICE_CAT_LABELS = {
@@ -29,6 +30,7 @@ const DEVICE_CAT_LABELS = {
   servidor: 'Servidores',
   nas:      'NAS',
   red:      'Redes',
+  web:      'Web',
 }
 
 const DEVICE_ICONOS = {
@@ -36,6 +38,7 @@ const DEVICE_ICONOS = {
   servidor: 'fa-server',
   nas:      'fa-hdd',
   red:      'fa-network-wired',
+  web:      'fa-globe',
 }
 
 function getAvatarColor(str) {

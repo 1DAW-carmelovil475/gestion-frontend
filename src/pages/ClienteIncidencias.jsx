@@ -1,9 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getIncidenciasCliente, createIncidencia, getTicket, getArchivoUrl } from '../services/api'
+import { getIncidenciasCliente, createIncidencia, getTicket, getArchivoUrl, getDispositivos } from '../services/api'
 import ThemeToggle from '../components/ThemeToggle'
 import './ClienteIncidencias.css'
+
+const CAT_LABELS = {
+  equipo:   'Equipos',
+  servidor: 'Servidores',
+  nas:      'NAS',
+  red:      'Redes',
+  correo:   'Correos',
+  otro:     'Otros',
+  web:      'Web',
+}
+
+const CAT_ICONOS = {
+  equipo:   'fa-desktop',
+  servidor: 'fa-server',
+  nas:      'fa-hdd',
+  red:      'fa-network-wired',
+  correo:   'fa-envelope',
+  otro:     'fa-cube',
+  web:      'fa-globe',
+}
 
 
 function formatDate(str) {
@@ -18,9 +38,50 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function truncateFileName(name, max = 30) {
+  if (!name || name.length <= max) return name
+  const dot = name.lastIndexOf('.')
+  const ext = dot > 0 ? name.slice(dot) : ''
+  return name.slice(0, max - ext.length - 1) + '…' + ext
+}
+
 // ── MODAL NUEVA INCIDENCIA ────────────────────────────────────────────────────
-function NuevaIncidenciaModal({ onSave, onClose, loading }) {
+function NuevaIncidenciaModal({ onSave, onClose, loading, dispositivos }) {
   const [archivos, setArchivos] = useState([])
+  const [sistemaSeleccionado, setSistemaSeleccionado] = useState(null) // { cat, nombre, label }
+
+  // Construir opciones del select de sistema
+  // Para categoría 'otro', exponer cada item con su nombre real
+  // Para el resto de categorías, agrupar en una opción por categoría
+  const opcionesSistema = (() => {
+    if (!dispositivos?.length) return []
+    const opts = []
+    const categorias = [...new Set(dispositivos.map(d => d.categoria))]
+    categorias.forEach(cat => {
+      const items = dispositivos.filter(d => d.categoria === cat)
+      if (cat === 'otro') {
+        // Mostrar cada item por su nombre real en lugar de "Otros"
+        items.forEach(item => {
+          opts.push({
+            value: `otro__${item.id}`,
+            cat: 'otro',
+            nombre: item.nombre || item.tipo || 'Otro',
+            label: item.nombre || item.tipo || 'Otro',
+            icon: CAT_ICONOS['otro'],
+          })
+        })
+      } else {
+        opts.push({
+          value: cat,
+          cat,
+          nombre: CAT_LABELS[cat] || cat,
+          label: CAT_LABELS[cat] || cat,
+          icon: CAT_ICONOS[cat] || 'fa-cube',
+        })
+      }
+    })
+    return opts
+  })()
 
   function handleFileChange(e) {
     const nuevos = Array.from(e.target.files)
@@ -34,7 +95,7 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
 
   function handleSubmit(e) {
     e.preventDefault()
-    onSave(e, archivos)
+    onSave(e, archivos, sistemaSeleccionado)
   }
 
   return (
@@ -49,6 +110,32 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
 
         <form onSubmit={handleSubmit}>
           <div className="ci-modal-body">
+            {opcionesSistema.length > 0 && (
+              <div className="ci-form-group">
+                <label><i className="fas fa-laptop-code"></i> Sistema afectado</label>
+                <div className="ci-sistema-grid">
+                  <button
+                    type="button"
+                    className={`ci-sistema-opt${!sistemaSeleccionado ? ' active' : ''}`}
+                    onClick={() => setSistemaSeleccionado(null)}
+                  >
+                    <i className="fas fa-question-circle"></i>
+                    <span>Sin especificar</span>
+                  </button>
+                  {opcionesSistema.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`ci-sistema-opt${sistemaSeleccionado?.value === opt.value ? ' active' : ''}`}
+                      onClick={() => setSistemaSeleccionado(opt)}
+                    >
+                      <i className={`fas ${opt.icon}`}></i>
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="ci-form-group">
               <label><i className="fas fa-tag"></i> Asunto *</label>
               <input
@@ -57,6 +144,7 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
                 placeholder="Describe brevemente el problema..."
                 required
                 autoFocus
+                maxLength={200}
               />
             </div>
             <div className="ci-form-group">
@@ -65,6 +153,7 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
                 name="descripcion"
                 placeholder="Explica con más detalle qué está ocurriendo, cuándo empezó, qué has intentado..."
                 rows={4}
+                maxLength={2000}
               />
             </div>
             <div className="ci-form-group">
@@ -86,7 +175,7 @@ function NuevaIncidenciaModal({ onSave, onClose, loading }) {
                   {archivos.map((f, i) => (
                     <li key={i} className="ci-file-item">
                       <i className="fas fa-file"></i>
-                      <span title={f.name}>{f.name}</span>
+                      <span title={f.name}>{truncateFileName(f.name)}</span>
                       <span className="ci-file-size">{formatFileSize(f.size)}</span>
                       <button type="button" className="ci-file-remove" onClick={() => removeFile(i)} title="Quitar">
                         <i className="fas fa-times"></i>
@@ -197,7 +286,7 @@ function DetalleModal({ inc, onClose, showEmpresa }) {
                 {archivos.map(a => (
                   <li key={a.id} className="ci-file-item ci-file-item--download" onClick={() => handleDownload(a)}>
                     <i className={`fas ${getFileIcon(a.mime_type)}`}></i>
-                    <span title={a.nombre_original}>{a.nombre_original}</span>
+                    <span title={a.nombre_original}>{truncateFileName(a.nombre_original)}</span>
                     <span className="ci-file-meta">
                       {a.tamanio && <span className="ci-file-size">{formatFileSize(a.tamanio)}</span>}
                       <i className="fas fa-download ci-file-download-icon"></i>
@@ -221,12 +310,13 @@ export default function ClienteIncidencias() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const [incidencias, setIncidencias] = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [saving, setSaving]           = useState(false)
-  const [showModal, setShowModal]     = useState(false)
-  const [detalle, setDetalle]         = useState(null)
-  const [toast, setToast]             = useState(null)
+  const [incidencias, setIncidencias]   = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [saving, setSaving]             = useState(false)
+  const [showModal, setShowModal]       = useState(false)
+  const [detalle, setDetalle]           = useState(null)
+  const [toast, setToast]               = useState(null)
+  const [dispositivos, setDispositivos] = useState([])
 
   const empresaNombre = user?.empresa_nombre || 'Mi empresa'
 
@@ -236,6 +326,13 @@ export default function ClienteIncidencias() {
   useEffect(() => {
     loadIncidencias()
   }, [])
+
+  useEffect(() => {
+    if (!user?.empresa_id) return
+    getDispositivos(user.empresa_id)
+      .then(data => setDispositivos((data || []).filter(d => d.categoria !== 'correo')))
+      .catch(() => {})
+  }, [user?.empresa_id])
 
   async function loadIncidencias() {
     setLoading(true)
@@ -249,11 +346,18 @@ export default function ClienteIncidencias() {
     }
   }
 
-  async function handleSave(e, archivos = []) {
+  async function handleSave(e, archivos = [], sistema = null) {
     const raw = new FormData(e.target)
     const fd  = new FormData()
-    fd.append('asunto',      raw.get('asunto'))
-    fd.append('descripcion', raw.get('descripcion') || '')
+    const asunto = (raw.get('asunto') || '').trim().replace(/<[^>]*>/g, '').substring(0, 200)
+    const descripcion = (raw.get('descripcion') || '').trim().replace(/<[^>]*>/g, '').substring(0, 2000)
+    if (!asunto) { showToast('error', 'El asunto es obligatorio'); return }
+    fd.append('asunto',      asunto)
+    fd.append('descripcion', descripcion)
+    if (sistema) {
+      fd.append('sistema_categoria', sistema.cat)
+      fd.append('sistema_nombre',    sistema.nombre)
+    }
     fd.append('file_names',  JSON.stringify(archivos.map(f => f.name)))
     archivos.forEach(f => fd.append('archivos', f, f.name))
     setSaving(true)
@@ -407,6 +511,7 @@ export default function ClienteIncidencias() {
           onSave={handleSave}
           onClose={() => setShowModal(false)}
           loading={saving}
+          dispositivos={dispositivos}
         />
       )}
 

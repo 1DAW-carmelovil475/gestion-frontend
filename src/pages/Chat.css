@@ -1486,3 +1486,4 @@
 [data-theme="dark"] .chat-edit-textarea   { color: #e2e8f0; }
 [data-theme="dark"] .chat-cancel-btn      { background: #263447; color: #94a3b8; }
 [data-theme="dark"] .chat-editor-wrap     { background: #1e293b; border-color: #2d3f5c; }
+[data-theme="dark"] .chat-editor-wrap:focus-within { background: #1e293b; border-color: #3b82f6; }

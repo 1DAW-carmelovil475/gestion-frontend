@@ -70,6 +70,9 @@ const CAMPOS = {
   otro: [
     { key: 'tipo',     label: 'Tipo' },
   ],
+  web: [
+    { key: 'url',      label: 'URL' },
+  ],
 }
 
 const ICONOS = {
@@ -79,6 +82,7 @@ const ICONOS = {
   red:      'fa-network-wired',
   correo:   'fa-envelope',
   otro:     'fa-cube',
+  web:      'fa-globe',
 }
 
 const TAB_TO_CAT = {
@@ -86,6 +90,7 @@ const TAB_TO_CAT = {
   servidores: 'servidor',
   nas:        'nas',
   redes:      'red',
+  web:        'web',
   correos:    'correo',
   otros:      'otro',
 }
@@ -97,6 +102,17 @@ const CAT_LABELS = {
   red:      'Redes',
   correo:   'Correos',
   otro:     'Otros',
+  web:      'Web',
+}
+
+const CAT_LABELS_SING = {
+  equipo:   'Equipo',
+  servidor: 'Servidor',
+  nas:      'NAS',
+  red:      'Red',
+  correo:   'Correo',
+  otro:     'Otro',
+  web:      'Web',
 }
 
 const SERVICIO_COLORS = {
@@ -347,12 +363,12 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
     <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && onClose()}>
       <div className="modal-content">
         <div className="modal-header">
-          <h2>{editingITItem ? 'Editar' : 'Añadir'} {CAT_LABELS[cat]?.slice(0, -1) || cat}</h2>
+          <h2>{editingITItem ? 'Editar' : 'Añadir'} {CAT_LABELS_SING[cat] || cat}</h2>
           <button className="modal-close" onClick={onClose}><i className="fas fa-times"></i></button>
         </div>
         <form onSubmit={onSave}>
           <div className="modal-body">
-            {cat !== 'correo' && (
+            {cat !== 'correo' && cat !== 'web' && (
               <div className="form-row">
                 <div className="form-group">
                   <label>Nombre *</label>
@@ -413,22 +429,28 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
                 <div className="form-group"><label>Contraseña</label><input type="text" name="password_cliente" defaultValue={editingITItem?.password_cliente} placeholder="••••••••" /></div>
               </div>
             </>)}
+            {cat === 'web' && (
+              <div className="form-group">
+                <label>URL</label>
+                <input type="url" name="url" defaultValue={editingITItem?.url} placeholder="https://ejemplo.com" />
+              </div>
+            )}
 
-            <div style={{ borderTop: '1px dashed #e2e8f0', margin: '12px 0 14px', paddingTop: '14px' }}>
+            <div style={{ borderTop: '1px dashed var(--border)', margin: '12px 0 14px', paddingTop: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <label style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem', color: '#475569' }}>
+                <label style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem', color: 'var(--gray)' }}>
                   <i className="fas fa-plus-circle" style={{ color: 'var(--primary)', marginRight: '5px' }}></i>Campos personalizados
                 </label>
                 <button type="button" onClick={addExtraField}
-                  style={{ background: 'none', border: '1px solid #e2e8f0', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', padding: '5px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'inherit' }}>
+                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', padding: '5px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'inherit' }}>
                   <i className="fas fa-plus"></i> Añadir
                 </button>
               </div>
               {extraFields.map((ef, i) => (
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input type="text" value={ef.key} onChange={e => updateExtraField(i, 'key', e.target.value)} placeholder="Campo" style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontFamily: 'inherit', fontSize: '0.88rem' }} />
-                  <input type="text" value={ef.val} onChange={e => updateExtraField(i, 'val', e.target.value)} placeholder="Valor" style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontFamily: 'inherit', fontSize: '0.88rem' }} />
-                  <button type="button" onClick={() => removeExtraField(i)} style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <input type="text" value={ef.key} onChange={e => updateExtraField(i, 'key', e.target.value)} placeholder="Campo" style={{ padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', fontSize: '0.88rem', background: 'var(--card-bg)', color: 'var(--dark)' }} />
+                  <input type="text" value={ef.val} onChange={e => updateExtraField(i, 'val', e.target.value)} placeholder="Valor" style={{ padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', fontSize: '0.88rem', background: 'var(--card-bg)', color: 'var(--dark)' }} />
+                  <button type="button" onClick={() => removeExtraField(i)} style={{ background: '#fee2e2', color: 'var(--danger)', border: 'none', width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <i className="fas fa-times"></i>
                   </button>
                 </div>
@@ -693,9 +715,19 @@ export default function Dashboard() {
       nombre_cliente: formData.get('nombre_cliente') || null,
       correo_cliente: formData.get('correo_cliente') || null,
       password_cliente: formData.get('password_cliente') || null,
+      url: formData.get('url') || null,
       campos_extra,
     }
-    if (selectedITCategory !== 'correo' && !payload.nombre) { showToast('error', 'Error', 'El nombre es obligatorio'); return }
+    // Para web, el nombre se deriva de la URL
+    if (selectedITCategory === 'web') {
+      if (!payload.url) { showToast('error', 'Error', 'La URL es obligatoria'); return }
+      try {
+        payload.nombre = new URL(payload.url).hostname || payload.url
+      } catch {
+        payload.nombre = payload.url
+      }
+    }
+    if (!['correo', 'web'].includes(selectedITCategory) && !payload.nombre) { showToast('error', 'Error', 'El nombre es obligatorio'); return }
     if (selectedITCategory === 'equipo' && !payload.numero_serie) { showToast('error', 'Error', 'El número de serie es obligatorio'); return }
     try {
       if (editingITItem) { await updateDispositivo(editingITItem.id, payload); showToast('success', 'Actualizado', 'Dispositivo actualizado correctamente') }

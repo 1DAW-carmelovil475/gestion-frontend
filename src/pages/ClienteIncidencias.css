@@ -360,6 +360,9 @@
 
 /* ── Empty ───────────────────────────────────────────────── */
 .ci-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   padding: 60px 20px;
   background: #fff;
@@ -756,3 +759,48 @@
 [data-theme="dark"] .ci-detalle-desc                  { background: #162032; border-color: #2d3f5c; color: #cbd5e1; }
 [data-theme="dark"] .ci-file-item--download:hover    { background: #1e3a5f; }
 [data-theme="dark"] .ci-archivos-empty               { color: #475569; }
+
+/* ── Sistema selector ────────────────────────────────── */
+.ci-sistema-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ci-sistema-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  font-family: inherit;
+  min-width: 70px;
+}
+
+.ci-sistema-opt i {
+  font-size: 1.1rem;
+}
+
+.ci-sistema-opt:hover {
+  border-color: #0047b3;
+  color: #0047b3;
+}
+
+.ci-sistema-opt.active {
+  border-color: #0047b3;
+  background: #eff6ff;
+  color: #0047b3;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .ci-sistema-opt          { background: #162032; border-color: #2d3f5c; color: #94a3b8; }
+[data-theme="dark"] .ci-sistema-opt:hover    { border-color: #60a5fa; color: #60a5fa; }
+[data-theme="dark"] .ci-sistema-opt.active   { border-color: #60a5fa; background: #1e3a5f; color: #93c5fd; }

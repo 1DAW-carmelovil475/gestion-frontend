@@ -150,6 +150,7 @@ function UserModal({ editingUser, empresas, onSave, onClose }) {
               >
                 <option value="trabajador">Trabajador — acceso estándar</option>
                 <option value="gestor">Gestor — recibe incidencias de clientes</option>
+                <option value="desarrollador">Desarrollador — recibe incidencias web</option>
                 <option value="admin">Administrador — acceso total</option>
                 <option value="cliente">Cliente — portal de incidencias</option>
               </select>
@@ -375,19 +376,21 @@ export default function Usuarios() {
   }
 
   function getRolLabel(rol) {
-    const labels = { admin: 'Admin', trabajador: 'Trabajador', gestor: 'Gestor', cliente: 'Cliente' }
+    const labels = { admin: 'Admin', trabajador: 'Trabajador', gestor: 'Gestor', desarrollador: 'Desarrollador', cliente: 'Cliente' }
     return labels[rol] || rol
   }
 
   function getRolIcon(rol) {
-    const icons = { admin: 'fa-shield-alt', trabajador: 'fa-user', gestor: 'fa-user-tie', cliente: 'fa-user-tag' }
+    const icons = { admin: 'fa-shield-alt', trabajador: 'fa-user', gestor: 'fa-user-tie', desarrollador: 'fa-code', cliente: 'fa-user-tag' }
     return icons[rol] || 'fa-user'
   }
 
   function getRolColor(rol) {
-    const colors = { admin: '#7c3aed', trabajador: '#0047b3', gestor: '#0891b2', cliente: '#16a34a' }
+    const colors = { admin: '#7c3aed', trabajador: '#0047b3', gestor: '#0891b2', desarrollador: '#4338ca', cliente: '#16a34a' }
     return colors[rol] || '#0047b3'
   }
+
+  const ROL_ORDER = { admin: 0, gestor: 1, desarrollador: 2, trabajador: 3, cliente: 4 }
 
   // ── Filtrado ──────────────────────────────────────
   const filtered = usuarios.filter(u => {
@@ -401,7 +404,7 @@ export default function Usuarios() {
       (estadoFilter === 'activo'      && u.activo) ||
       (estadoFilter === 'desactivado' && !u.activo)
     return matchSearch && matchRol && matchEstado
-  })
+  }).sort((a, b) => (ROL_ORDER[a.rol] ?? 99) - (ROL_ORDER[b.rol] ?? 99))
 
   const totalPages = Math.ceil(filtered.length / USERS_PER_PAGE)
   const safePage   = Math.min(userPage, totalPages || 1)
@@ -409,11 +412,12 @@ export default function Usuarios() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setUserPage(1) }, [searchTerm, rolFilter, estadoFilter])
 
-  const totalAdmins      = usuarios.filter(u => u.rol === 'admin').length
-  const totalTrabajadores = usuarios.filter(u => u.rol === 'trabajador').length
-  const totalGestores    = usuarios.filter(u => u.rol === 'gestor').length
-  const totalClientes    = usuarios.filter(u => u.rol === 'cliente').length
-  const totalActivos     = usuarios.filter(u => u.activo).length
+  const totalAdmins        = usuarios.filter(u => u.rol === 'admin').length
+  const totalTrabajadores  = usuarios.filter(u => u.rol === 'trabajador').length
+  const totalGestores      = usuarios.filter(u => u.rol === 'gestor').length
+  const totalDesarrolladores = usuarios.filter(u => u.rol === 'desarrollador').length
+  const totalClientes      = usuarios.filter(u => u.rol === 'cliente').length
+  const totalActivos       = usuarios.filter(u => u.activo).length
 
   if (loading) {
     return (
@@ -499,8 +503,8 @@ export default function Usuarios() {
               <i className="fas fa-user-tie"></i>
             </div>
             <div className="stat-info">
-              <h3>{totalTrabajadores + totalGestores}</h3>
-              <p>Trabajadores / Gestores</p>
+              <h3>{totalTrabajadores + totalGestores + totalDesarrolladores}</h3>
+              <p>Trab. / Gestores / Dev</p>
             </div>
           </div>
           <div className="stat-card">
@@ -540,6 +544,7 @@ export default function Usuarios() {
               <option value="admin">Administrador</option>
               <option value="trabajador">Trabajador</option>
               <option value="gestor">Gestor</option>
+              <option value="desarrollador">Desarrollador</option>
               <option value="cliente">Cliente</option>
             </select>
             <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>

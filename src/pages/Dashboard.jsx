@@ -429,12 +429,26 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
                 <div className="form-group"><label>Contraseña</label><input type="text" name="password_cliente" defaultValue={editingITItem?.password_cliente} placeholder="••••••••" /></div>
               </div>
             </>)}
-            {cat === 'web' && (
+            {cat === 'web' && (<>
               <div className="form-group">
-                <label>URL</label>
+                <label>URL *</label>
                 <input type="url" name="url" defaultValue={editingITItem?.url} placeholder="https://ejemplo.com" />
               </div>
-            )}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Puerto</label>
+                  <input type="text" name="web_puerto" defaultValue={editingITItem?.campos_extra?.puerto} placeholder="443" />
+                </div>
+                <div className="form-group">
+                  <label>Usuario FTP</label>
+                  <input type="text" name="web_ftp" defaultValue={editingITItem?.campos_extra?.ftp} placeholder="ftpuser" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Contraseña FTP</label>
+                <input type="text" name="web_password_ftp" defaultValue={editingITItem?.campos_extra?.password_ftp} placeholder="••••••••" />
+              </div>
+            </>)}
 
             <div style={{ borderTop: '1px dashed var(--border)', margin: '12px 0 14px', paddingTop: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -690,9 +704,12 @@ export default function Dashboard() {
   function openITModal(item = null, categoria = currentITCategory) {
     setEditingITItem(item)
     setSelectedITCategory(categoria)
+    const WEB_FIXED = ['puerto', 'ftp', 'password_ftp']
     setExtraFields(
       item?.campos_extra
-        ? Object.entries(item.campos_extra).map(([k, v]) => ({ key: k, val: v }))
+        ? Object.entries(item.campos_extra)
+            .filter(([k]) => !WEB_FIXED.includes(k))
+            .map(([k, v]) => ({ key: k, val: v }))
         : []
     )
     setShowITModal(true)
@@ -703,6 +720,11 @@ export default function Dashboard() {
     const formData = new FormData(e.target)
     const campos_extra = {}
     extraFields.forEach(({ key, val }) => { if (key && val) campos_extra[key] = val })
+    if (selectedITCategory === 'web') {
+      const puerto = formData.get('web_puerto'); if (puerto) campos_extra.puerto = puerto
+      const ftp    = formData.get('web_ftp');    if (ftp)    campos_extra.ftp    = ftp
+      const pftp   = formData.get('web_password_ftp'); if (pftp) campos_extra.password_ftp = pftp
+    }
     const payload = {
       empresa_id: currentCompanyId, categoria: selectedITCategory,
       nombre: selectedITCategory !== 'correo' ? (formData.get('nombre') || '') : 'correo',
@@ -1055,12 +1077,31 @@ export default function Dashboard() {
                               )}
                             </div>
                           ))}
-                          {Object.entries(item.campos_extra || {}).map(([k, v]) => (
-                            <div className="it-item-row" key={k}>
-                              <span className="it-label">{k}:</span>
-                              <span>{v}</span>
+                          {currentITCategory === 'web' && item.campos_extra?.puerto && (
+                            <div className="it-item-row"><span className="it-label">Puerto:</span><span>{item.campos_extra.puerto}</span></div>
+                          )}
+                          {currentITCategory === 'web' && item.campos_extra?.ftp && (
+                            <div className="it-item-row"><span className="it-label">FTP:</span><span>{item.campos_extra.ftp}</span></div>
+                          )}
+                          {currentITCategory === 'web' && item.campos_extra?.password_ftp && (
+                            <div className="it-item-row">
+                              <span className="it-label">Clave FTP:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{visiblePwds[`ftp-${item.id}`] ? item.campos_extra.password_ftp : '••••••••'}</span>
+                                <button className="btn-icon" onClick={() => togglePassword(`ftp-${item.id}`)}>
+                                  <i className={`fas ${visiblePwds[`ftp-${item.id}`] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </button>
+                              </div>
                             </div>
-                          ))}
+                          )}
+                          {Object.entries(item.campos_extra || {})
+                            .filter(([k]) => !['puerto', 'ftp', 'password_ftp'].includes(k))
+                            .map(([k, v]) => (
+                              <div className="it-item-row" key={k}>
+                                <span className="it-label">{k}:</span>
+                                <span>{v}</span>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     ))}

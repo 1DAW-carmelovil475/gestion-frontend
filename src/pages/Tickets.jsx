@@ -810,7 +810,6 @@ function TicketModal({
     <div
       className="modal"
       style={{ display: 'flex' }}
-      onClick={e => e.target.classList.contains('modal') && onClose()}
     >
       <div className={`ticket-panels-container${panelOpen ? ' with-panel' : ''}`}>
         <div className="modal-content ticket-modal-main">
@@ -873,6 +872,10 @@ export default function Tickets() {
   const [asignarOperariosCheck, setAsignarOperariosCheck] = useState([])
   const [historialAbierto, setHistorialAbierto]           = useState(false)
   const [showInfoDrawer, setShowInfoDrawer]               = useState(false)
+
+  const [mostrarCerrados, setMostrarCerrados] = useState(false)
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set())
+  const toggleGrupo = id => setCollapsedGroups(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   const [comentarioText, setComentarioText] = useState('')
 
@@ -1437,7 +1440,6 @@ export default function Tickets() {
       <div
         className="modal"
         style={{ display: 'flex' }}
-        onClick={e => e.target.classList.contains('modal') && setShowAsignarModal(false)}
       >
         <div className="modal-content">
           <div className="modal-header">
@@ -1873,9 +1875,44 @@ export default function Tickets() {
   // ============================================================
   // VISTA LISTA
   // ============================================================
-  const tTotalPages  = Math.ceil(tickets.length / TICKETS_PER_PAGE)
+  const ESTADOS_ABIERTOS = ['Pendiente', 'En curso']
+  const ESTADOS_CERRADOS = ['Completado', 'Pendiente de facturar', 'Facturado']
+
+  // Tickets abiertos agrupados por operario (con filtros aplicados excepto estado)
+  const gruposPorOperario = (() => {
+    const open = allTickets.filter(t => {
+      if (!ESTADOS_ABIERTOS.includes(t.estado)) return false
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase()
+        if (!t.asunto?.toLowerCase().includes(s) && !t.empresas?.nombre?.toLowerCase().includes(s) && !String(t.numero).includes(s)) return false
+      }
+      if (prioridadFilter !== 'all' && t.prioridad !== prioridadFilter) return false
+      if (operarioFilter !== 'all' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
+      if (empresaFilter !== 'all' && t.empresa_id !== empresaFilter) return false
+      if (filtroDesde && new Date(t.created_at) < new Date(filtroDesde)) return false
+      if (filtroHasta) { const h = new Date(filtroHasta); h.setHours(23,59,59,999); if (new Date(t.created_at) > h) return false }
+      return true
+    })
+    const map = {}
+    open.forEach(t => {
+      const asigs = t.ticket_asignaciones || []
+      if (!asigs.length) {
+        if (!map['__sin__']) map['__sin__'] = { id: '__sin__', nombre: 'Sin asignar', tickets: [] }
+        map['__sin__'].tickets.push(t)
+      } else {
+        asigs.forEach(a => {
+          if (!map[a.user_id]) map[a.user_id] = { id: a.user_id, nombre: a.profiles?.nombre || '?', tickets: [] }
+          map[a.user_id].tickets.push(t)
+        })
+      }
+    })
+    return Object.values(map)
+  })()
+
+  const ticketsCerrados = tickets.filter(t => ESTADOS_CERRADOS.includes(t.estado))
+  const tTotalPages  = Math.ceil(ticketsCerrados.length / TICKETS_PER_PAGE)
   const tSafePage    = Math.min(ticketPage, tTotalPages || 1)
-  const pagedTickets = tickets.slice((tSafePage - 1) * TICKETS_PER_PAGE, tSafePage * TICKETS_PER_PAGE)
+  const pagedTickets = ticketsCerrados.slice((tSafePage - 1) * TICKETS_PER_PAGE, tSafePage * TICKETS_PER_PAGE)
 
   return (
     <div className="tickets-page">
@@ -1885,9 +1922,27 @@ export default function Tickets() {
         <div className="section-header">
           <div>
             <h1><i className="fas fa-headset"></i> Tickets</h1>
-            <p><span>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span></p>
+            <p><span>{allTickets.length} ticket{allTickets.length !== 1 ? 's' : ''}</span></p>
           </div>
-          <button className="btn-primary" onClick={abrirModalNuevoTicket}><i className="fas fa-plus"></i> Nuevo Ticket</button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <button
+                className={`btn-sm${!mostrarCerrados ? ' btn-primary' : ' btn-secondary'}`}
+                style={{ borderRadius: 0, border: 'none' }}
+                onClick={() => setMostrarCerrados(false)}
+              >
+                <i className="fas fa-unlock"></i> Abiertos
+              </button>
+              <button
+                className={`btn-sm${mostrarCerrados ? ' btn-primary' : ' btn-secondary'}`}
+                style={{ borderRadius: 0, border: 'none', borderLeft: '1px solid var(--border)' }}
+                onClick={() => setMostrarCerrados(true)}
+              >
+                <i className="fas fa-lock"></i> Cerrados
+              </button>
+            </div>
+            <button className="btn-primary" onClick={abrirModalNuevoTicket}><i className="fas fa-plus"></i> Nuevo Ticket</button>
+          </div>
         </div>
 
         <div className="stats">
@@ -1964,119 +2019,204 @@ export default function Tickets() {
           </div>
         </div>
 
-        <div className="table-container desktop-only">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th><th>Empresa</th><th>Asunto</th><th>Operarios</th>
-                <th>Prioridad</th><th>Estado</th><th>Tiempo</th><th>Fecha</th><th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="empty-state">
-                    <i className="fas fa-inbox" style={{ display: 'block', fontSize: '2rem', color: '#cbd5e1', marginBottom: '12px' }}></i>
-                    No hay tickets con los filtros actuales
-                  </td>
-                </tr>
-              ) : (
-                pagedTickets.map(t => {
-                  const asignados     = t.ticket_asignaciones || []
-                  const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado' || t.estado === 'Pendiente de facturar'
-                  return (
-                    <tr key={t.id} onClick={() => abrirTicket(t.id)} style={{ cursor: 'pointer' }}>
-                      <td><span className="ticket-numero">#{t.numero}</span></td>
-                      <td>{t.empresas?.nombre || '—'}</td>
-                      <td>
-                        <div className="ticket-asunto-cell">
-                          <span className="ticket-asunto-text">{t.asunto}</span>
-                          {t.dispositivos && (
-                            <span className="ticket-empresa-sub">
-                              <i className="fas fa-desktop" style={{ fontSize: '0.7rem' }}></i> {t.dispositivos.nombre}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="avatares-operarios">
-                          {asignados.length === 0
-                            ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span>
-                            : asignados.map(a => {
-                                const nombre = a.profiles?.nombre || '?'
-                                return (
-                                  <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={nombre}>
-                                    {getInitials(nombre)}
+        {/* ── VISTA ABIERTOS: agrupado por operario ── */}
+        {!mostrarCerrados && (
+          gruposPorOperario.length === 0 ? (
+            <div className="empty-state" style={{ padding: '40px 0' }}>
+              <i className="fas fa-check-circle" style={{ display: 'block', fontSize: '2rem', color: '#22c55e', marginBottom: '12px' }}></i>
+              No hay tickets abiertos
+            </div>
+          ) : (
+            gruposPorOperario.map(grupo => (
+              <div key={grupo.id} style={{ marginBottom: '24px' }}>
+                {/* Header del grupo */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', paddingBottom: '8px', borderBottom: '2px solid var(--border)', cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleGrupo(grupo.id)}>
+                  <div className="avatar" style={{ background: getAvatarColor(grupo.id), width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#fff', fontWeight: 700, flexShrink: 0 }}>
+                    {getInitials(grupo.nombre)}
+                  </div>
+                  <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark)' }}>Incidencias de {grupo.nombre}</span>
+                  <span style={{ background: 'var(--primary)', color: '#fff', borderRadius: '12px', padding: '2px 10px', fontSize: '0.78rem', fontWeight: 700 }}>{grupo.tickets.length}</span>
+                  <i className={`fas fa-chevron-${collapsedGroups.has(grupo.id) ? 'right' : 'down'}`} style={{ marginLeft: 'auto', color: 'var(--gray)', fontSize: '0.85rem' }}></i>
+                </div>
+
+                {/* Tabla desktop + cards mobile (ocultados si está colapsado) */}
+                {!collapsedGroups.has(grupo.id) && (
+                  <>
+                    <div className="table-container desktop-only" style={{ marginBottom: 0 }}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>#</th><th>Empresa</th><th>Asunto</th><th>Operarios</th>
+                            <th>Prioridad</th><th>Estado</th><th>Tiempo</th><th>Fecha</th><th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {grupo.tickets.map(t => {
+                            const asignados = t.ticket_asignaciones || []
+                            return (
+                              <tr key={t.id} onClick={() => abrirTicket(t.id)} style={{ cursor: 'pointer' }}>
+                                <td><span className="ticket-numero">#{t.numero}</span></td>
+                                <td>{t.empresas?.nombre || '—'}</td>
+                                <td>
+                                  <div className="ticket-asunto-cell">
+                                    <span className="ticket-asunto-text">{t.asunto}</span>
+                                    {t.dispositivos && <span className="ticket-empresa-sub"><i className="fas fa-desktop" style={{ fontSize: '0.7rem' }}></i> {t.dispositivos.nombre}</span>}
                                   </div>
-                                )
-                              })
-                          }
-                        </div>
-                      </td>
-                      <td><PrioridadBadge p={t.prioridad} /></td>
-                      <td><EstadoBadge e={t.estado} /></td>
-                      <td style={{ fontWeight: 600, color: estadoCerrado ? 'var(--gray)' : 'var(--primary)', fontSize: '0.82rem' }}>
-                        {formatHoras(t.horas_transcurridas || 0)}
-                        {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>}
-                      </td>
-                      <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
-                      <td onClick={e => e.stopPropagation()}>
-                        <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
-                        {isAdmin() && (
-                          <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar"><i className="fas fa-trash"></i></button>
-                        )}
+                                </td>
+                                <td>
+                                  <div className="avatares-operarios">
+                                    {asignados.length === 0
+                                      ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span>
+                                      : asignados.map(a => {
+                                          const n = a.profiles?.nombre || '?'
+                                          return <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={n}>{getInitials(n)}</div>
+                                        })}
+                                  </div>
+                                </td>
+                                <td><PrioridadBadge p={t.prioridad} /></td>
+                                <td><EstadoBadge e={t.estado} /></td>
+                                <td style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.82rem' }}>{formatHoras(t.horas_transcurridas || 0)}</td>
+                                <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
+                                <td onClick={e => e.stopPropagation()}>
+                                  <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
+                                  {isAdmin() && <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar"><i className="fas fa-trash"></i></button>}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mobile-only">
+                      {grupo.tickets.map(t => {
+                        const nombresOps = (t.ticket_asignaciones || []).map(a => a.profiles?.nombre).filter(Boolean).join(', ')
+                        return (
+                          <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
+                            <div className="ticket-card-top">
+                              <div>
+                                <div className="ticket-card-id-row">
+                                  <span className="ticket-numero">#{t.numero}</span>
+                                  <span className={`ticket-prio-inline ticket-prio-${t.prioridad}`}>{t.prioridad}</span>
+                                </div>
+                                <div className="ticket-card-asunto">{t.asunto}</div>
+                              </div>
+                              <EstadoBadge e={t.estado} />
+                            </div>
+                            <div className="ticket-card-meta">
+                              <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
+                              {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
+                              <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          )
+        )}
+
+        {/* ── VISTA CERRADOS: lista plana ── */}
+        {mostrarCerrados && (
+          <>
+            <div className="table-container desktop-only">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th><th>Empresa</th><th>Asunto</th><th>Operarios</th>
+                    <th>Prioridad</th><th>Estado</th><th>Tiempo</th><th>Fecha</th><th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedTickets.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" className="empty-state">
+                        <i className="fas fa-inbox" style={{ display: 'block', fontSize: '2rem', color: '#cbd5e1', marginBottom: '12px' }}></i>
+                        No hay tickets cerrados con los filtros actuales
                       </td>
                     </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : pagedTickets.map(t => {
+                    const asignados = t.ticket_asignaciones || []
+                    return (
+                      <tr key={t.id} onClick={() => abrirTicket(t.id)} style={{ cursor: 'pointer' }}>
+                        <td><span className="ticket-numero">#{t.numero}</span></td>
+                        <td>{t.empresas?.nombre || '—'}</td>
+                        <td>
+                          <div className="ticket-asunto-cell">
+                            <span className="ticket-asunto-text">{t.asunto}</span>
+                            {t.dispositivos && <span className="ticket-empresa-sub"><i className="fas fa-desktop" style={{ fontSize: '0.7rem' }}></i> {t.dispositivos.nombre}</span>}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="avatares-operarios">
+                            {asignados.length === 0
+                              ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span>
+                              : asignados.map(a => {
+                                  const n = a.profiles?.nombre || '?'
+                                  return <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={n}>{getInitials(n)}</div>
+                                })}
+                          </div>
+                        </td>
+                        <td><PrioridadBadge p={t.prioridad} /></td>
+                        <td><EstadoBadge e={t.estado} /></td>
+                        <td style={{ fontWeight: 600, color: 'var(--gray)', fontSize: '0.82rem' }}>
+                          {formatHoras(t.horas_transcurridas || 0)}
+                          <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>
+                        </td>
+                        <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
+                        <td onClick={e => e.stopPropagation()}>
+                          <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
+                          {isAdmin() && <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar"><i className="fas fa-trash"></i></button>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="mobile-only">
-          {tickets.length === 0 ? (
-            <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets</div>
-          ) : (
-            pagedTickets.map(t => {
-              const asignados     = t.ticket_asignaciones || []
-              const nombresOps    = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
-              const estadoCerrado = t.estado === 'Completado' || t.estado === 'Facturado' || t.estado === 'Pendiente de facturar'
-              return (
-                <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
-                  <div className="ticket-card-top">
-                    <div>
-                      <div className="ticket-card-id-row">
-                        <span className="ticket-numero">#{t.numero}</span>
-                        <span className={`ticket-prio-inline ticket-prio-${t.prioridad}`}>{t.prioridad}</span>
+            <div className="mobile-only">
+              {pagedTickets.length === 0 ? (
+                <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets cerrados</div>
+              ) : pagedTickets.map(t => {
+                const asignados = t.ticket_asignaciones || []
+                const nombresOps = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
+                return (
+                  <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
+                    <div className="ticket-card-top">
+                      <div>
+                        <div className="ticket-card-id-row">
+                          <span className="ticket-numero">#{t.numero}</span>
+                          <span className={`ticket-prio-inline ticket-prio-${t.prioridad}`}>{t.prioridad}</span>
+                        </div>
+                        <div className="ticket-card-asunto">{t.asunto}</div>
                       </div>
-                      <div className="ticket-card-asunto">{t.asunto}</div>
+                      <EstadoBadge e={t.estado} />
                     </div>
-                    <EstadoBadge e={t.estado} />
+                    <div className="ticket-card-meta">
+                      <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
+                      {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
+                      <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)} <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5 }}></i></span>
+                    </div>
                   </div>
-                  <div className="ticket-card-meta">
-                    <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
-                    {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
-                    <span>
-                      <i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)}
-                      {estadoCerrado && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '3px' }}></i>}
-                    </span>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
+                )
+              })}
+            </div>
 
-        {tTotalPages > 1 && (
-          <div className="pagination">
-            <button className="pagination-btn" onClick={() => setTicketPage(p => Math.max(1, p - 1))} disabled={tSafePage === 1}><i className="fas fa-chevron-left"></i></button>
-            {Array.from({ length: tTotalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} className={`pagination-btn ${p === tSafePage ? 'active' : ''}`} onClick={() => setTicketPage(p)}>{p}</button>
-            ))}
-            <button className="pagination-btn" onClick={() => setTicketPage(p => Math.min(tTotalPages, p + 1))} disabled={tSafePage === tTotalPages}><i className="fas fa-chevron-right"></i></button>
-            <span className="pagination-info">{tickets.length} tickets</span>
-          </div>
+            {tTotalPages > 1 && (
+              <div className="pagination">
+                <button className="pagination-btn" onClick={() => setTicketPage(p => Math.max(1, p - 1))} disabled={tSafePage === 1}><i className="fas fa-chevron-left"></i></button>
+                {Array.from({ length: tTotalPages }, (_, i) => i + 1).map(p => (
+                  <button key={p} className={`pagination-btn ${p === tSafePage ? 'active' : ''}`} onClick={() => setTicketPage(p)}>{p}</button>
+                ))}
+                <button className="pagination-btn" onClick={() => setTicketPage(p => Math.min(tTotalPages, p + 1))} disabled={tSafePage === tTotalPages}><i className="fas fa-chevron-right"></i></button>
+                <span className="pagination-info">{ticketsCerrados.length} tickets</span>
+              </div>
+            )}
+          </>
         )}
 
       </main>

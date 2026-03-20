@@ -579,6 +579,14 @@ export default function Estadisticas() {
                                 <i className="fas fa-check" style={{ fontSize: '0.7rem', marginRight: 3 }} />
                                 {empresa.completados} comp.
                               </span>
+                              {empresa.media_horas != null && (
+                                <span className="empresa-stat media-horas-stat">
+                                  <i className="fas fa-stopwatch" style={{ fontSize: '0.7rem', marginRight: 3 }} />
+                                  {empresa.media_horas < 24
+                                    ? `${empresa.media_horas.toFixed(1)}h media`
+                                    : `${(empresa.media_horas / 24).toFixed(1)}d media`}
+                                </span>
+                              )}
                             </div>
                             {/* Barra de progreso */}
                             <div className="empresa-progress-bar">

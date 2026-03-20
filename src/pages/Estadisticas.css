@@ -325,6 +325,8 @@
   align-items: center;
   gap: 3px;
 }
+.media-horas-stat { color: #0047b3; }
+[data-theme="dark"] .media-horas-stat { color: #60a5fa; }
 
 /* Barra de progreso por empresa */
 .empresa-progress-bar {

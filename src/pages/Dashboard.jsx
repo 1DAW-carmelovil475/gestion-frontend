@@ -177,7 +177,7 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
   }
 
   return (
-    <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && onClose()}>
+    <div className="modal" style={{ display: 'flex' }}>
       <div className="modal-content modal-large">
         <div className="modal-header">
           <h2><i className={`fas ${editingCompany ? 'fa-building' : 'fa-plus-circle'}`}></i>{editingCompany ? 'Editar Empresa' : 'Nueva Empresa'}</h2>
@@ -360,7 +360,7 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
   function removeExtraField(index) { setExtraFields(prev => prev.filter((_, i) => i !== index)) }
 
   return (
-    <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && onClose()}>
+    <div className="modal" style={{ display: 'flex' }}>
       <div className="modal-content">
         <div className="modal-header">
           <h2>{editingITItem ? 'Editar' : 'Añadir'} {CAT_LABELS_SING[cat] || cat}</h2>

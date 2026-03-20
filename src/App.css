@@ -561,7 +561,6 @@ select option {
 .status.admin                 { background: #f3e8ff; color: #9333ea; }
 .status.trabajador            { background: #dbeafe; color: #2563eb; }
 .status.gestor                { background: #cffafe; color: #0e7490; }
-.status.desarrollador         { background: #e0e7ff; color: #4338ca; }
 .status.cliente               { background: #dcfce7; color: #15803d; }
 .status.Pendiente             { background: #fef3c7; color: #d97706; }
 .status.En-curso              { background: #dbeafe; color: #2563eb; }
@@ -1844,7 +1843,6 @@ body:not(.is-admin) [data-admin-only] { display: none !important; }
 [data-theme="dark"] .status.admin                 { background: #3b0764; color: #c084fc; }
 [data-theme="dark"] .status.trabajador            { background: #1e3a5f; color: #60a5fa; }
 [data-theme="dark"] .status.gestor                { background: #164e63; color: #67e8f9; }
-[data-theme="dark"] .status.desarrollador         { background: #1e1b4b; color: #818cf8; }
 [data-theme="dark"] .status.cliente               { background: #14432a; color: #4ade80; }
 [data-theme="dark"] .status.Pendiente             { background: #451a03; color: #fbbf24; }
 [data-theme="dark"] .status.En-curso              { background: #1e3a5f; color: #60a5fa; }

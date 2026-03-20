@@ -104,7 +104,7 @@ function NuevaIncidenciaModal({ onSave, onClose, loading, dispositivos }) {
   }
 
   return (
-    <div className="ci-modal-overlay" onClick={e => e.target.classList.contains('ci-modal-overlay') && onClose()}>
+    <div className="ci-modal-overlay">
       <div className="ci-modal">
         <div className="ci-modal-header">
           <h2><i className="fas fa-plus-circle"></i> Nueva incidencia</h2>
@@ -247,7 +247,7 @@ function DetalleModal({ inc, onClose, showEmpresa }) {
 
   if (!inc) return null
   return (
-    <div className="ci-modal-overlay" onClick={e => e.target.classList.contains('ci-modal-overlay') && onClose()}>
+    <div className="ci-modal-overlay">
       <div className="ci-modal">
         <div className="ci-modal-header">
           <h2><i className="fas fa-exclamation-triangle"></i> Detalle de incidencia</h2>

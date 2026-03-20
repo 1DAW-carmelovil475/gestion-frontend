@@ -123,7 +123,7 @@ export function AuthProvider({ children }) {
   }
 
   function isAdmin() {
-    return user?.rol === 'admin' || user?.rol === 'gestor' || user?.rol === 'desarrollador'
+    return user?.rol === 'admin' || user?.rol === 'gestor'
   }
 
   function isCliente() {
@@ -134,13 +134,9 @@ export function AuthProvider({ children }) {
     return user?.rol === 'gestor'
   }
 
-  function isDesarrollador() {
-    return user?.rol === 'desarrollador'
-  }
-
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, isAdmin, isCliente, isGestor, isDesarrollador, checkSession }}
+      value={{ user, loading, login, logout, isAdmin, isCliente, isGestor, checkSession }}
     >
       {children}
     </AuthContext.Provider>

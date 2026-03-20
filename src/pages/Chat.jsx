@@ -1499,7 +1499,7 @@ export default function Chat() {
       )}
 
       {showCanalModal && (
-        <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowCanalModal(false)}>
+        <div className="modal" style={{ display: 'flex' }}>
           <div className="modal-content">
             <div className="modal-header">
               <h2><i className="fas fa-hashtag"></i> Nuevo Canal</h2>
@@ -1520,7 +1520,7 @@ export default function Chat() {
         </div>
       )}
       {showEditModal && editingCanal && (
-        <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowEditModal(false)}>
+        <div className="modal" style={{ display: 'flex' }}>
           <div className="modal-content">
             <div className="modal-header">
               <h2><i className="fas fa-pen"></i> Editar Canal</h2>
@@ -1543,7 +1543,7 @@ export default function Chat() {
         </div>
       )}
       {showDirectoModal && (
-        <div className="modal" style={{ display: 'flex' }} onClick={e => e.target.classList.contains('modal') && setShowDirectoModal(false)}>
+        <div className="modal" style={{ display: 'flex' }}>
           <div className="modal-content">
             <div className="modal-header">
               <h2><i className="fas fa-user"></i> Mensaje Directo</h2>

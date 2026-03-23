@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from './AuthContext'
-import { getChatCanales, getChatMensajes } from '../services/api'
+import { getChatCanales, getChatMensajes, getChatPrefs, updateChatPrefs } from '../services/api'
 
 const Ctx = createContext(null)
 
@@ -222,9 +222,17 @@ export function ChatNotificationsProvider({ children }) {
     userIdRef.current    = user.id
     lastSeenRef.current  = loadLS(`chat_seen_${user.id}`)
     lastNotifRef.current = loadLS(`chat_notified_${user.id}`)
-    const p = loadLS(`chat_prefs_${user.id}`)
-    prefsRef.current = p
-    _setPrefs(p)
+    const localPrefs = loadLS(`chat_prefs_${user.id}`)
+    prefsRef.current = localPrefs
+    _setPrefs(localPrefs)
+    // Load from server (source of truth) — overrides localStorage
+    getChatPrefs().then(data => {
+      if (!mountedRef.current) return
+      const apiPrefs = data?.prefs || {}
+      prefsRef.current = apiPrefs
+      _setPrefs({ ...apiPrefs })
+      saveLS(`chat_prefs_${user.id}`, apiPrefs)
+    }).catch(() => {})
 
     if (Notification.permission === 'granted') getSW()
     requestNotificationPermission().then(r => setNotifPermission(r))
@@ -254,6 +262,7 @@ export function ChatNotificationsProvider({ children }) {
     prefsRef.current = next
     _setPrefs({ ...next })
     saveLS(`chat_prefs_${user.id}`, next)
+    updateChatPrefs(next).catch(() => {})
   }, [user?.id]) // eslint-disable-line
 
   // markRead: llamado cuando el usuario ABRE un canal

@@ -887,6 +887,18 @@ export default function Tickets() {
   useEffect(() => { loadData() }, [])
 
   useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const ticketsData = await getTickets()
+        setAllTickets(ticketsData || [])
+        setTickets(ticketsData || [])
+        calcStats(ticketsData || [])
+      } catch {}
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
     const ticketId = location.state?.abrirTicketId
     if (ticketId && !loading) {
       abrirTicket(ticketId)

@@ -194,4 +194,7 @@ export async function getChatArchivoUrl(archivoId) {
   return apiFetch(`/api/v2/chat/archivos/${archivoId}/url`)
 }
 
+export const getChatPrefs    = ()      => apiFetch('/api/v2/chat/prefs')
+export const updateChatPrefs = (prefs) => apiFetch('/api/v2/chat/prefs', { method: 'PUT', body: JSON.stringify({ prefs }) })
+
 export { API_URL }

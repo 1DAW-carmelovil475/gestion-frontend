@@ -39,26 +39,26 @@ const CAMPOS = {
     { key: 'tipo',       label: 'Tipo' },
     { key: 'usuario',    label: 'Usuario' },
     { key: 'password',   label: 'Contraseña', password: true },
-    { key: 'ip',         label: 'IP' },
-    { key: 'anydesk_id', label: 'AnyDesk ID' },
+    { key: 'ip',         label: 'IP', copyable: true },
+    { key: 'anydesk_id', label: 'AnyDesk ID', copyable: true },
   ],
   servidor: [
     { key: 'tipo',              label: 'Tipo' },
-    { key: 'ip',                label: 'IP' },
+    { key: 'ip',                label: 'IP', copyable: true },
     { key: 'usuario',           label: 'Usuario' },
     { key: 'password',          label: 'Contraseña', password: true },
     { key: 'sistema_operativo', label: 'S.O.' },
   ],
   nas: [
     { key: 'tipo',      label: 'Tipo' },
-    { key: 'ip',        label: 'IP' },
+    { key: 'ip',        label: 'IP', copyable: true },
     { key: 'usuario',   label: 'Usuario' },
     { key: 'password',  label: 'Contraseña', password: true },
     { key: 'capacidad', label: 'Capacidad' },
   ],
   red: [
     { key: 'tipo',     label: 'Tipo' },
-    { key: 'ip',       label: 'IP' },
+    { key: 'ip',       label: 'IP', copyable: true },
     { key: 'usuario',  label: 'Usuario' },
     { key: 'password', label: 'Contraseña', password: true },
     { key: 'modelo',   label: 'Modelo' },
@@ -71,7 +71,7 @@ const CAMPOS = {
     { key: 'tipo',     label: 'Tipo' },
   ],
   web: [
-    { key: 'url',      label: 'URL' },
+    { key: 'url',      label: 'URL', copyable: true },
   ],
 }
 
@@ -510,6 +510,7 @@ export default function Dashboard() {
   const [contactos, setContactos] = useState([{ nombre: '', telefono: '', email: '', cargo: '' }])
   const [extraFields, setExtraFields] = useState([])
   const [visiblePwds, setVisiblePwds] = useState({})
+  const [copiedField, setCopiedField] = useState(null)
   const excelInputRef = useRef(null)
   const itemsPerPage = 10
 
@@ -1047,8 +1048,10 @@ export default function Dashboard() {
                         <div className="it-item-header">
                           <h4>
                             <i className={`fas ${ICONOS[currentITCategory]}`}></i>
-                            {currentITCategory === 'correo' ? (item.nombre_cliente || item.correo_cliente || '—') : item.nombre}
-                            {item.tipo && <small style={{ fontWeight: 400, opacity: 0.65, fontSize: '0.82rem' }}> ({item.tipo})</small>}
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {currentITCategory === 'correo' ? (item.nombre_cliente || item.correo_cliente || '—') : item.nombre}
+                            </span>
+                            {item.tipo && <small style={{ fontWeight: 400, opacity: 0.65, fontSize: '0.82rem', flexShrink: 0 }}> ({item.tipo})</small>}
                           </h4>
                           <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                             <button className="btn-action btn-edit" onClick={() => openITModal(item, currentITCategory)} title="Editar"><i className="fas fa-edit"></i></button>
@@ -1070,6 +1073,22 @@ export default function Dashboard() {
                                   <span>{visiblePwds[`${field.key}-${item.id}`] ? (item[field.key] || '(vacío)') : '••••••••'}</span>
                                   <button className="btn-icon" onClick={() => togglePassword(`${field.key}-${item.id}`)}>
                                     <i className={`fas ${visiblePwds[`${field.key}-${item.id}`] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                  </button>
+                                </div>
+                              ) : field.copyable && item[field.key] ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', minWidth: 0 }}>
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item[field.key]}</span>
+                                  <button
+                                    className="btn-icon"
+                                    title={copiedField === `${field.key}-${item.id}` ? '¡Copiado!' : 'Copiar'}
+                                    style={{ flexShrink: 0, color: copiedField === `${field.key}-${item.id}` ? 'var(--success, #16a34a)' : undefined }}
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(item[field.key])
+                                      setCopiedField(`${field.key}-${item.id}`)
+                                      setTimeout(() => setCopiedField(null), 2000)
+                                    }}
+                                  >
+                                    <i className={`fas ${copiedField === `${field.key}-${item.id}` ? 'fa-check' : 'fa-copy'}`}></i>
                                   </button>
                                 </div>
                               ) : (

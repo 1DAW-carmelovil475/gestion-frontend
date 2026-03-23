@@ -88,7 +88,7 @@ export function getNotificationPermission() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Enviar notificación — simple y directo
-// new Notification() funciona en localhost (HTTP) y en HTTPS
+// new Notification() funciona en HTTP y en HTTPS
 // En HTTPS también intentamos via SW para que funcione con Chrome cerrado
 // ─────────────────────────────────────────────────────────────────────────────
 function sendNotif(title, body, tag) {
@@ -112,7 +112,7 @@ function sendNotif(title, body, tag) {
     return
   }
 
-  // HTTP/localhost: Notification API directa (siempre funciona si hay permiso)
+  // HTTP: Notification API directa (siempre funciona si hay permiso)
   _fireDirectNotif(title, body, tag)
 }
 

@@ -929,14 +929,13 @@ export default function Tickets() {
   }
 
   function calcStats(list) {
+    const esAsignado = t => (t.ticket_asignaciones || []).some(a => a.user_id === user?.id)
     setStats({
-      total:                 list.length,
-      pendientes:            list.filter(t => t.estado === 'Pendiente').length,
-      en_curso:              list.filter(t => t.estado === 'En curso').length,
+      total:                 list.filter(t => t.estado === 'Pendiente' || t.estado === 'En curso').length,
+      mis_abiertos:          list.filter(t => (t.estado === 'Pendiente' || t.estado === 'En curso') && esAsignado(t)).length,
       completados:           list.filter(t => t.estado === 'Completado').length,
       pendiente_facturar:    list.filter(t => t.estado === 'Pendiente de facturar').length,
       facturados:            list.filter(t => t.estado === 'Facturado').length,
-      urgentes:              list.filter(t => t.prioridad === 'Urgente').length,
     })
   }
 
@@ -1878,6 +1877,13 @@ export default function Tickets() {
   const ESTADOS_ABIERTOS = ['Pendiente', 'En curso']
   const ESTADOS_CERRADOS = ['Completado', 'Pendiente de facturar', 'Facturado']
 
+  // Stats computed directly from allTickets — always fresh, no calcStats dependency
+  const statAbiertosTotal  = allTickets.filter(t => ESTADOS_ABIERTOS.includes(t.estado)).length
+  const statMisAbiertos    = allTickets.filter(t => ESTADOS_ABIERTOS.includes(t.estado) && (t.ticket_asignaciones || []).some(a => a.user_id === user?.id)).length
+  const statCompletados    = allTickets.filter(t => t.estado === 'Completado').length
+  const statPendFacturar   = allTickets.filter(t => t.estado === 'Pendiente de facturar').length
+  const statFacturados     = allTickets.filter(t => t.estado === 'Facturado').length
+
   // Tickets abiertos agrupados por operario (con filtros aplicados excepto estado)
   const gruposPorOperario = (() => {
     const open = allTickets.filter(t => {
@@ -1901,6 +1907,7 @@ export default function Tickets() {
         map['__sin__'].tickets.push(t)
       } else {
         asigs.forEach(a => {
+          if (operarioFilter !== 'all' && a.user_id !== operarioFilter) return
           if (!map[a.user_id]) map[a.user_id] = { id: a.user_id, nombre: a.profiles?.nombre || '?', tickets: [] }
           map[a.user_id].tickets.push(t)
         })
@@ -1946,16 +1953,15 @@ export default function Tickets() {
         </div>
 
         <div className="stats">
-          {[
-            { id: 'statTotal',             label: 'Total',                val: stats.total || 0,              icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('all'); setPrioridadFilter('all') } },
-            { id: 'statPendientes',        label: 'Pendientes',           val: stats.pendientes || 0,         icon: 'fa-clock',               bg: '#fef3c7', col: '#d97706', click: () => { setEstadoFilter('Pendiente'); setPrioridadFilter('all') } },
-            { id: 'statEnCurso',           label: 'En curso',             val: stats.en_curso || 0,           icon: 'fa-spinner',             bg: '#dbeafe', col: '#2563eb', click: () => { setEstadoFilter('En curso'); setPrioridadFilter('all') } },
-            { id: 'statCompletados',       label: 'Completados',          val: stats.completados || 0,        icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', click: () => { setEstadoFilter('Completado'); setPrioridadFilter('all') } },
-            { id: 'statPendFacturar',      label: 'Pend. facturar',       val: stats.pendiente_facturar || 0, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', click: () => { setEstadoFilter('Pendiente de facturar'); setPrioridadFilter('all') } },
-            { id: 'statFacturados',        label: 'Facturados',           val: stats.facturados || 0,         icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', click: () => { setEstadoFilter('Facturado'); setPrioridadFilter('all') } },
-            { id: 'statUrgentes',          label: 'Urgentes',             val: stats.urgentes || 0,           icon: 'fa-exclamation-circle',  bg: '#fee2e2', col: '#dc2626', click: () => { setEstadoFilter('all'); setPrioridadFilter('Urgente') }, hideMobile: true },
-          ].map(s => (
-            <div className={`stat-card${s.hideMobile ? ' stat-hide-mobile' : ''}`} key={s.id} onClick={s.click} style={{ cursor: 'pointer' }}>
+          {(!mostrarCerrados ? [
+            { id: 'statTotal',       label: 'Total',        val: statAbiertosTotal, icon: 'fa-ticket-alt', bg: '#dbeafe', col: '#2563eb', active: operarioFilter === 'all', click: () => setOperarioFilter('all') },
+            { id: 'statMisAbiertos', label: 'Mis abiertos', val: statMisAbiertos,   icon: 'fa-user-clock', bg: '#fef3c7', col: '#d97706', active: operarioFilter === user?.id, click: () => setOperarioFilter(user?.id) },
+          ] : [
+            { id: 'statCompletados',  label: 'Completados',    val: statCompletados,  icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', active: estadoFilter === 'Completado',            click: () => setEstadoFilter('Completado') },
+            { id: 'statPendFacturar', label: 'Pend. facturar', val: statPendFacturar, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', active: estadoFilter === 'Pendiente de facturar', click: () => setEstadoFilter('Pendiente de facturar') },
+            { id: 'statFacturados',   label: 'Facturados',     val: statFacturados,   icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', active: estadoFilter === 'Facturado',             click: () => setEstadoFilter('Facturado') },
+          ]).map(s => (
+            <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer', outline: s.active ? `2px solid ${s.col}` : 'none' }}>
               <div className="stat-icon" style={{ background: s.bg, color: s.col }}><i className={`fas ${s.icon}`}></i></div>
               <div className="stat-info"><h3>{s.val}</h3><p>{s.label}</p></div>
             </div>
@@ -1968,34 +1974,15 @@ export default function Tickets() {
             <input type="text" placeholder="Buscar tickets..." value={searchTerm} onChange={onSearchChange} />
           </div>
           <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            <div className={`filter-chip${estadoFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Estado">
-              <i className="fas fa-tag"></i>
-              <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
-                <option value="all">Todos los estados</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="En curso">En curso</option>
-                <option value="Completado">Completado</option>
-                <option value="Pendiente de facturar">Pendiente de facturar</option>
-                <option value="Facturado">Facturado</option>
-              </select>
-            </div>
-            <div className={`filter-chip${prioridadFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Prioridad">
-              <i className="fas fa-flag"></i>
-              <select value={prioridadFilter} onChange={e => setPrioridadFilter(e.target.value)}>
-                <option value="all">Prioridad</option>
-                <option value="Baja">Baja</option>
-                <option value="Media">Media</option>
-                <option value="Alta">Alta</option>
-                <option value="Urgente">Urgente</option>
-              </select>
-            </div>
-            <div className={`filter-chip${operarioFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Operario">
-              <i className="fas fa-user"></i>
-              <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
-                <option value="all">Operario</option>
-                {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
-              </select>
-            </div>
+            {(!mostrarCerrados && operarioFilter !== user?.id) && (
+              <div className={`filter-chip${operarioFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Operario">
+                <i className="fas fa-user"></i>
+                <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
+                  <option value="all">Operario</option>
+                  {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
+                </select>
+              </div>
+            )}
             <div className={`filter-chip${empresaFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Empresa">
               <i className="fas fa-building"></i>
               <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>

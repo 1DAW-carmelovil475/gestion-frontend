@@ -1308,7 +1308,7 @@ export default function Tickets() {
 
     try {
       if (editingTicket) {
-        await updateTicket(editingTicket.id, { asunto, descripcion, prioridad, estado, dispositivo_id, dispositivos_ids: modalDispIds, telefono_cliente, contacto_nombre })
+        await updateTicket(editingTicket.id, { empresa_id, asunto, descripcion, prioridad, estado, dispositivo_id, dispositivos_ids: modalDispIds, telefono_cliente, contacto_nombre })
         // Operarios: sincronizar — añadir nuevos y borrar los desmarcados
         const asignadosPrevios = (editingTicket.ticket_asignaciones || []).map(a => a.user_id)
         const nuevosAsignados   = operariosSeleccionados.filter(id => !asignadosPrevios.includes(id))

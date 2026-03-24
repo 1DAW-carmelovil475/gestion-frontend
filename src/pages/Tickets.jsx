@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useChatNotifications } from '../context/ChatNotificationsContext'
+import ChatNavLink from '../components/ChatNavLink'
 import {
   getTickets, getTicket, createTicket, updateTicket, deleteTicket,
   getEmpresas, getOperarios, getDispositivos,
@@ -11,7 +11,6 @@ import {
   uploadTicketArchivo, deleteArchivo, getArchivoUrl,
   updateTicketNotas
 } from '../services/api'
-import ChatNavLink from '../components/ChatNavLink'
 import ThemeToggle from '../components/ThemeToggle'
 import './Tickets.css'
 
@@ -824,7 +823,6 @@ function TicketModal({
 
 export default function Tickets() {
   const { user, logout, isAdmin } = useAuth()
-  const { totalUnread } = useChatNotifications()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -885,6 +883,10 @@ export default function Tickets() {
   const editorRef       = useRef(null)
 
   useEffect(() => { loadData() }, [])
+
+  useEffect(() => {
+    if (user?.id) setOperarioFilter(user.id)
+  }, [user?.id])
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -1420,9 +1422,9 @@ export default function Tickets() {
           <nav className="top-nav">
             <Link to="/" className="nav-link"><i className="fas fa-building"></i> Empresas</Link>
             {isAdmin() && <Link to="/usuarios" className="nav-link"><i className="fas fa-users"></i> Usuarios</Link>}
-            <Link to="/tickets" className="nav-link active"><i className="fas fa-headset"></i> Tickets</Link>
+            <Link to="/tickets" className="nav-link active" onClick={() => setVistaDetalle(false)}><i className="fas fa-headset"></i> Tickets</Link>
             {isAdmin() && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
-            <Link to="/chat" className="nav-link"><i className="fas fa-comments"></i> Chat</Link>
+            <ChatNavLink mode="top" />
           </nav>
           <div className="user-area">
 <div className="user-info">
@@ -1438,9 +1440,9 @@ export default function Tickets() {
         <nav className="bottom-nav">
           <Link to="/" className="bottom-nav-item"><i className="fas fa-building"></i><span>Empresas</span></Link>
           {isAdmin() && <Link to="/usuarios" className="bottom-nav-item"><i className="fas fa-users"></i><span>Usuarios</span></Link>}
-          <Link to="/tickets" className="bottom-nav-item active"><i className="fas fa-headset"></i><span>Tickets</span></Link>
+          <Link to="/tickets" className="bottom-nav-item active" onClick={() => setVistaDetalle(false)}><i className="fas fa-headset"></i><span>Tickets</span></Link>
           {isAdmin() && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
-          <Link to="/chat" className="bottom-nav-item"><i className="fas fa-comments"></i><span>Chat</span></Link>
+          <ChatNavLink mode="bottom" />
         </nav>
       </>
     )
@@ -1966,8 +1968,8 @@ export default function Tickets() {
 
         <div className="stats">
           {(!mostrarCerrados ? [
-            { id: 'statTotal',       label: 'Total',        val: statAbiertosTotal, icon: 'fa-ticket-alt', bg: '#dbeafe', col: '#2563eb', active: operarioFilter === 'all', click: () => setOperarioFilter('all') },
             { id: 'statMisAbiertos', label: 'Mis abiertos', val: statMisAbiertos,   icon: 'fa-user-clock', bg: '#fef3c7', col: '#d97706', active: operarioFilter === user?.id, click: () => setOperarioFilter(user?.id) },
+            { id: 'statTotal',       label: 'Total',        val: statAbiertosTotal, icon: 'fa-ticket-alt', bg: '#dbeafe', col: '#2563eb', active: operarioFilter === 'all', click: () => setOperarioFilter('all') },
           ] : [
             { id: 'statCompletados',  label: 'Completados',    val: statCompletados,  icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', active: estadoFilter === 'Completado',            click: () => setEstadoFilter('Completado') },
             { id: 'statPendFacturar', label: 'Pend. facturar', val: statPendFacturar, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', active: estadoFilter === 'Pendiente de facturar', click: () => setEstadoFilter('Pendiente de facturar') },

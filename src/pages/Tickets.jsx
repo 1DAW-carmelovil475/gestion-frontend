@@ -2259,7 +2259,7 @@ export default function Tickets() {
                     <tr>
                       <td colSpan="9" className="empty-state">
                         <i className="fas fa-inbox" style={{ display: 'block', fontSize: '2rem', color: '#cbd5e1', marginBottom: '12px' }}></i>
-                        No hay tickets cerrados con los filtros actuales
+                        No hay tickets con los filtros actuales
                       </td>
                     </tr>
                   ) : pagedTickets.map(t => {
@@ -2286,9 +2286,9 @@ export default function Tickets() {
                         </td>
                         <td><PrioridadBadge p={t.prioridad} /></td>
                         <td><EstadoBadge e={t.estado} /></td>
-                        <td style={{ fontWeight: 600, color: 'var(--gray)', fontSize: '0.82rem' }}>
+                        <td style={{ fontWeight: 600, color: ESTADOS_CERRADOS.includes(t.estado) ? 'var(--gray)' : 'var(--primary)', fontSize: '0.82rem' }}>
                           {formatHoras(t.horas_transcurridas || 0)}
-                          <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>
+                          {ESTADOS_CERRADOS.includes(t.estado) && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>}
                         </td>
                         <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                         <td onClick={e => e.stopPropagation()}>
@@ -2323,7 +2323,7 @@ export default function Tickets() {
                     <div className="ticket-card-meta">
                       <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
                       {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
-                      <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)} <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5 }}></i></span>
+                      <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)} {ESTADOS_CERRADOS.includes(t.estado) && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5 }}></i>}</span>
                     </div>
                   </div>
                 )

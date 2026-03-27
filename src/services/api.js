@@ -190,7 +190,7 @@ export async function pinChatMensaje(mensajeId, anclado) {
 export async function addChatMiembros(canalId, miembros) {
   return apiFetch(`/api/v2/chat/canales/${canalId}/miembros`, { method: 'POST', body: JSON.stringify({ miembros }) })
 }
-export async function getChatArchivoUrl(archivoId) {
+export async function gsetChatArchivoUrl(archivoId) {
   return apiFetch(`/api/v2/chat/archivos/${archivoId}/url`)
 }
 

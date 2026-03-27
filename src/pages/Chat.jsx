@@ -5,7 +5,7 @@ import { useChatNotifications } from '../context/ChatNotificationsContext'
 import {
   getChatCanales, createChatCanal, updateChatCanal, deleteChatCanal,
   getChatMensajes, sendChatMensaje, deleteChatMensaje, editChatMensaje, pinChatMensaje,
-  getOperarios, getTickets, getChatArchivoUrl
+  getOperarios, getTickets, getArchivoUrl
 } from '../services/api'
 import ChatNavLink from '../components/ChatNavLink'
 import ThemeToggle from '../components/ThemeToggle'
@@ -875,7 +875,7 @@ export default function Chat() {
 
   async function descargarArchivo(archivoId, nombre) {
     try {
-      const { url } = await getChatArchivoUrl(archivoId)
+      const { url } = await getArchivoUrl(archivoId)
       const a = document.createElement('a'); a.href = url; a.download = nombre; a.target = '_blank'
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
     } catch { showToast('error', 'Error', 'No se pudo descargar') }

@@ -300,6 +300,7 @@ function TicketModal({
   modalAsunto, modalDesc, modalContactoIdx, empresaContactos,
   modalPrioridad, modalEstado,
   selectedOperarios,
+  esGestor,
   onClose, onSave,
   onEmpresaChange,
   onDispIdsChange,
@@ -698,7 +699,9 @@ function TicketModal({
                 <option value="Pendiente">Pendiente</option>
                 <option value="En curso">En curso</option>
                 <option value="Completado">Completado</option>
-                <option value="Pendiente de facturar">Pendiente de facturar</option>
+                {esGestor
+                  ? <option value="Pendiente de facturar">Pendiente de facturar</option>
+                  : modalEstado === 'Pendiente de facturar' && <option value="Pendiente de facturar" disabled>Pendiente de facturar</option>}
                 <option value="Facturado">Facturado</option>
               </select>
             </div>
@@ -822,7 +825,7 @@ function TicketModal({
 }
 
 export default function Tickets() {
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, isGestor } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -1538,7 +1541,9 @@ export default function Tickets() {
                 <option value="Pendiente">Pendiente</option>
                 <option value="En curso">En curso</option>
                 <option value="Completado">Completado</option>
-                <option value="Pendiente de facturar">Pendiente de facturar</option>
+                {isGestor()
+                  ? <option value="Pendiente de facturar">Pendiente de facturar</option>
+                  : ticketActual.estado === 'Pendiente de facturar' && <option value="Pendiente de facturar" disabled>Pendiente de facturar</option>}
                 <option value="Facturado">Facturado</option>
               </select>
               <button className="btn-primary btn-sm" onClick={() => abrirModalEditarTicket(ticketActual)}>
@@ -1880,7 +1885,7 @@ export default function Tickets() {
         </main>
 
         {showAsignarModal && <AsignarModal />}
-        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}
+        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} esGestor={isGestor()} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}
       </div>
     )
   }
@@ -1898,7 +1903,7 @@ export default function Tickets() {
   const statPendFacturar   = allTickets.filter(t => t.estado === 'Pendiente de facturar').length
   const statFacturados     = allTickets.filter(t => t.estado === 'Facturado').length
 
-  // Tickets abiertos agrupados por operario (con filtros aplicados excepto estado)
+  // Tickets abiertos (Pendiente/En curso) agrupados por operario
   const gruposPorOperario = (() => {
     const open = allTickets.filter(t => {
       if (!ESTADOS_ABIERTOS.includes(t.estado)) return false
@@ -1930,10 +1935,30 @@ export default function Tickets() {
     return Object.values(map)
   })()
 
-  const ticketsCerrados = tickets.filter(t => ESTADOS_CERRADOS.includes(t.estado))
-  const tTotalPages  = Math.ceil(ticketsCerrados.length / TICKETS_PER_PAGE)
+  // Tickets cerrados filtrados (para subvista dentro de "Tickets" al clicar Completados/etc.)
+  const ticketsCerradosFiltrados = allTickets.filter(t => {
+    if (!ESTADOS_CERRADOS.includes(t.estado)) return false
+    if (estadoFilter && t.estado !== estadoFilter) return false
+    if (operarioFilter !== 'all' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
+    if (empresaFilter !== 'all' && t.empresa_id !== empresaFilter) return false
+    if (searchTerm) { const s = searchTerm.toLowerCase(); if (!t.asunto?.toLowerCase().includes(s) && !t.empresas?.nombre?.toLowerCase().includes(s) && !String(t.numero).includes(s)) return false }
+    if (filtroDesde && new Date(t.created_at) < new Date(filtroDesde)) return false
+    if (filtroHasta) { const h = new Date(filtroHasta); h.setHours(23,59,59,999); if (new Date(t.created_at) > h) return false }
+    return true
+  })
+
+  // Total tickets (vista paginada con filtros: operario, número, empresa, fecha)
+  const ticketsTotal = allTickets.filter(t => {
+    if (operarioFilter !== 'all' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
+    if (empresaFilter !== 'all' && t.empresa_id !== empresaFilter) return false
+    if (searchTerm && !String(t.numero).includes(searchTerm.trim())) return false
+    if (filtroDesde && new Date(t.created_at) < new Date(filtroDesde)) return false
+    if (filtroHasta) { const h = new Date(filtroHasta); h.setHours(23,59,59,999); if (new Date(t.created_at) > h) return false }
+    return true
+  })
+  const tTotalPages  = Math.ceil(ticketsTotal.length / TICKETS_PER_PAGE)
   const tSafePage    = Math.min(ticketPage, tTotalPages || 1)
-  const pagedTickets = ticketsCerrados.slice((tSafePage - 1) * TICKETS_PER_PAGE, tSafePage * TICKETS_PER_PAGE)
+  const pagedTickets = ticketsTotal.slice((tSafePage - 1) * TICKETS_PER_PAGE, tSafePage * TICKETS_PER_PAGE)
 
   return (
     <div className="tickets-page">
@@ -1952,43 +1977,82 @@ export default function Tickets() {
                 style={{ borderRadius: 0, border: 'none' }}
                 onClick={() => setMostrarCerrados(false)}
               >
-                <i className="fas fa-unlock"></i> Abiertos
+                <i className="fas fa-list-ul"></i> Tickets
               </button>
               <button
                 className={`btn-sm${mostrarCerrados ? ' btn-primary' : ' btn-secondary'}`}
                 style={{ borderRadius: 0, border: 'none', borderLeft: '1px solid var(--border)' }}
                 onClick={() => setMostrarCerrados(true)}
               >
-                <i className="fas fa-lock"></i> Cerrados
+                <i className="fas fa-th-list"></i> Total tickets
               </button>
             </div>
             <button className="btn-primary" onClick={abrirModalNuevoTicket}><i className="fas fa-plus"></i> Nuevo Ticket</button>
           </div>
         </div>
 
-        <div className="stats">
-          {(!mostrarCerrados ? [
-            { id: 'statMisAbiertos', label: 'Mis abiertos', val: statMisAbiertos,   icon: 'fa-user-clock', bg: '#fef3c7', col: '#d97706', active: operarioFilter === user?.id, click: () => setOperarioFilter(user?.id) },
-            { id: 'statTotal',       label: 'Total',        val: statAbiertosTotal, icon: 'fa-ticket-alt', bg: '#dbeafe', col: '#2563eb', active: operarioFilter === 'all', click: () => setOperarioFilter('all') },
-          ] : [
-            { id: 'statCompletados',  label: 'Completados',    val: statCompletados,  icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', active: estadoFilter === 'Completado',            click: () => setEstadoFilter('Completado') },
-            { id: 'statPendFacturar', label: 'Pend. facturar', val: statPendFacturar, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', active: estadoFilter === 'Pendiente de facturar', click: () => setEstadoFilter('Pendiente de facturar') },
-            { id: 'statFacturados',   label: 'Facturados',     val: statFacturados,   icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', active: estadoFilter === 'Facturado',             click: () => setEstadoFilter('Facturado') },
-          ]).map(s => (
-            <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer', outline: s.active ? `2px solid ${s.col}` : 'none' }}>
-              <div className="stat-icon" style={{ background: s.bg, color: s.col }}><i className={`fas ${s.icon}`}></i></div>
-              <div className="stat-info"><h3>{s.val}</h3><p>{s.label}</p></div>
-            </div>
-          ))}
-        </div>
+        {!mostrarCerrados && (
+          <div className="stats">
+            {[
+              { id: 'statMisAbiertos', label: 'Mis abiertos',   val: statMisAbiertos,   icon: 'fa-user-clock',          bg: '#fef3c7', col: '#d97706', active: operarioFilter === user?.id && !estadoFilter,     click: () => { setOperarioFilter(user?.id); setEstadoFilter('') } },
+              { id: 'statTotal',       label: 'Total abiertos', val: statAbiertosTotal, icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', active: operarioFilter === 'all'    && !estadoFilter,     click: () => { setOperarioFilter('all'); setEstadoFilter('') } },
+              { id: 'statCompletados',  label: 'Completados',   val: statCompletados,  icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', active: estadoFilter === 'Completado',                    click: () => { setEstadoFilter(estadoFilter === 'Completado' ? '' : 'Completado'); setOperarioFilter('all') } },
+              { id: 'statPendFacturar', label: 'Pend. facturar',val: statPendFacturar, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', active: estadoFilter === 'Pendiente de facturar',          click: () => { setEstadoFilter(estadoFilter === 'Pendiente de facturar' ? '' : 'Pendiente de facturar'); setOperarioFilter('all') } },
+              { id: 'statFacturados',   label: 'Facturados',    val: statFacturados,   icon: 'fa-file-invoice-dollar', bg: '#f3e8ff', col: '#9333ea', active: estadoFilter === 'Facturado',                     click: () => { setEstadoFilter(estadoFilter === 'Facturado' ? '' : 'Facturado'); setOperarioFilter('all') } },
+            ].map(s => (
+              <div className="stat-card" key={s.id} onClick={s.click} style={{ cursor: 'pointer', outline: s.active ? `2px solid ${s.col}` : 'none' }}>
+                <div className="stat-icon" style={{ background: s.bg, color: s.col }}><i className={`fas ${s.icon}`}></i></div>
+                <div className="stat-info"><h3>{s.val}</h3><p>{s.label}</p></div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="filters">
-          <div className="search-box">
-            <i className="fas fa-search"></i>
-            <input type="text" placeholder="Buscar tickets..." value={searchTerm} onChange={onSearchChange} />
-          </div>
-          <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            {(!mostrarCerrados && operarioFilter !== user?.id) && (
+          {!mostrarCerrados ? (
+            /* ── Filtros vista "Tickets" ── */
+            <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+              <div className="search-box" style={{ flex: '1 1 180px' }}>
+                <i className="fas fa-search"></i>
+                <input type="text" placeholder="Buscar tickets..." value={searchTerm} onChange={onSearchChange} />
+              </div>
+              {operarioFilter !== user?.id && (
+                <div className={`filter-chip${operarioFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Operario">
+                  <i className="fas fa-user"></i>
+                  <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
+                    <option value="all">Operario</option>
+                    {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
+                  </select>
+                </div>
+              )}
+              <div className={`filter-chip${empresaFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Empresa">
+                <i className="fas fa-building"></i>
+                <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
+                  <option value="all">Empresa</option>
+                  {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+              <div className={`filter-chip filter-chip-date${filtroDesde ? ' filter-chip-active' : ''}`} title="Desde">
+                <i className="fas fa-calendar-alt"></i>
+                <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
+              </div>
+              <div className={`filter-chip filter-chip-date${filtroHasta ? ' filter-chip-active' : ''}`} title="Hasta">
+                <i className="fas fa-calendar-check"></i>
+                <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+              </div>
+              {(filtroDesde || filtroHasta) && (
+                <button className="btn-secondary btn-sm filter-chip-reset" onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}>
+                  <i className="fas fa-undo"></i>
+                </button>
+              )}
+            </div>
+          ) : (
+            /* ── Filtros vista "Total tickets" ── */
+            <div className="filter-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+              <div className="search-box" style={{ flex: '1 1 160px' }}>
+                <i className="fas fa-hashtag"></i>
+                <input type="number" placeholder="Nº ticket..." value={searchTerm} onChange={onSearchChange} min="1" style={{ appearance: 'textfield' }} />
+              </div>
               <div className={`filter-chip${operarioFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Operario">
                 <i className="fas fa-user"></i>
                 <select value={operarioFilter} onChange={e => setOperarioFilter(e.target.value)}>
@@ -1996,32 +2060,91 @@ export default function Tickets() {
                   {operarios.map(op => <option key={op.id} value={op.id}>{op.nombre}</option>)}
                 </select>
               </div>
-            )}
-            <div className={`filter-chip${empresaFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Empresa">
-              <i className="fas fa-building"></i>
-              <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
-                <option value="all">Empresa</option>
-                {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-              </select>
+              <div className={`filter-chip${empresaFilter !== 'all' ? ' filter-chip-active' : ''}`} title="Empresa">
+                <i className="fas fa-building"></i>
+                <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)}>
+                  <option value="all">Empresa</option>
+                  {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+              <div className={`filter-chip filter-chip-date${filtroDesde ? ' filter-chip-active' : ''}`} title="Desde">
+                <i className="fas fa-calendar-alt"></i>
+                <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
+              </div>
+              <div className={`filter-chip filter-chip-date${filtroHasta ? ' filter-chip-active' : ''}`} title="Hasta">
+                <i className="fas fa-calendar-check"></i>
+                <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+              </div>
+              {(filtroDesde || filtroHasta || searchTerm || operarioFilter !== 'all' || empresaFilter !== 'all') && (
+                <button className="btn-secondary btn-sm filter-chip-reset" onClick={() => { setFiltroDesde(''); setFiltroHasta(''); setSearchTerm(''); setOperarioFilter('all'); setEmpresaFilter('all') }}>
+                  <i className="fas fa-undo"></i>
+                </button>
+              )}
             </div>
-            <div className={`filter-chip filter-chip-date${filtroDesde ? ' filter-chip-active' : ''}`} title="Desde">
-              <i className="fas fa-calendar-alt"></i>
-              <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
-            </div>
-            <div className={`filter-chip filter-chip-date${filtroHasta ? ' filter-chip-active' : ''}`} title="Hasta">
-              <i className="fas fa-calendar-check"></i>
-              <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
-            </div>
-            {(filtroDesde || filtroHasta) && (
-              <button className="btn-secondary btn-sm filter-chip-reset" onClick={() => { setFiltroDesde(''); setFiltroHasta('') }}>
-                <i className="fas fa-undo"></i>
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* ── VISTA ABIERTOS: agrupado por operario ── */}
-        {!mostrarCerrados && (
+        {/* ── VISTA TICKETS ── */}
+        {!mostrarCerrados && (ESTADOS_CERRADOS.includes(estadoFilter) ? (
+          /* Subvista cerrados (Completados / Pend. facturar / Facturados) */
+          <>
+            <div className="table-container desktop-only">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>Empresa</th><th>Asunto</th><th>Operarios</th><th>Prioridad</th><th>Estado</th><th>Tiempo</th><th>Fecha</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                  {ticketsCerradosFiltrados.length === 0 ? (
+                    <tr><td colSpan="9" className="empty-state"><i className="fas fa-inbox" style={{ display: 'block', fontSize: '2rem', color: '#cbd5e1', marginBottom: '12px' }}></i>No hay tickets con este estado</td></tr>
+                  ) : ticketsCerradosFiltrados.map(t => {
+                    const asignados = t.ticket_asignaciones || []
+                    return (
+                      <tr key={t.id} onClick={() => abrirTicket(t.id)} style={{ cursor: 'pointer' }}>
+                        <td><span className="ticket-numero">#{t.numero}</span></td>
+                        <td>{t.empresas?.nombre || '—'}</td>
+                        <td><div className="ticket-asunto-cell"><span className="ticket-asunto-text">{t.asunto}</span>{t.dispositivos && <span className="ticket-empresa-sub"><i className="fas fa-desktop" style={{ fontSize: '0.7rem' }}></i> {t.dispositivos.nombre}</span>}</div></td>
+                        <td><div className="avatares-operarios">{asignados.length === 0 ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span> : asignados.map(a => { const n = a.profiles?.nombre || '?'; return <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={n}>{getInitials(n)}</div> })}</div></td>
+                        <td><PrioridadBadge p={t.prioridad} /></td>
+                        <td><EstadoBadge e={t.estado} /></td>
+                        <td style={{ fontWeight: 600, color: 'var(--gray)', fontSize: '0.82rem' }}>{formatHoras(t.horas_transcurridas || 0)}</td>
+                        <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
+                        <td onClick={e => e.stopPropagation()}>
+                          <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
+                          {isAdmin() && <button className="btn-action btn-delete" onClick={() => eliminarTicketLista(t.id)} title="Eliminar"><i className="fas fa-trash"></i></button>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mobile-only">
+              {ticketsCerradosFiltrados.length === 0 ? (
+                <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets</div>
+              ) : ticketsCerradosFiltrados.map(t => {
+                const asignados = t.ticket_asignaciones || []
+                const nombresOps = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
+                return (
+                  <div key={t.id} className={`ticket-card-mobile prio-${t.prioridad}`} onClick={() => abrirTicket(t.id)}>
+                    <div className="ticket-card-top">
+                      <div>
+                        <div className="ticket-card-id-row"><span className="ticket-numero">#{t.numero}</span><span className={`ticket-prio-inline ticket-prio-${t.prioridad}`}>{t.prioridad}</span></div>
+                        <div className="ticket-card-asunto">{t.asunto}</div>
+                      </div>
+                      <EstadoBadge e={t.estado} />
+                    </div>
+                    <div className="ticket-card-meta">
+                      <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
+                      {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
+                      <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        ) : (
+          /* Subvista abiertos: agrupado por operario */
           gruposPorOperario.length === 0 ? (
             <div className="empty-state" style={{ padding: '40px 0' }}>
               <i className="fas fa-check-circle" style={{ display: 'block', fontSize: '2rem', color: '#22c55e', marginBottom: '12px' }}></i>
@@ -2118,9 +2241,9 @@ export default function Tickets() {
               </div>
             ))
           )
-        )}
+        ))}
 
-        {/* ── VISTA CERRADOS: lista plana ── */}
+        {/* ── VISTA TOTAL TICKETS: lista plana paginada ── */}
         {mostrarCerrados && (
           <>
             <div className="table-container desktop-only">
@@ -2181,7 +2304,7 @@ export default function Tickets() {
 
             <div className="mobile-only">
               {pagedTickets.length === 0 ? (
-                <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets cerrados</div>
+                <div className="empty-state"><i className="fas fa-inbox"></i><br />Sin tickets</div>
               ) : pagedTickets.map(t => {
                 const asignados = t.ticket_asignaciones || []
                 const nombresOps = asignados.map(a => a.profiles?.nombre).filter(Boolean).join(', ')
@@ -2214,7 +2337,7 @@ export default function Tickets() {
                   <button key={p} className={`pagination-btn ${p === tSafePage ? 'active' : ''}`} onClick={() => setTicketPage(p)}>{p}</button>
                 ))}
                 <button className="pagination-btn" onClick={() => setTicketPage(p => Math.min(tTotalPages, p + 1))} disabled={tSafePage === tTotalPages}><i className="fas fa-chevron-right"></i></button>
-                <span className="pagination-info">{ticketsCerrados.length} tickets</span>
+                <span className="pagination-info">{ticketsTotal.length} tickets</span>
               </div>
             )}
           </>

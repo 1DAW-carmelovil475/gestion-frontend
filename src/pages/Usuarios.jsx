@@ -414,7 +414,6 @@ export default function Usuarios() {
   const totalTrabajadores  = usuarios.filter(u => u.rol === 'trabajador').length
   const totalGestores      = usuarios.filter(u => u.rol === 'gestor').length
   const totalClientes      = usuarios.filter(u => u.rol === 'cliente').length
-  const totalActivos       = usuarios.filter(u => u.activo).length
 
   if (loading) {
     return (
@@ -477,51 +476,23 @@ export default function Usuarios() {
 
         {/* ── KPI Cards ────────────────────────────── */}
         <div className="stats u-stats">
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#dbeafe', color: '#2563eb' }}>
-              <i className="fas fa-users"></i>
+          {[
+            { rol: 'all',        label: 'Total',           val: usuarios.length,  icon: 'fa-users',       bg: '#dbeafe', col: '#2563eb' },
+            { rol: 'admin',      label: 'Administradores', val: totalAdmins,      icon: 'fa-user-shield', bg: '#f3e8ff', col: '#9333ea' },
+            { rol: 'gestor',     label: 'Gestores',        val: totalGestores,    icon: 'fa-user-tie',    bg: '#e0f2fe', col: '#0369a1' },
+            { rol: 'trabajador', label: 'Trabajadores',    val: totalTrabajadores,icon: 'fa-user-cog',bg: '#fff7ed', col: '#ea580c' },
+            { rol: 'cliente',    label: 'Clientes',        val: totalClientes,    icon: 'fa-user-tag',    bg: '#dcfce7', col: '#16a34a' },
+          ].map(s => (
+            <div key={s.rol} className="stat-card" onClick={() => setRolFilter(s.rol)} style={{ cursor: 'pointer', outline: rolFilter === s.rol ? `2px solid ${s.col}` : 'none' }}>
+              <div className="stat-icon" style={{ background: s.bg, color: s.col }}>
+                <i className={`fas ${s.icon}`}></i>
+              </div>
+              <div className="stat-info">
+                <h3>{s.val}</h3>
+                <p>{s.label}</p>
+              </div>
             </div>
-            <div className="stat-info">
-              <h3>{usuarios.length}</h3>
-              <p>Total usuarios</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#f3e8ff', color: '#9333ea' }}>
-              <i className="fas fa-user-shield"></i>
-            </div>
-            <div className="stat-info">
-              <h3>{totalAdmins}</h3>
-              <p>Administradores</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#e0f2fe', color: '#0369a1' }}>
-              <i className="fas fa-user-tie"></i>
-            </div>
-            <div className="stat-info">
-              <h3>{totalTrabajadores + totalGestores}</h3>
-              <p>Trab. / Gestores</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#dcfce7', color: '#16a34a' }}>
-              <i className="fas fa-user-tag"></i>
-            </div>
-            <div className="stat-info">
-              <h3>{totalClientes}</h3>
-              <p>Clientes</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#fef9c3', color: '#ca8a04' }}>
-              <i className="fas fa-user-check"></i>
-            </div>
-            <div className="stat-info">
-              <h3>{totalActivos}</h3>
-              <p>Activos</p>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* ── Filtros ──────────────────────────────── */}
@@ -536,13 +507,6 @@ export default function Usuarios() {
             />
           </div>
           <div className="filter-row">
-            <select value={rolFilter} onChange={e => setRolFilter(e.target.value)}>
-              <option value="all">Todos los roles</option>
-              <option value="admin">Administrador</option>
-              <option value="trabajador">Trabajador</option>
-              <option value="gestor">Gestor</option>
-              <option value="cliente">Cliente</option>
-            </select>
             <select value={estadoFilter} onChange={e => setEstadoFilter(e.target.value)}>
               <option value="all">Todos los estados</option>
               <option value="activo">Activo</option>

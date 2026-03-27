@@ -43,8 +43,24 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     checkSession()
 
+    // Refresca el perfil solo cuando el usuario vuelve a la pestaña
+    async function onVisibilityChange() {
+      if (document.visibilityState !== 'visible') return
+      const token = sessionStorage.getItem('hola_token')
+      if (!token) return
+      try {
+        const userData = await apiFetch('/api/auth/me')
+        setUser(userData)
+      } catch {
+        // silencioso, la sesión se gestiona por el token refresh
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
     return () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])
 

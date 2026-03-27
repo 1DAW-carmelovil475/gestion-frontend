@@ -2106,7 +2106,7 @@ export default function Tickets() {
                         <td><div className="avatares-operarios">{asignados.length === 0 ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span> : asignados.map(a => { const n = a.profiles?.nombre || '?'; return <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={n}>{getInitials(n)}</div> })}</div></td>
                         <td><PrioridadBadge p={t.prioridad} /></td>
                         <td><EstadoBadge e={t.estado} /></td>
-                        <td style={{ fontWeight: 600, color: 'var(--gray)', fontSize: '0.82rem' }}>{formatHoras(t.horas_transcurridas || 0)}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--gray)', fontSize: '0.82rem' }}>{formatHoras(t.horas_transcurridas || 0)}<i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i></td>
                         <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                         <td onClick={e => e.stopPropagation()}>
                           <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>

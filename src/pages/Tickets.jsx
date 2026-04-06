@@ -1626,12 +1626,6 @@ export default function Tickets() {
                       )}
                     </span>
                   </div>
-                  {ticketActual.descripcion && (
-                    <div className="info-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <span className="info-row-label">Descripción</span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--dark)', marginTop: '4px', whiteSpace: 'pre-wrap' }}>{ticketActual.descripcion}</span>
-                    </div>
-                  )}
                   <div className="info-row"><span className="info-row-label">Creado</span><span className="info-row-value">{formatFecha(ticketActual.created_at)}</span></div>
                   {ticketActual.started_at && <div className="info-row"><span className="info-row-label">Iniciado</span><span className="info-row-value">{formatFecha(ticketActual.started_at)}</span></div>}
                   {ticketActual.completed_at && <div className="info-row"><span className="info-row-label">Completado</span><span className="info-row-value">{formatFecha(ticketActual.completed_at)}</span></div>}
@@ -1779,7 +1773,23 @@ export default function Tickets() {
                 {activeTab === 'comentarios' && (
                   <div className="tab-panel tab-panel-comentarios">
                     <div className="comentarios-lista">
-                      {comentarios.length === 0 ? (
+                      {ticketActual.descripcion && (
+                        <div className="comentario-item" style={{ marginBottom: '16px' }}>
+                          <div className="comentario-avatar" style={{ background: 'var(--border)', color: 'var(--gray)' }}>
+                            <i className="fas fa-ticket-alt" style={{ fontSize: '0.85rem' }}></i>
+                          </div>
+                          <div className="comentario-cuerpo">
+                            <div className="comentario-meta">
+                              <span className="comentario-autor">Descripción del ticket</span>
+                              <span className="comentario-fecha">{formatFecha(ticketActual.created_at)}</span>
+                            </div>
+                            <div className="comentario-texto" style={{ whiteSpace: 'pre-wrap', background: 'var(--bg)', borderLeft: '3px solid var(--border)', paddingLeft: '10px' }}>
+                              {ticketActual.descripcion}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {comentarios.length === 0 && !ticketActual.descripcion ? (
                         <div className="comentarios-empty">
                           <i className="fas fa-comments"></i>
                           <p>Sin comentarios aún</p>

@@ -6,6 +6,7 @@ import {
   getTickets, getTicket, createTicket, updateTicket, deleteTicket,
   getEmpresas, getOperarios, getDispositivos,
   updateEmpresa, createDispositivo,
+  getUsuarios, updateUsuario,
   assignOperarios, removeOperario,
   getTicketComentarios, createTicketComentario, deleteTicketComentario,
   uploadTicketArchivo, deleteArchivo, getArchivoUrl,
@@ -309,17 +310,20 @@ function TicketModal({
   onPrioridadChange, onEstadoChange,
   onOperariosChange,
   onSaveContact,
+  onEditContact,
   onSaveDevice,
 }) {
   const [dispSearch, setDispSearch] = useState('')
 
   // Panel state
-  const [showContactPanel, setShowContactPanel] = useState(false)
-  const [showDevicePanel, setShowDevicePanel]   = useState(false)
-  const [devicePanelStep, setDevicePanelStep]   = useState('select') // 'select' | 'form'
-  const [deviceCategory, setDeviceCategory]     = useState('')
-  const [contactSaving, setContactSaving]       = useState(false)
-  const [deviceSaving, setDeviceSaving]         = useState(false)
+  const [showContactPanel, setShowContactPanel]         = useState(false)
+  const [showEditContactPanel, setShowEditContactPanel] = useState(false)
+  const [showDevicePanel, setShowDevicePanel]           = useState(false)
+  const [devicePanelStep, setDevicePanelStep]           = useState('select') // 'select' | 'form'
+  const [deviceCategory, setDeviceCategory]             = useState('')
+  const [contactSaving, setContactSaving]               = useState(false)
+  const [editContactSaving, setEditContactSaving]       = useState(false)
+  const [deviceSaving, setDeviceSaving]                 = useState(false)
 
   // Contact panel form
   const [contNombre,   setContNombre]   = useState('')
@@ -327,21 +331,40 @@ function TicketModal({
   const [contEmail,    setContEmail]    = useState('')
   const [contCargo,    setContCargo]    = useState('')
 
+  // Edit contact panel form
+  const [editNombre,   setEditNombre]   = useState('')
+  const [editTelefono, setEditTelefono] = useState('')
+  const [editEmail,    setEditEmail]    = useState('')
+  const [editCargo,    setEditCargo]    = useState('')
+
   // Device panel extra fields
   const [deviceExtraFields, setDeviceExtraFields] = useState([])
   const deviceFormRef = useRef(null)
 
-  const panelOpen = showContactPanel || showDevicePanel
+  const panelOpen = showContactPanel || showEditContactPanel || showDevicePanel
 
   function openContactPanel() {
     setShowContactPanel(true)
+    setShowEditContactPanel(false)
     setShowDevicePanel(false)
     setContNombre(''); setContTelefono(''); setContEmail(''); setContCargo('')
+  }
+
+  function openEditContactPanel() {
+    if (!selectedContacto) return
+    setShowEditContactPanel(true)
+    setShowContactPanel(false)
+    setShowDevicePanel(false)
+    setEditNombre(selectedContacto.nombre || '')
+    setEditTelefono(selectedContacto.telefono || '')
+    setEditEmail(selectedContacto.email || '')
+    setEditCargo(selectedContacto.cargo || '')
   }
 
   function openDevicePanel() {
     setShowDevicePanel(true)
     setShowContactPanel(false)
+    setShowEditContactPanel(false)
     setDevicePanelStep('select')
     setDeviceCategory('')
     setDeviceExtraFields([])
@@ -349,6 +372,7 @@ function TicketModal({
 
   function closeSidePanel() {
     setShowContactPanel(false)
+    setShowEditContactPanel(false)
     setShowDevicePanel(false)
     setDevicePanelStep('select')
     setDeviceCategory('')
@@ -363,6 +387,17 @@ function TicketModal({
       setShowContactPanel(false)
     } catch { /* error handled by parent */ }
     finally { setContactSaving(false) }
+  }
+
+  async function saveEditContact(e) {
+    e.preventDefault()
+    if (!editNombre.trim() || !selectedContacto) return
+    setEditContactSaving(true)
+    try {
+      await onEditContact(selectedContacto, { nombre: editNombre.trim(), telefono: editTelefono.trim(), email: editEmail.trim(), cargo: editCargo.trim() })
+      setShowEditContactPanel(false)
+    } catch { /* error handled by parent */ }
+    finally { setEditContactSaving(false) }
   }
 
   async function saveDevice(e) {
@@ -542,13 +577,24 @@ function TicketModal({
             <div className="form-group">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <label style={{ margin: 0 }}><i className="fas fa-user-tie"></i> Contacto <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.78rem' }}>(opcional)</span></label>
-                <button
-                  type="button"
-                  onClick={openContactPanel}
-                  className={`btn-panel-action${showContactPanel ? ' active' : ''}`}
-                >
-                  <i className="fas fa-user-plus"></i> Crear contacto
-                </button>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {selectedContacto && (
+                    <button
+                      type="button"
+                      onClick={openEditContactPanel}
+                      className={`btn-panel-action${showEditContactPanel ? ' active' : ''}`}
+                    >
+                      <i className="fas fa-user-edit"></i> Editar contacto
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={openContactPanel}
+                    className={`btn-panel-action${showContactPanel ? ' active' : ''}`}
+                  >
+                    <i className="fas fa-user-plus"></i> Crear contacto
+                  </button>
+                </div>
               </div>
               {empresaContactos.length === 0 ? (
                 <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0 }}>Esta empresa no tiene contactos registrados.</p>
@@ -763,6 +809,42 @@ function TicketModal({
     </div>
   )
 
+  // ── Edit contact side panel ─────────────────────────────────
+  const editContactPanel = (
+    <div className="ticket-side-panel modal-content">
+      <div className="modal-header">
+        <h2><i className="fas fa-user-edit"></i> Editar Contacto</h2>
+        <button className="modal-close" onClick={closeSidePanel}><i className="fas fa-times"></i></button>
+      </div>
+      <form onSubmit={saveEditContact} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div className="modal-body" style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="form-group">
+            <label>Nombre *</label>
+            <input type="text" value={editNombre} onChange={e => setEditNombre(e.target.value)} required placeholder="Nombre del contacto" />
+          </div>
+          <div className="form-group">
+            <label>Teléfono</label>
+            <input type="tel" value={editTelefono} onChange={e => setEditTelefono(e.target.value)} placeholder="612 345 678" />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="contacto@empresa.com" />
+          </div>
+          <div className="form-group">
+            <label>Cargo</label>
+            <input type="text" value={editCargo} onChange={e => setEditCargo(e.target.value)} placeholder="Ej: Responsable IT, Gerente..." />
+          </div>
+        </div>
+        <div className="modal-buttons">
+          <button type="submit" className="btn-primary" disabled={editContactSaving}>
+            <i className={`fas ${editContactSaving ? 'fa-spinner fa-spin' : 'fa-save'}`}></i> {editContactSaving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+          <button type="button" className="btn-secondary" onClick={closeSidePanel}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  )
+
   // ── Device side panel ───────────────────────────────────────
   const devicePanel = (
     <div className="ticket-side-panel modal-content">
@@ -818,6 +900,7 @@ function TicketModal({
           {ticketFormContent}
         </div>
         {showContactPanel && contactPanel}
+        {showEditContactPanel && editContactPanel}
         {showDevicePanel  && devicePanel}
       </div>
     </div>
@@ -1267,6 +1350,36 @@ export default function Tickets() {
       setEmpresaContactos(nuevosContactos)
       setModalContactoIdx(String(nuevosContactos.length - 1))
       showToast('success', 'Contacto creado', contactData.nombre)
+    } catch (error) {
+      showToast('error', 'Error', error.message)
+      throw error
+    }
+  }
+
+  async function handleEditContact(oldContacto, updatedData) {
+    const empresa = empresas.find(e => e.id === modalEmprId)
+    const nuevosContactos = (empresa?.contactos || []).map(c => c.nombre === oldContacto.nombre ? updatedData : c)
+    try {
+      await updateEmpresa(modalEmprId, { ...empresa, contactos: nuevosContactos })
+      const nuevaEmpresa = { ...empresa, contactos: nuevosContactos }
+      setEmpresas(prev => prev.map(e => e.id === modalEmprId ? nuevaEmpresa : e))
+      setEmpresaContactos(nuevosContactos)
+      const newIdx = nuevosContactos.findIndex(c => c.nombre === updatedData.nombre)
+      if (newIdx >= 0) setModalContactoIdx(String(newIdx))
+      // Si el contacto tiene email, buscar si hay un usuario vinculado y actualizarlo también
+      if (oldContacto.email) {
+        try {
+          const allUsers = await getUsuarios()
+          const linkedUser = allUsers?.find(u => u.email?.toLowerCase() === oldContacto.email.toLowerCase())
+          if (linkedUser) {
+            const userUpdate = { nombre: updatedData.nombre, telefono: updatedData.telefono || '' }
+            if (updatedData.email && updatedData.email.toLowerCase() !== oldContacto.email.toLowerCase())
+              userUpdate.email = updatedData.email
+            await updateUsuario(linkedUser.id, userUpdate)
+          }
+        } catch { /* no bloquear si falla la actualización del usuario */ }
+      }
+      showToast('success', 'Contacto actualizado', updatedData.nombre)
     } catch (error) {
       showToast('error', 'Error', error.message)
       throw error
@@ -1895,7 +2008,7 @@ export default function Tickets() {
         </main>
 
         {showAsignarModal && <AsignarModal />}
-        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} esGestor={isGestor()} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}
+        {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} esGestor={isGestor()} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onEditContact={handleEditContact} onSaveDevice={handleSaveDevice} />}
       </div>
     )
   }
@@ -2354,7 +2467,7 @@ export default function Tickets() {
         )}
 
       </main>
-      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onSaveDevice={handleSaveDevice} />}
+      {showTicketModal && <TicketModal editingTicket={editingTicket} empresas={empresas} modalEmprId={modalEmprId} modalDispIds={modalDispIds} modalDispositivos={modalDispositivos} modalAsunto={modalAsunto} modalDesc={modalDesc} modalContactoIdx={modalContactoIdx} empresaContactos={empresaContactos} modalPrioridad={modalPrioridad} modalEstado={modalEstado} operarios={operarios} selectedOperarios={selectedOperarios} onClose={() => setShowTicketModal(false)} onSave={saveTicket} onEmpresaChange={onModalEmpresaChange} onDispIdsChange={setModalDispIds} onAsuntoChange={setModalAsunto} onDescChange={setModalDesc} onContactoIdxChange={setModalContactoIdx} onPrioridadChange={setModalPrioridad} onEstadoChange={setModalEstado} onOperariosChange={setSelectedOperarios} onSaveContact={handleSaveContact} onEditContact={handleEditContact} onSaveDevice={handleSaveDevice} />}
     </div>
   )
 }

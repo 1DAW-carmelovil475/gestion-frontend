@@ -323,7 +323,7 @@ export default function ClienteIncidencias() {
   const [toast, setToast]               = useState(null)
   const [dispositivos, setDispositivos] = useState([])
 
-  const empresaNombre = user?.empresa_nombre || 'Mi empresa'
+  const empresaNombre = user?.empresa_nombre || 'Sin empresa'
 
   // Mostrar columna empresa si los tickets pertenecen a más de una empresa (cliente es matriz)
   const multiEmpresa = new Set(incidencias.map(i => i.empresa_id)).size > 1
@@ -442,9 +442,6 @@ export default function ClienteIncidencias() {
             <i className="fas fa-check-circle"></i>
             <h3>Todo en orden</h3>
             <p>No tienes incidencias registradas.</p>
-            <button className="ci-btn-primary" onClick={() => setShowModal(true)}>
-              <i className="fas fa-plus"></i> Crear primera incidencia
-            </button>
           </div>
         ) : (
           <>

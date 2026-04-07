@@ -126,18 +126,17 @@ function UserModal({ editingUser, empresas, onSave, onClose }) {
               />
             </div>
 
-            {/* Email — solo en creación */}
-            {!editingUser && (
-              <div className="form-group">
-                <label><i className="fas fa-envelope"></i> Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Ej: maria.garcia@empresa.com"
-                  required
-                />
-              </div>
-            )}
+            {/* Email */}
+            <div className="form-group">
+              <label><i className="fas fa-envelope"></i> Email {!editingUser && '*'}</label>
+              <input
+                type="email"
+                name="email"
+                defaultValue={editingUser?.email || ''}
+                placeholder="Ej: maria.garcia@empresa.com"
+                required={!editingUser}
+              />
+            </div>
 
             {/* Rol */}
             <div className="form-group">
@@ -273,6 +272,11 @@ export default function Usuarios() {
   useEffect(() => {
     if (!isAdmin()) { navigate('/'); return }
     loadData()
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') loadData()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [])
 
   async function loadData() {
@@ -316,6 +320,9 @@ export default function Usuarios() {
     } else {
       const pwd = formData.get('password')?.trim()
       if (pwd) payload.password = pwd
+      const newEmail = formData.get('email')?.trim()
+      if (newEmail && newEmail.toLowerCase() !== editingUser.email?.toLowerCase())
+        payload.email = newEmail
       if (rolValue === 'cliente') {
         payload.empresa_id = formData.get('empresa_id') || null
         payload.telefono   = formData.get('telefono') || ''

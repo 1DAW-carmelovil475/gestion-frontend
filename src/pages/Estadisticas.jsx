@@ -136,6 +136,7 @@ export default function Estadisticas() {
 
   /** Distribución de estados → LineChart / BarChart / PieChart */
   const estadosData = [
+    { name: 'Sin asignar',value: resumen?.sin_asignar || 0, color: '#dc2626' },
     { name: 'Pendientes', value: resumen?.pendientes  || 0, color: WARN   },
     { name: 'En curso',   value: resumen?.en_curso    || 0, color: CYAN   },
     { name: 'Completados',value: resumen?.completados || 0, color: ACCENT },
@@ -248,6 +249,15 @@ export default function Estadisticas() {
             <div className="stat-info">
               <h3>{(resumen?.pendientes || 0) + (resumen?.en_curso || 0)}</h3>
               <p>Abiertos</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
+              <i className="fas fa-user-slash"></i>
+            </div>
+            <div className="stat-info">
+              <h3>{resumen?.sin_asignar || 0}</h3>
+              <p>Sin asignar</p>
             </div>
           </div>
           <div className="stat-card">

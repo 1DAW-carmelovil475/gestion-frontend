@@ -2022,6 +2022,7 @@ export default function Tickets() {
   // Stats computed directly from allTickets — always fresh, no calcStats dependency
   const statAbiertosTotal  = allTickets.filter(t => ESTADOS_ABIERTOS.includes(t.estado)).length
   const statMisAbiertos    = allTickets.filter(t => ESTADOS_ABIERTOS.includes(t.estado) && (t.ticket_asignaciones || []).some(a => a.user_id === user?.id)).length
+  const statSinAsignar     = allTickets.filter(t => ESTADOS_ABIERTOS.includes(t.estado) && (t.ticket_asignaciones || []).length === 0).length
   const statCompletados    = allTickets.filter(t => t.estado === 'Completado').length
   const statPendFacturar   = allTickets.filter(t => t.estado === 'Pendiente de facturar').length
   const statFacturados     = allTickets.filter(t => t.estado === 'Facturado').length
@@ -2035,7 +2036,8 @@ export default function Tickets() {
         if (!t.asunto?.toLowerCase().includes(s) && !t.empresas?.nombre?.toLowerCase().includes(s) && !String(t.numero).includes(s)) return false
       }
       if (prioridadFilter !== 'all' && t.prioridad !== prioridadFilter) return false
-      if (operarioFilter !== 'all' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
+      if (operarioFilter === '__sin__' && (t.ticket_asignaciones || []).length > 0) return false
+      if (operarioFilter !== 'all' && operarioFilter !== '__sin__' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
       if (empresaFilter !== 'all' && t.empresa_id !== empresaFilter) return false
       if (filtroDesde && new Date(t.created_at) < new Date(filtroDesde)) return false
       if (filtroHasta) { const h = new Date(filtroHasta); h.setHours(23,59,59,999); if (new Date(t.created_at) > h) return false }
@@ -2049,13 +2051,16 @@ export default function Tickets() {
         map['__sin__'].tickets.push(t)
       } else {
         asigs.forEach(a => {
-          if (operarioFilter !== 'all' && a.user_id !== operarioFilter) return
+          if (operarioFilter !== 'all' && operarioFilter !== '__sin__' && a.user_id !== operarioFilter) return
           if (!map[a.user_id]) map[a.user_id] = { id: a.user_id, nombre: a.profiles?.nombre || '?', tickets: [] }
           map[a.user_id].tickets.push(t)
         })
       }
     })
-    return Object.values(map)
+    // Sin asignar siempre primero
+    const grupos = Object.values(map)
+    grupos.sort((a, b) => a.id === '__sin__' ? -1 : b.id === '__sin__' ? 1 : 0)
+    return grupos
   })()
 
   // Tickets cerrados filtrados (para subvista dentro de "Tickets" al clicar Completados/etc.)
@@ -2118,6 +2123,7 @@ export default function Tickets() {
           <div className="stats">
             {[
               { id: 'statMisAbiertos', label: 'Mis abiertos',   val: statMisAbiertos,   icon: 'fa-user-clock',          bg: '#fef3c7', col: '#d97706', active: operarioFilter === user?.id && !estadoFilter,     click: () => { setOperarioFilter(user?.id); setEstadoFilter('') } },
+              { id: 'statSinAsignar', label: 'Sin asignar',    val: statSinAsignar,    icon: 'fa-user-slash',          bg: '#fee2e2', col: '#dc2626', active: operarioFilter === '__sin__' && !estadoFilter,    click: () => { setOperarioFilter('__sin__'); setEstadoFilter('') } },
               { id: 'statTotal',       label: 'Total abiertos', val: statAbiertosTotal, icon: 'fa-ticket-alt',          bg: '#dbeafe', col: '#2563eb', active: operarioFilter === 'all'    && !estadoFilter,     click: () => { setOperarioFilter('all'); setEstadoFilter('') } },
               { id: 'statCompletados',  label: 'Completados',   val: statCompletados,  icon: 'fa-check-circle',        bg: '#dcfce7', col: '#16a34a', active: estadoFilter === 'Completado',                    click: () => { setEstadoFilter(estadoFilter === 'Completado' ? '' : 'Completado'); setOperarioFilter('all') } },
               { id: 'statPendFacturar', label: 'Pend. facturar',val: statPendFacturar, icon: 'fa-file-invoice',        bg: '#fff7ed', col: '#ea580c', active: estadoFilter === 'Pendiente de facturar',          click: () => { setEstadoFilter(estadoFilter === 'Pendiente de facturar' ? '' : 'Pendiente de facturar'); setOperarioFilter('all') } },
@@ -2278,10 +2284,16 @@ export default function Tickets() {
               <div key={grupo.id} style={{ marginBottom: '24px' }}>
                 {/* Header del grupo */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', paddingBottom: '8px', borderBottom: '2px solid var(--border)', cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleGrupo(grupo.id)}>
-                  <div className="avatar" style={{ background: getAvatarColor(grupo.id), width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#fff', fontWeight: 700, flexShrink: 0 }}>
-                    {getInitials(grupo.nombre)}
-                  </div>
-                  <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark)' }}>Incidencias de {grupo.nombre}</span>
+                  {grupo.id === '__sin__' ? (
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', flexShrink: 0 }}>
+                      <i className="fas fa-user-slash" style={{ fontSize: '0.75rem', color: '#dc2626' }}></i>
+                    </div>
+                  ) : (
+                    <div className="avatar" style={{ background: getAvatarColor(grupo.id), width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#fff', fontWeight: 700, flexShrink: 0 }}>
+                      {getInitials(grupo.nombre)}
+                    </div>
+                  )}
+                  <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--dark)' }}>{grupo.id === '__sin__' ? 'Incidencias sin asignar' : `Incidencias de ${grupo.nombre}`}</span>
                   <span style={{ background: 'var(--primary)', color: '#fff', borderRadius: '12px', padding: '2px 10px', fontSize: '0.78rem', fontWeight: 700 }}>{grupo.tickets.length}</span>
                   <i className={`fas fa-chevron-${collapsedGroups.has(grupo.id) ? 'right' : 'down'}`} style={{ marginLeft: 'auto', color: 'var(--gray)', fontSize: '0.85rem' }}></i>
                 </div>

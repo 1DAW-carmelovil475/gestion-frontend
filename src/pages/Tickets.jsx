@@ -1366,19 +1366,6 @@ export default function Tickets() {
       setEmpresaContactos(nuevosContactos)
       const newIdx = nuevosContactos.findIndex(c => c.nombre === updatedData.nombre)
       if (newIdx >= 0) setModalContactoIdx(String(newIdx))
-      // Si el contacto tiene email, buscar si hay un usuario vinculado y actualizarlo también
-      if (oldContacto.email) {
-        try {
-          const allUsers = await getUsuarios()
-          const linkedUser = allUsers?.find(u => u.email?.toLowerCase() === oldContacto.email.toLowerCase())
-          if (linkedUser) {
-            const userUpdate = { nombre: updatedData.nombre, telefono: updatedData.telefono || '' }
-            if (updatedData.email && updatedData.email.toLowerCase() !== oldContacto.email.toLowerCase())
-              userUpdate.email = updatedData.email
-            await updateUsuario(linkedUser.id, userUpdate)
-          }
-        } catch { /* no bloquear si falla la actualización del usuario */ }
-      }
       showToast('success', 'Contacto actualizado', updatedData.nombre)
     } catch (error) {
       showToast('error', 'Error', error.message)

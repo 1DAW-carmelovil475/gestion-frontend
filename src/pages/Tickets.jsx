@@ -10,7 +10,8 @@ import {
   assignOperarios, removeOperario,
   getTicketComentarios, createTicketComentario, deleteTicketComentario,
   uploadTicketArchivo, deleteArchivo, getArchivoUrl,
-  updateTicketNotas
+  updateTicketNotas,
+  createTicketHoras, deleteTicketHoras
 } from '../services/api'
 import ThemeToggle from '../components/ThemeToggle'
 import './Tickets.css'
@@ -86,6 +87,15 @@ function formatHoras(horas) {
   const meses = Math.floor(dias / 30)
   const restD = dias % 30
   return restD > 0 ? `${meses}m ${restD}d` : `${meses}m`
+}
+
+function getTiempoTicket(t) {
+  const cerrado = ['Completado', 'Pendiente de facturar', 'Facturado'].includes(t.estado)
+  const pausado = t.estado === 'Pausado' || t.estado === 'Pendiente'
+  const horas = t.horas_totales > 0 ? t.horas_totales : (t.horas_transcurridas || 0)
+  const icon = cerrado ? 'fa-lock' : pausado ? 'fa-pause' : 'fa-clock'
+  const color = cerrado ? 'var(--gray)' : pausado ? '#64748b' : 'var(--primary)'
+  return { horas, icon, color }
 }
 
 function iconoArchivo(mime) {
@@ -744,6 +754,7 @@ function TicketModal({
               <select value={modalEstado} onChange={e => onEstadoChange(e.target.value)}>
                 <option value="Pendiente">Pendiente</option>
                 <option value="En curso">En curso</option>
+                <option value="Pausado">Pausado</option>
                 <option value="Completado">Completado</option>
                 {esGestor
                   ? <option value="Pendiente de facturar">Pendiente de facturar</option>
@@ -1007,6 +1018,19 @@ export default function Tickets() {
         setComentarios(data || [])
       } catch {}
     }, 5000)
+    return () => clearInterval(interval)
+  }, [vistaDetalle, ticketActual?.id])
+
+  // Refresh ticket detail periodically (updates time display for En curso)
+  useEffect(() => {
+    if (!vistaDetalle || !ticketActual?.id) return
+    const id = ticketActual.id
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await getTicket(id)
+        setTicketActual(fresh)
+      } catch {}
+    }, 30000)
     return () => clearInterval(interval)
   }, [vistaDetalle, ticketActual?.id])
 
@@ -1640,6 +1664,7 @@ export default function Tickets() {
               <select value={ticketActual.estado} onChange={e => cambiarEstado(e.target.value)} className="estado-select">
                 <option value="Pendiente">Pendiente</option>
                 <option value="En curso">En curso</option>
+                <option value="Pausado">Pausado</option>
                 <option value="Completado">Completado</option>
                 {isGestor()
                   ? <option value="Pendiente de facturar">Pendiente de facturar</option>
@@ -1719,11 +1744,10 @@ export default function Tickets() {
                   <div className="info-row">
                     <span className="info-row-label">⏱ Tiempo</span>
                     <span className="info-row-value">
-                      {estadoCerrado ? (
-                        <strong style={{ color: 'var(--gray)' }}>{formatHoras(ticketActual.horas_transcurridas || 0)}<i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i></strong>
-                      ) : (
-                        <strong style={{ color: 'var(--primary)' }}>{formatHoras(ticketActual.horas_transcurridas || 0)}</strong>
-                      )}
+                      {(() => {
+                        const ti = getTiempoTicket(ticketActual)
+                        return <strong style={{ color: ti.color }}>{formatHoras(ti.horas)}<i className={`fas ${ti.icon}`} style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i></strong>
+                      })()}
                     </span>
                   </div>
                   <div className="info-row"><span className="info-row-label">Creado</span><span className="info-row-value">{formatFecha(ticketActual.created_at)}</span></div>
@@ -1858,6 +1882,10 @@ export default function Tickets() {
                   <button className={`detalle-tab ${activeTab === 'notas' ? 'active' : ''}`} onClick={() => switchTab('notas')}>
                     <i className="fas fa-sticky-note"></i> Notas privadas
                   </button>
+                  <button className={`detalle-tab ${activeTab === 'horas' ? 'active' : ''}`} onClick={() => switchTab('horas')}>
+                    <i className="fas fa-business-time"></i> Horas
+                    {(ticketActual.ticket_horas || []).length > 0 && <span className="tab-badge">{(ticketActual.ticket_horas || []).length}</span>}
+                  </button>
                 </div>
 
                 {activeTab === 'notas' && (
@@ -1867,6 +1895,99 @@ export default function Tickets() {
                       <span ref={notasGuardado} style={{ fontSize: '0.8rem', color: 'var(--primary)' }}></span>
                     </div>
                     <textarea className="notas-textarea" placeholder="Escribe notas privadas aquí..." value={notasValue} onChange={onNotasChange} />
+                  </div>
+                )}
+
+                {activeTab === 'horas' && (
+                  <div className="tab-panel" style={{ overflow: 'auto' }}>
+                    {/* Formulario */}
+                    <form onSubmit={async (e) => {
+                      e.preventDefault()
+                      const fd = new FormData(e.target)
+                      const fecha_inicio = fd.get('fecha_inicio')
+                      const fecha_fin = fd.get('fecha_fin')
+                      const descripcion = fd.get('descripcion')
+                      if (!fecha_inicio || !fecha_fin) return
+                      try {
+                        await createTicketHoras(ticketActual.id, { fecha_inicio, fecha_fin, descripcion })
+                        const fresh = await getTicket(ticketActual.id)
+                        setTicketActual(fresh)
+                        e.target.reset()
+                      } catch (err) { alert(err.message) }
+                    }} style={{ padding: '14px', background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                        <div style={{ flex: '1 1 170px', minWidth: 0 }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--gray)', display: 'block', marginBottom: 4 }}>Inicio</label>
+                          <input type="datetime-local" name="fecha_inicio" required style={{ width: '100%', fontSize: '0.82rem', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
+                        </div>
+                        <div style={{ flex: '1 1 170px', minWidth: 0 }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--gray)', display: 'block', marginBottom: 4 }}>Fin</label>
+                          <input type="datetime-local" name="fecha_fin" required style={{ width: '100%', fontSize: '0.82rem', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
+                        </div>
+                        <div style={{ flex: '2 1 200px', minWidth: 0 }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--gray)', display: 'block', marginBottom: 4 }}>Descripción (opcional)</label>
+                          <input type="text" name="descripcion" placeholder="Qué se hizo..." style={{ width: '100%', fontSize: '0.82rem', padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
+                        </div>
+                        <button type="submit" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.82rem', borderRadius: 8, whiteSpace: 'nowrap', height: 34 }}>
+                          <i className="fas fa-plus"></i> Añadir
+                        </button>
+                      </div>
+                    </form>
+
+                    {/* Lista */}
+                    {(ticketActual.ticket_horas || []).length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--gray)' }}>
+                        <i className="fas fa-business-time" style={{ fontSize: '2rem', marginBottom: 10, display: 'block', opacity: 0.4 }}></i>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>No hay horas registradas</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {[...(ticketActual.ticket_horas || [])].sort((a, b) => a.fecha_inicio > b.fecha_inicio ? -1 : 1).map(h => {
+                          const op = (ticketActual.ticket_asignaciones || []).find(a => a.user_id === h.user_id)
+                          const ms = new Date(h.fecha_fin) - new Date(h.fecha_inicio)
+                          const hrs = Math.round(ms / 36e5 * 100) / 100
+                          const fmtDt = (iso) => new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                          const nombre = op?.profiles?.nombre || h.profiles?.nombre || '—'
+                          return (
+                            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--card-bg)' }}>
+                              <div style={{ width: 36, height: 36, borderRadius: '50%', background: getAvatarColor(h.user_id), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>{getInitials(nombre)}</span>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)' }}>{hrs}h</span>
+                                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text)' }}>{nombre}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: '0.75rem', color: 'var(--gray)' }}>
+                                  <i className="fas fa-arrow-right" style={{ fontSize: '0.55rem' }}></i>
+                                  <span>{fmtDt(h.fecha_inicio)}</span>
+                                  <span style={{ opacity: 0.4 }}>→</span>
+                                  <span>{fmtDt(h.fecha_fin)}</span>
+                                </div>
+                                {h.descripcion && <div style={{ fontSize: '0.78rem', color: 'var(--gray)', marginTop: 3 }}>{h.descripcion}</div>}
+                              </div>
+                              {h.user_id === user?.id && (
+                                <button onClick={async () => {
+                                  if (!confirm('¿Eliminar este registro?')) return
+                                  await deleteTicketHoras(ticketActual.id, h.id)
+                                  const fresh = await getTicket(ticketActual.id)
+                                  setTicketActual(fresh)
+                                }} className="btn-icon" title="Eliminar" style={{ opacity: 0.5, transition: 'opacity 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>
+                                  <i className="fas fa-trash" style={{ color: '#dc2626', fontSize: '0.75rem' }}></i>
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                        {/* Total */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, padding: '10px 14px', borderTop: '2px solid var(--border)', marginTop: 4 }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--gray)', fontWeight: 600 }}>Total</span>
+                          <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>
+                            {Math.round((ticketActual.ticket_horas || []).reduce((s, h) => s + Math.max(0, (new Date(h.fecha_fin) - new Date(h.fecha_inicio)) / 36e5), 0) * 100) / 100}h
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2003,7 +2124,7 @@ export default function Tickets() {
   // ============================================================
   // VISTA LISTA
   // ============================================================
-  const ESTADOS_ABIERTOS = ['Pendiente', 'En curso']
+  const ESTADOS_ABIERTOS = ['Pendiente', 'En curso', 'Pausado']
   const ESTADOS_CERRADOS = ['Completado', 'Pendiente de facturar', 'Facturado']
 
   // Stats computed directly from allTickets — always fresh, no calcStats dependency
@@ -2222,7 +2343,7 @@ export default function Tickets() {
                         <td><div className="avatares-operarios">{asignados.length === 0 ? <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>Sin asignar</span> : asignados.map(a => { const n = a.profiles?.nombre || '?'; return <div key={a.user_id} className="avatar-operario" style={{ background: getAvatarColor(a.user_id) }} title={n}>{getInitials(n)}</div> })}</div></td>
                         <td><PrioridadBadge p={t.prioridad} /></td>
                         <td><EstadoBadge e={t.estado} /></td>
-                        <td style={{ fontWeight: 600, color: 'var(--gray)', fontSize: '0.82rem' }}>{formatHoras(t.horas_transcurridas || 0)}<i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i></td>
+                        <td style={{ fontWeight: 600, color: getTiempoTicket(t).color, fontSize: '0.82rem' }}>{formatHoras(getTiempoTicket(t).horas)}<i className={`fas ${getTiempoTicket(t).icon}`} style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i></td>
                         <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                         <td onClick={e => e.stopPropagation()}>
                           <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
@@ -2252,7 +2373,7 @@ export default function Tickets() {
                     <div className="ticket-card-meta">
                       <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
                       {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
-                      <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)}</span>
+                      <span style={{ color: getTiempoTicket(t).color }}><i className={`fas ${getTiempoTicket(t).icon}`}></i> {formatHoras(getTiempoTicket(t).horas)}</span>
                     </div>
                   </div>
                 )
@@ -2321,7 +2442,7 @@ export default function Tickets() {
                                 </td>
                                 <td><PrioridadBadge p={t.prioridad} /></td>
                                 <td><EstadoBadge e={t.estado} /></td>
-                                <td style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.82rem' }}>{formatHoras(t.horas_transcurridas || 0)}</td>
+                                <td style={{ fontWeight: 600, color: getTiempoTicket(t).color, fontSize: '0.82rem' }}>{formatHoras(getTiempoTicket(t).horas)}{(t.estado === 'Pausado' || t.estado === 'Pendiente') && <i className="fas fa-pause" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>}</td>
                                 <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                                 <td onClick={e => e.stopPropagation()}>
                                   <button className="btn-action btn-edit" onClick={() => abrirModalEditarTicket(t)} title="Editar"><i className="fas fa-edit"></i></button>
@@ -2352,7 +2473,7 @@ export default function Tickets() {
                             <div className="ticket-card-meta">
                               <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
                               {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
-                              <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)}</span>
+                              <span style={{ color: getTiempoTicket(t).color }}><i className={`fas ${getTiempoTicket(t).icon}`}></i> {formatHoras(getTiempoTicket(t).horas)}</span>
                             </div>
                           </div>
                         )
@@ -2408,9 +2529,9 @@ export default function Tickets() {
                         </td>
                         <td><PrioridadBadge p={t.prioridad} /></td>
                         <td><EstadoBadge e={t.estado} /></td>
-                        <td style={{ fontWeight: 600, color: ESTADOS_CERRADOS.includes(t.estado) ? 'var(--gray)' : 'var(--primary)', fontSize: '0.82rem' }}>
-                          {formatHoras(t.horas_transcurridas || 0)}
-                          {ESTADOS_CERRADOS.includes(t.estado) && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>}
+                        <td style={{ fontWeight: 600, color: getTiempoTicket(t).color, fontSize: '0.82rem' }}>
+                          {formatHoras(getTiempoTicket(t).horas)}
+                          <i className={`fas ${getTiempoTicket(t).icon}`} style={{ fontSize: '0.7rem', opacity: 0.5, marginLeft: '4px' }}></i>
                         </td>
                         <td style={{ color: 'var(--gray)', fontSize: '0.82rem' }}>{formatFechaCorta(t.created_at)}</td>
                         <td onClick={e => e.stopPropagation()}>
@@ -2445,7 +2566,7 @@ export default function Tickets() {
                     <div className="ticket-card-meta">
                       <span><i className="fas fa-building"></i> {t.empresas?.nombre || '—'}</span>
                       {nombresOps && <span><i className="fas fa-user"></i> {nombresOps}</span>}
-                      <span><i className="fas fa-clock"></i> {formatHoras(t.horas_transcurridas || 0)} {ESTADOS_CERRADOS.includes(t.estado) && <i className="fas fa-lock" style={{ fontSize: '0.7rem', opacity: 0.5 }}></i>}</span>
+                      <span style={{ color: getTiempoTicket(t).color }}><i className={`fas ${getTiempoTicket(t).icon}`}></i> {formatHoras(getTiempoTicket(t).horas)}</span>
                     </div>
                   </div>
                 )

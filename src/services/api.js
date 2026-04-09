@@ -73,6 +73,8 @@ export async function createTicket(data)       { return apiFetch('/api/v2/ticket
 export async function updateTicket(id, data)   { return apiFetch(`/api/v2/tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) }) }
 export async function deleteTicket(id)         { return apiFetch(`/api/v2/tickets/${id}`, { method: 'DELETE' }) }
 export async function updateTicketNotas(id, notas) { return apiFetch(`/api/v2/tickets/${id}/notas`, { method: 'PUT', body: JSON.stringify({ notas }) }) }
+export async function createTicketHoras(ticketId, data) { return apiFetch(`/api/v2/tickets/${ticketId}/horas`, { method: 'POST', body: JSON.stringify(data) }) }
+export async function deleteTicketHoras(ticketId, horaId) { return apiFetch(`/api/v2/tickets/${ticketId}/horas/${horaId}`, { method: 'DELETE' }) }
 
 export async function getTicketComentarios(ticketId) { return apiFetch(`/api/v2/tickets/${ticketId}/comentarios`) }
 

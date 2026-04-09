@@ -969,6 +969,7 @@ export default function Tickets() {
   const [showInfoDrawer, setShowInfoDrawer]               = useState(false)
 
   const [mostrarCerrados, setMostrarCerrados] = useState(false)
+  const prevFiltros = useRef({ operarioFilter: 'all', estadoFilter: '' })
   const [collapsedGroups, setCollapsedGroups] = useState(new Set())
   const toggleGrupo = id => setCollapsedGroups(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
@@ -2185,7 +2186,8 @@ export default function Tickets() {
 
   // Total tickets (vista paginada con filtros: operario, número, empresa, fecha)
   const ticketsTotal = allTickets.filter(t => {
-    if (operarioFilter !== 'all' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
+    if (operarioFilter === '__sin__' && (t.ticket_asignaciones || []).length > 0) return false
+    if (operarioFilter !== 'all' && operarioFilter !== '__sin__' && !(t.ticket_asignaciones || []).some(a => a.user_id === operarioFilter)) return false
     if (empresaFilter !== 'all' && t.empresa_id !== empresaFilter) return false
     if (searchTerm && !String(t.numero).includes(searchTerm.trim())) return false
     if (filtroDesde && new Date(t.created_at) < new Date(filtroDesde)) return false
@@ -2211,14 +2213,14 @@ export default function Tickets() {
               <button
                 className={`btn-sm${!mostrarCerrados ? ' btn-primary' : ' btn-secondary'}`}
                 style={{ borderRadius: 0, border: 'none' }}
-                onClick={() => setMostrarCerrados(false)}
+                onClick={() => { setMostrarCerrados(false); setOperarioFilter(prevFiltros.current.operarioFilter); setEstadoFilter(prevFiltros.current.estadoFilter) }}
               >
                 <i className="fas fa-list-ul"></i> Tickets
               </button>
               <button
                 className={`btn-sm${mostrarCerrados ? ' btn-primary' : ' btn-secondary'}`}
                 style={{ borderRadius: 0, border: 'none', borderLeft: '1px solid var(--border)' }}
-                onClick={() => setMostrarCerrados(true)}
+                onClick={() => { prevFiltros.current = { operarioFilter, estadoFilter }; setMostrarCerrados(true); setOperarioFilter('all'); setEstadoFilter('') }}
               >
                 <i className="fas fa-th-list"></i> Total tickets
               </button>

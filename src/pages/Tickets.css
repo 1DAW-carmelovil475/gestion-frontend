@@ -95,7 +95,7 @@
 
 .estado-Pendiente              { background: #fef3c7; color: #d97706; }
 .estado-En-curso               { background: #dbeafe; color: #2563eb; }
-.estado-Pausado                { background: #f1f5f9; color: #64748b; }
+.estado-Pausado                { background: transparent; color: #64748b; border: 1.5px solid #94a3b8; }
 .estado-Completado             { background: #d1fae5; color: #059669; }
 .estado-Pendiente-de-facturar  { background: #fff7ed; color: #ea580c; }
 .estado-Facturado              { background: #ede9fe; color: #7c3aed; }

@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentación Técnica - Hola Informática</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --primary: #0047b3;
+    --primary-dark: #003a91;
+    --primary-light: #e8f0fe;
+    --accent: #1a73e8;
+    --bg: #ffffff;
+    --dark: #1a1a2e;
+    --gray-900: #202124;
+    --gray-700: #3c4043;
+    --gray-500: #5f6368;
+    --gray-300: #dadce0;
+    --gray-100: #f1f3f4;
+    --green: #0d904f;
+    --green-bg: #e6f4ea;
+    --orange: #e37400;
+    --orange-bg: #fef7e0;
+    --red: #c5221f;
+    --red-bg: #fce8e6;
+    --purple: #7c3aed;
+    --purple-bg: #f3e8ff;
+    --cyan: #0891b2;
+    --cyan-bg: #e0f7fa;
+  }
+
+  /* ── DARK MODE ──────────────────────────── */
+  [data-theme="dark"] {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: rgba(96,165,250,0.15);
+    --accent: #60a5fa;
+    --bg: #0f172a;
+    --dark: #e2e8f0;
+    --gray-900: #e2e8f0;
+    --gray-700: #cbd5e1;
+    --gray-500: #94a3b8;
+    --gray-300: #334155;
+    --gray-100: #1e293b;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.12);
+    --orange: #f59e0b;
+    --orange-bg: rgba(245,158,11,0.12);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.12);
+    --purple: #a78bfa;
+    --purple-bg: rgba(167,139,250,0.12);
+    --cyan: #22d3ee;
+    --cyan-bg: rgba(34,211,238,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--gray-900);
+    line-height: 1.7;
+    font-size: 11pt;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 24px;
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ── CUSTOM SCROLLBAR ───────────────────── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c1c9d4; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+  [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #334155; }
+  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  html { scrollbar-color: #c1c9d4 transparent; scrollbar-width: thin; }
+  [data-theme="dark"] html { scrollbar-color: #334155 transparent; }
+
+  /* ── SEARCH HIGHLIGHTS ──────────────────── */
+  .search-highlight { background: #ffe066; border-radius: 2px; padding: 0 1px; }
+  .search-highlight-active { background: #ff9800; color: #fff; border-radius: 2px; padding: 0 1px; }
+  [data-theme="dark"] .search-highlight { background: #854d0e; color: #fef3c7; }
+  [data-theme="dark"] .search-highlight-active { background: #f59e0b; color: #1e293b; }
+
+  /* ── DARK MODE CONTENT ──────────────────── */
+  [data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+  [data-theme="dark"] pre { background: #0f172a; border: 1px solid #334155; }
+  [data-theme="dark"] thead th { background: #1e3a5f; color: #e2e8f0; }
+  [data-theme="dark"] tbody td { border-bottom-color: #334155; }
+  [data-theme="dark"] tbody tr:nth-child(even) { background: #1e293b; }
+  [data-theme="dark"] tbody tr:hover { background: rgba(96,165,250,0.1); }
+  [data-theme="dark"] td code, [data-theme="dark"] th code { background: #334155; color: #f87171; }
+  [data-theme="dark"] p code, [data-theme="dark"] li code { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  [data-theme="dark"] .flow { background: #1e293b; }
+  [data-theme="dark"] .flow-step { background: #0f172a; border-color: #334155; color: var(--gray-700); }
+  [data-theme="dark"] .arch-box { background: #0f172a; border-color: var(--primary); }
+  [data-theme="dark"] .er-container { background: #1e293b; }
+  [data-theme="dark"] .er-table { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+  [data-theme="dark"] .cover-divider span { background: #334155; }
+  [data-theme="dark"] .cover-chip { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+  [data-theme="dark"] .cover { border-bottom-color: #334155; }
+  [data-theme="dark"] .footer { border-top-color: #334155; }
+  [data-theme="dark"] h2 { color: #e2e8f0; border-bottom-color: #334155; }
+  [data-theme="dark"] h3 { color: #cbd5e1; }
+  [data-theme="dark"] h4 { color: #60a5fa; }
+  [data-theme="dark"] li strong { color: #e2e8f0; }
+  [data-theme="dark"] a { color: #60a5fa; }
+  [data-theme="dark"] .toc-list li { border-bottom-color: #334155; }
+  [data-theme="dark"] .toc-list li a { color: #e2e8f0; }
+  [data-theme="dark"] .toc-list li a:hover { color: #60a5fa; }
+
+  /* Badges dark mode — higher contrast backgrounds */
+  [data-theme="dark"] .badge-red { background: rgba(248,113,113,0.2); color: #fca5a5; }
+  [data-theme="dark"] .badge-purple { background: rgba(167,139,250,0.2); color: #c4b5fd; }
+  [data-theme="dark"] .badge-blue { background: rgba(96,165,250,0.2); color: #93c5fd; }
+  [data-theme="dark"] .badge-green { background: rgba(34,197,94,0.2); color: #86efac; }
+  [data-theme="dark"] .badge-orange { background: rgba(245,158,11,0.2); color: #fcd34d; }
+  [data-theme="dark"] .badge-cyan { background: rgba(34,211,238,0.2); color: #67e8f9; }
+  [data-theme="dark"] .badge-gray { background: rgba(148,163,184,0.2); color: #cbd5e1; }
+  /* Badges inside thead need even more contrast */
+  [data-theme="dark"] thead .badge { font-weight: 700; }
+
+  /* Perm icons dark mode */
+  [data-theme="dark"] .perm-no { color: #475569; }
+
+  /* Info boxes dark mode */
+  [data-theme="dark"] .box-blue { background: rgba(96,165,250,0.1); border-color: #3b82f6; }
+  [data-theme="dark"] .box-green { background: rgba(34,197,94,0.1); border-color: #22c55e; }
+  [data-theme="dark"] .box-orange { background: rgba(245,158,11,0.1); border-color: #f59e0b; }
+  [data-theme="dark"] .box-red { background: rgba(248,113,113,0.1); border-color: #f87171; }
+  [data-theme="dark"] .box-purple { background: rgba(167,139,250,0.1); border-color: #a78bfa; }
+
+  /* ── PORTADA ─────────────────────────────── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 36px 24px 28px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--gray-300);
+  }
+  .cover-logo {
+    font-size: 24pt;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
+  }
+  .cover-sub {
+    font-size: 8.5pt;
+    color: var(--gray-500);
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .cover-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    width: 200px;
+  }
+  .cover-divider span { flex: 1; height: 1px; background: var(--gray-300); }
+  .cover-divider i { color: var(--primary); font-size: 0.85rem; }
+  .cover-title {
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .cover-subtitle {
+    font-size: 10pt;
+    color: var(--gray-500);
+    font-weight: 400;
+    margin-bottom: 20px;
+  }
+  .cover-meta-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .cover-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    border-radius: 16px;
+    font-size: 7.5pt;
+    font-weight: 500;
+    color: var(--gray-700);
+  }
+  .cover-chip i { color: var(--primary); font-size: 0.65rem; }
+
+  /* ── SECTION CARDS ──────────────────────── */
+  .section-card {
+    background: #fff;
+    border: 1px solid var(--gray-300);
+    border-radius: 12px;
+    padding: 32px 36px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .section-card h1 {
+    margin-top: 0;
+    page-break-before: auto;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 10px;
+    margin-bottom: 24px;
+  }
+  .section-card h2 { margin-top: 28px; }
+  .section-card h2:first-of-type { margin-top: 0; }
+  [data-theme="dark"] .section-card {
+    background: #1e293b;
+    border-color: #2d3f5c;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  /* ── INDICE ──────────────────────────────── */
+  .toc {
+    page-break-after: always;
+    padding: 40px 0;
+  }
+  .toc h1 {
+    font-size: 18pt;
+    color: var(--primary);
+    margin-bottom: 24px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary);
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    list-style: none;
+  }
+  .toc-grid li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid var(--gray-300);
+    border-radius: 10px;
+    color: var(--gray-900);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 10pt;
+    transition: all 0.18s;
+  }
+  .toc-grid li a:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .toc-grid .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 9pt;
+    flex-shrink: 0;
+  }
+  .toc-grid .toc-icon {
+    color: var(--gray-500);
+    font-size: 0.8rem;
+    width: 16px;
+    text-align: center;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  [data-theme="dark"] .toc-grid li a {
+    background: #1e293b;
+    border-color: #2d3f5c;
+    color: #e2e8f0;
+  }
+  [data-theme="dark"] .toc-grid li a:hover {
+    border-color: #3b82f6;
+    background: rgba(96,165,250,0.1);
+    color: #93c5fd;
+  }
+
+  /* ── HEADINGS ────────────────────────────── */
+  h1 {
+    font-size: 20pt;
+    font-weight: 800;
+    color: var(--primary);
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary);
+  }
+
+  h2 {
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--dark);
+    margin-top: 35px;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--gray-300);
+  }
+
+  h3 {
+    font-size: 12pt;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+
+  h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+
+  /* ── PARAGRAPH ───────────────────────────── */
+  p {
+    margin-bottom: 12px;
+    text-align: justify;
+  }
+
+  /* ── TABLES ──────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 9.5pt;
+  }
+  thead th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 9.5pt;
+    letter-spacing: 0.3px;
+  }
+  thead th:first-child { border-radius: 6px 0 0 0; }
+  thead th:last-child { border-radius: 0 6px 0 0; }
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--gray-300);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: var(--gray-100); }
+  tbody tr:hover { background: var(--primary-light); }
+  td code, th code {
+    background: var(--gray-100);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 9pt;
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: var(--red);
+  }
+  .center { text-align: center; }
+
+  /* ── CODE BLOCKS ─────────────────────────── */
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 20px 24px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9pt;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 16px 0 24px;
+  }
+
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9.5pt;
+  }
+
+  /* ── INLINE CODE ─────────────────────────── */
+  p code, li code {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9.5pt;
+  }
+
+  /* ── LISTS ───────────────────────────────── */
+  ul, ol {
+    margin: 8px 0 16px 24px;
+  }
+  li {
+    margin-bottom: 5px;
+  }
+  li strong {
+    color: var(--gray-900);
+  }
+
+  /* ── INFO BOXES ──────────────────────────── */
+  .box {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0 24px;
+    border-left: 4px solid;
+  }
+  .box-blue { background: var(--primary-light); border-color: var(--accent); }
+  .box-green { background: var(--green-bg); border-color: var(--green); }
+  .box-orange { background: var(--orange-bg); border-color: var(--orange); }
+  .box-red { background: var(--red-bg); border-color: var(--red); }
+  .box-purple { background: var(--purple-bg); border-color: var(--purple); }
+  .box p { margin-bottom: 4px; }
+  .box-title {
+    font-weight: 700;
+    font-size: 10pt;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── BADGES ──────────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 8.5pt;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-blue { background: var(--primary-light); color: var(--primary); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-orange { background: var(--orange-bg); color: var(--orange); }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); }
+  .badge-cyan { background: var(--cyan-bg); color: var(--cyan); }
+  .badge-gray { background: var(--gray-100); color: var(--gray-500); }
+
+  /* ── FLOW DIAGRAMS ──────────────────────── */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 24px;
+    padding: 20px;
+    background: var(--gray-100);
+    border-radius: 8px;
+  }
+  .flow-step {
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 9pt;
+    text-align: center;
+    min-width: 100px;
+  }
+  .flow-step.active { border-color: var(--accent); color: var(--accent); }
+  .flow-step.green { border-color: var(--green); color: var(--green); }
+  .flow-step.orange { border-color: var(--orange); color: var(--orange); }
+  .flow-step.purple { border-color: var(--purple); color: var(--purple); }
+  .flow-arrow {
+    font-size: 16pt;
+    color: var(--gray-500);
+    font-weight: 300;
+  }
+
+  /* ── ARCHITECTURE ────────────────────────── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr 60px 1fr;
+    gap: 0;
+    align-items: center;
+    margin: 20px 0 30px;
+  }
+  .arch-box {
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .arch-box h4 { color: var(--primary); margin-bottom: 6px; font-size: 11pt; }
+  .arch-box p { font-size: 9pt; color: var(--gray-500); margin: 0; text-align: center; }
+  .arch-connector {
+    text-align: center;
+    font-size: 20pt;
+    color: var(--primary);
+  }
+
+  /* ── SECTION NUMBER ──────────────────────── */
+  .section-num {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13pt;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  /* ── PERMISSIONS TABLE ───────────────────── */
+  .perm-yes {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 13pt;
+  }
+  .perm-no {
+    color: var(--gray-300);
+    font-size: 13pt;
+  }
+
+  /* ── FOOTER ──────────────────────────────── */
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 2px solid var(--gray-300);
+    text-align: center;
+    font-size: 9pt;
+    color: var(--gray-500);
+  }
+
+  /* ── HR ───────────────────────────────────── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--gray-300);
+    margin: 30px 0;
+  }
+
+  /* ── PAGE BREAK HELPER ───────────────────── */
+  .page-break { page-break-before: always; }
+
+  /* ── ER DIAGRAM ──────────────────────────── */
+  .er-container {
+    background: var(--gray-100);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .er-group {
+    margin-bottom: 16px;
+  }
+  .er-group-title {
+    font-weight: 700;
+    font-size: 9.5pt;
+    color: var(--primary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .er-tables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .er-table {
+    background: white;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 8.5pt;
+    font-weight: 500;
+    font-family: 'Consolas', monospace;
+  }
+</style>
+<script>
+  // Sync theme from parent app
+  (function() {
+    var saved = localStorage.getItem('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'theme-change') {
+        document.documentElement.setAttribute('data-theme', e.data.theme);
+      }
+    });
+  })();
+</script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- PORTADA                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">Hola Informática</div>
+  <div class="cover-sub">Informática &amp; Mantenimiento</div>
+  <div class="cover-divider"><span></span><i class="fas fa-book"></i><span></span></div>
+  <div class="cover-title">Documentación Técnica y Funcional</div>
+  <div class="cover-subtitle">Plataforma de Gestión Integral</div>
+  <div class="cover-meta-row">
+    <span class="cover-chip"><i class="fas fa-code-branch"></i> v1.0</span>
+    <span class="cover-chip"><i class="fas fa-calendar-alt"></i> Abril 2026</span>
+    <span class="cover-chip"><i class="fas fa-file-alt"></i> Técnico y funcional</span>
+    <span class="cover-chip"><i class="fas fa-lock"></i> Uso interno</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- INDICE                                                                    -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="toc">
+  <h1>Índice de Contenidos</h1>
+  <ol class="toc-grid">
+    <li><a href="#sec1"><span class="toc-num">1</span> Introducción y Visión General <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec2"><span class="toc-num">2</span> Arquitectura del Sistema <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec3"><span class="toc-num">3</span> Tecnologías Utilizadas <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec4"><span class="toc-num">4</span> Base de Datos <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec5"><span class="toc-num">5</span> Autenticación y Seguridad <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec6"><span class="toc-num">6</span> Roles de Usuario y Permisos <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec7"><span class="toc-num">7</span> Navegación y Estructura <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec8"><span class="toc-num">8</span> Inicio de Sesión <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec9"><span class="toc-num">9</span> Dashboard <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec10"><span class="toc-num">10</span> Gestión de Tickets <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec11"><span class="toc-num">11</span> Gestión de Usuarios <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec12"><span class="toc-num">12</span> Estadísticas y Analíticas <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec13"><span class="toc-num">13</span> Sistema de Chat <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec14"><span class="toc-num">14</span> Portal de Clientes <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec15"><span class="toc-num">15</span> Notificaciones <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec16"><span class="toc-num">16</span> Temas y Personalización <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec17"><span class="toc-num">17</span> API REST <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec18"><span class="toc-num">18</span> Flujos de Trabajo <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec19"><span class="toc-num">19</span> Funcionalidades Avanzadas <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec20"><span class="toc-num">20</span> Diseño Responsive <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec21"><span class="toc-num">21</span> Despliegue y Configuración <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec22"><span class="toc-num">22</span> Preguntas Frecuentes <i class="fas fa-chevron-right toc-icon"></i></a></li>
+    <li><a href="#sec23"><span class="toc-num">23</span> Glosario de Términos <i class="fas fa-chevron-right toc-icon"></i></a></li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 1. INTRODUCCIÓN                                                           -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec1"><span class="section-num">1</span> Introducción y Vision General</h1>
+
+<h2>1.1 Proposito del Sistema</h2>
+<p>
+  <strong>Hola Informática</strong> es una plataforma web integral de gestión empresarial diseñada especificamente para empresas de servicios informaticos. El sistema permite gestionar de forma centralizada todos los aspectos operativos del negocio: empresas clientes, inventario de dispositivos, tickets de soporte técnico, registro de horas de trabajo, comunicación interna mediante chat y análisis estadístico del rendimiento del equipo.
+</p>
+
+<div class="box box-blue">
+  <div class="box-title">Objetivo principal</div>
+  <p>Centralizar la gestión operativa de una empresa de servicios IT en una unica plataforma accesible desde navegador web, ofreciendo interfaces diferenciadas para el equipo interno y los clientes externos.</p>
+</div>
+
+<h2>1.2 Alcance Funcional</h2>
+<p>La plataforma abarca las siguientes areas funcionales:</p>
+
+<table>
+  <thead>
+    <tr><th>Area</th><th>Descripción</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Gestión de empresas</strong></td><td>Alta, modificación y seguimiento de empresas cliente con sus contactos, servicios contratados y relaciones matriz-filial.</td></tr>
+    <tr><td><strong>Inventario de dispositivos</strong></td><td>Catalogación completa de equipos, servidores, NAS, redes, correos, webs y otros activos tecnologicos de cada empresa.</td></tr>
+    <tr><td><strong>Sistema de tickets</strong></td><td>Creación, asignación, seguimiento y resolución de incidencias con registro de tiempo, comentarios, archivos adjuntos e historial completo.</td></tr>
+    <tr><td><strong>Portal para clientes</strong></td><td>Interfaz simplificada donde los clientes externos crean incidencias y hacen seguimiento de sus peticiones.</td></tr>
+    <tr><td><strong>Chat corporativo</strong></td><td>Mensajeria interna (admin, gestor y trabajador) con canales grupales, mensajes directos, archivos, menciones y notificaciones.</td></tr>
+    <tr><td><strong>Estadisticas</strong></td><td>Panel de análisis con graficas interactivas sobre rendimiento de operarios, volumen de tickets y evolución temporal.</td></tr>
+    <tr><td><strong>Gestión de usuarios</strong></td><td>Administración de cuentas con sistema de roles y permisos diferenciados.</td></tr>
+  </tbody>
+</table>
+
+<h2>1.3 Usuarios Objetivo</h2>
+<table>
+  <thead>
+    <tr><th>Rol</th><th>Perfil</th><th>Acceso principal</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span class="badge badge-red">Administrador</span></td><td>Responsable IT o gerente</td><td>Acceso total: usuarios, estadisticas, configuración completa</td></tr>
+    <tr><td><span class="badge badge-purple">Gestor</span></td><td>Coordinador de equipo</td><td>Acceso total (como admin). Recibe emails de incidencias de clientes. Único rol que puede pasar tickets a &ldquo;Pendiente de facturar&rdquo;</td></tr>
+    <tr><td><span class="badge badge-blue">Trabajador</span></td><td>Técnico de soporte</td><td>Dashboard, tickets asignados, chat interno</td></tr>
+    <tr><td><span class="badge badge-green">Cliente</span></td><td>Usuario externo de empresa cliente</td><td>Portal de incidencias (sin acceso al sistema interno)</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 2. ARQUITECTURA                                                           -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec2"><span class="section-num">2</span> Arquitectura del Sistema</h1>
+
+<h2>2.1 Diagrama de Arquitectura</h2>
+<p>El sistema sigue una arquitectura de tres capas:</p>
+
+<div class="arch-grid">
+  <div class="arch-box">
+    <h4>FRONTEND</h4>
+    <p>React 18 + Vite</p>
+    <p>Single Page Application</p>
+  </div>
+  <div class="arch-connector">&harr;</div>
+  <div class="arch-box">
+    <h4>BACKEND</h4>
+    <p>Node.js + Express</p>
+    <p>API REST</p>
+  </div>
+  <div class="arch-connector">&harr;</div>
+  <div class="arch-box">
+    <h4>BASE DE DATOS</h4>
+    <p>Supabase (PostgreSQL)</p>
+    <p>Auth + Storage</p>
+  </div>
+</div>
+
+<h2>2.2 Frontend</h2>
+<ul>
+  <li><strong>Tipo:</strong> Single Page Application (SPA)</li>
+  <li><strong>Framework:</strong> React 18.2 con Vite 5.0 como bundler</li>
+  <li><strong>Enrutamiento:</strong> React Router DOM v6 con rutas protegidas por rol</li>
+  <li><strong>Gestión de estado:</strong> React Context API con tres contextos: <code>AuthContext</code>, <code>ThemeContext</code> y <code>ChatNotificationsContext</code></li>
+  <li><strong>Comunicación con backend:</strong> Fetch API nativa con wrapper personalizado (<code>apiFetch</code>) que inyecta tokens JWT y gestiona su renovación automática</li>
+</ul>
+
+<h2>2.3 Backend</h2>
+<ul>
+  <li><strong>Framework:</strong> Express.js 4.21 sobre Node.js</li>
+  <li><strong>Arquitectura:</strong> API REST organizada en rutas modulares con middleware de autenticación</li>
+  <li><strong>Subida de archivos:</strong> Multer para gestión de multipart/form-data</li>
+  <li><strong>Email:</strong> Nodemailer para notificaciones automáticas por correo</li>
+  <li><strong>Exportación:</strong> XLSX para generación de archivos Excel</li>
+</ul>
+
+<h2>2.4 Base de Datos y Servicios Cloud</h2>
+<ul>
+  <li><strong>Base de datos:</strong> PostgreSQL gestionada por Supabase</li>
+  <li><strong>Autenticación:</strong> Supabase Auth (generación y validación de JWT)</li>
+  <li><strong>Almacenamiento:</strong> Supabase Storage (bucket <code>ticket-archivos</code>)</li>
+  <li><strong>SDK:</strong> Supabase JS v2.49 en el backend</li>
+</ul>
+
+<h2>2.5 Aplicación Movil</h2>
+<p>Existe adicionalmente un proyecto de aplicación movil (<code>gestión-frontend-movil</code>) desarrollado con React Native, que ofrece acceso a las funcionalidades principales desde dispositivos iOS y Android.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 3. TECNOLOGIAS                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec3"><span class="section-num">3</span> Tecnologias Utilizadas</h1>
+
+<h2>3.1 Dependencias del Frontend</h2>
+<table>
+  <thead><tr><th>Tecnologia</th><th>Version</th><th>Función</th></tr></thead>
+  <tbody>
+    <tr><td>React</td><td>18.2.0</td><td>Biblioteca principal de interfaz de usuario</td></tr>
+    <tr><td>React Router DOM</td><td>6.20.0</td><td>Enrutamiento SPA con rutas protegidas</td></tr>
+    <tr><td>Vite</td><td>5.0.0</td><td>Build tool y servidor de desarrollo rápido</td></tr>
+    <tr><td>Recharts</td><td>3.7.0</td><td>Graficas y visualizaciones interactivas</td></tr>
+    <tr><td>XLSX</td><td>0.18.5</td><td>Exportación de datos a formato Excel</td></tr>
+    <tr><td>Font Awesome</td><td>6.4.0</td><td>Iconografia completa del sistema</td></tr>
+  </tbody>
+</table>
+
+<h2>3.2 Dependencias del Backend</h2>
+<table>
+  <thead><tr><th>Tecnologia</th><th>Version</th><th>Función</th></tr></thead>
+  <tbody>
+    <tr><td>Node.js</td><td>&mdash;</td><td>Entorno de ejecución JavaScript en servidor</td></tr>
+    <tr><td>Express</td><td>4.21.2</td><td>Framework HTTP para la API REST</td></tr>
+    <tr><td>Supabase JS</td><td>2.49.1</td><td>Cliente de base de datos, autenticación y storage</td></tr>
+    <tr><td>Multer</td><td>2.0.2</td><td>Gestión de subida de archivos (multipart)</td></tr>
+    <tr><td>Nodemailer</td><td>8.0.1</td><td>Envio de correos electronicos automatizados</td></tr>
+    <tr><td>XLSX</td><td>0.18.5</td><td>Procesamiento de archivos Excel</td></tr>
+    <tr><td>dotenv</td><td>16.4.5</td><td>Gestión de variables de entorno</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 4. BASE DE DATOS                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec4"><span class="section-num">4</span> Base de Datos</h1>
+
+<h2>4.1 Vision General del Modelo de Datos</h2>
+<p>La base de datos esta alojada en Supabase (PostgreSQL) y consta de <strong>16 tablas principales</strong> organizadas en los siguientes dominios:</p>
+
+<div class="er-container">
+  <div class="er-group">
+    <div class="er-group-title">Gestión Empresarial</div>
+    <div class="er-tables">
+      <span class="er-table">empresas</span>
+      <span class="er-table">dispositivos</span>
+    </div>
+  </div>
+  <div class="er-group">
+    <div class="er-group-title">Sistema de Tickets</div>
+    <div class="er-tables">
+      <span class="er-table">tickets_v2</span>
+      <span class="er-table">ticket_asignaciones</span>
+      <span class="er-table">ticket_comentarios</span>
+      <span class="er-table">ticket_comentarios_archivos</span>
+      <span class="er-table">ticket_mensajes</span>
+      <span class="er-table">ticket_archivos</span>
+      <span class="er-table">ticket_horas</span>
+      <span class="er-table">ticket_historial</span>
+    </div>
+  </div>
+  <div class="er-group">
+    <div class="er-group-title">Sistema de Chat</div>
+    <div class="er-tables">
+      <span class="er-table">chat_canales</span>
+      <span class="er-table">chat_canales_miembros</span>
+      <span class="er-table">chat_mensajes</span>
+      <span class="er-table">chat_mensajes_archivos</span>
+      <span class="er-table">chat_user_prefs</span>
+    </div>
+  </div>
+  <div class="er-group">
+    <div class="er-group-title">Usuarios</div>
+    <div class="er-tables">
+      <span class="er-table">profiles</span>
+    </div>
+  </div>
+</div>
+
+<h2>4.2 Descripción Detallada de Tablas</h2>
+
+<!-- profiles -->
+<h3>4.2.1 Tabla <code>profiles</code></h3>
+<p>Almacena la información de perfil de cada usuario del sistema. Vinculada directamente con <code>auth.users</code> de Supabase Auth.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único, referencia a <code>auth.users.id</code></td></tr>
+    <tr><td><code>nombre</code></td><td>TEXT</td><td>Nombre completo del usuario (por defecto: &ldquo;Usuario&rdquo;)</td></tr>
+    <tr><td><code>rol</code></td><td>TEXT</td><td>Rol: <code>admin</code>, <code>gestor</code>, <code>trabajador</code> o <code>cliente</code></td></tr>
+    <tr><td><code>activo</code></td><td>BOOLEAN</td><td>Indica si la cuenta esta activa (por defecto: <code>true</code>)</td></tr>
+    <tr><td><code>created_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de creación del perfil</td></tr>
+    <tr><td><code>empresa_id</code></td><td>UUID (FK)</td><td>Empresa asociada (obligatoria para clientes)</td></tr>
+  </tbody>
+</table>
+
+<div class="box box-blue">
+  <div class="box-title">Restricciones</div>
+  <p>El campo <code>rol</code> solo acepta: <code>admin</code>, <code>gestor</code>, <code>trabajador</code>, <code>cliente</code>. Al eliminar el usuario en <code>auth.users</code>, se elimina en cascada. Al eliminar la empresa, <code>empresa_id</code> se establece a NULL.</p>
+</div>
+
+<!-- empresas -->
+<h3>4.2.2 Tabla <code>empresas</code></h3>
+<p>Almacena las empresas clientes gestionadas. Soporta <strong>jerarquias</strong> de empresas (matriz y filiales) mediante autoreferencia.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>nombre</code></td><td>TEXT</td><td>Nombre de la empresa</td></tr>
+    <tr><td><code>cif</code></td><td>TEXT</td><td>Código de Identificación Fiscal</td></tr>
+    <tr><td><code>email</code></td><td>TEXT</td><td>Correo de contacto</td></tr>
+    <tr><td><code>telefono</code></td><td>TEXT</td><td>Telefono de contacto</td></tr>
+    <tr><td><code>dirección</code></td><td>TEXT</td><td>Dirección postal</td></tr>
+    <tr><td><code>estado</code></td><td>TEXT</td><td><code>Activo</code>, <code>En revision</code> o <code>Suspendido</code></td></tr>
+    <tr><td><code>notas</code></td><td>TEXT</td><td>Notas internas</td></tr>
+    <tr><td><code>servicios</code></td><td>JSONB</td><td>Array JSON con servicios contratados</td></tr>
+    <tr><td><code>contactos</code></td><td>JSONB</td><td>Array JSON con contactos de la empresa</td></tr>
+    <tr><td><code>created_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de creación</td></tr>
+    <tr><td><code>updated_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de modificación (trigger automático)</td></tr>
+    <tr><td><code>empresa_matriz_id</code></td><td>UUID (FK)</td><td>Referencia a la empresa matriz (si es filial)</td></tr>
+  </tbody>
+</table>
+<p><strong>Servicios disponibles:</strong> <span class="badge badge-blue">Cloud</span> <span class="badge badge-red">Soporte</span> <span class="badge badge-green">Hardware</span> <span class="badge badge-orange">Redes</span> <span class="badge badge-purple">Seguridad</span> <span class="badge badge-cyan">Backup</span></p>
+
+<!-- dispositivos -->
+<h3>4.2.3 Tabla <code>dispositivos</code></h3>
+<p>Inventario de activos tecnologicos asociados a cada empresa. Cada dispositivo pertenece a una categoria que determina los campos relevantes.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>empresa_id</code></td><td>UUID (FK)</td><td>Empresa propietaria</td></tr>
+    <tr><td><code>categoria</code></td><td>TEXT</td><td>Categoria: <code>equipo</code>, <code>servidor</code>, <code>nas</code>, <code>red</code>, <code>correo</code>, <code>otro</code>, <code>web</code></td></tr>
+    <tr><td><code>tipo</code></td><td>TEXT</td><td>Subtipo específico (PC, Router, etc.)</td></tr>
+    <tr><td><code>nombre</code></td><td>TEXT</td><td>Nombre identificativo del dispositivo</td></tr>
+    <tr><td><code>ip</code></td><td>TEXT</td><td>Dirección IP</td></tr>
+    <tr><td><code>número_serie</code></td><td>TEXT</td><td>número de serie</td></tr>
+    <tr><td><code>usuario</code></td><td>TEXT</td><td>Usuario de acceso al dispositivo</td></tr>
+    <tr><td><code>password</code></td><td>TEXT</td><td>Contraseña de acceso</td></tr>
+    <tr><td><code>anydesk_id</code></td><td>TEXT</td><td>ID de AnyDesk para acceso remoto</td></tr>
+    <tr><td><code>sistema_operativo</code></td><td>TEXT</td><td>Sistema operativo instalado</td></tr>
+    <tr><td><code>modelo</code></td><td>TEXT</td><td>Modelo del dispositivo</td></tr>
+    <tr><td><code>capacidad</code></td><td>TEXT</td><td>Capacidad de almacenamiento (NAS)</td></tr>
+    <tr><td><code>campos_extra</code></td><td>JSONB</td><td>Campos personalizados adicionales</td></tr>
+    <tr><td><code>url</code></td><td>TEXT</td><td>URL (para dispositivos de tipo web)</td></tr>
+    <tr><td><code>correo_cliente</code></td><td>TEXT</td><td>Correo electronico del cliente</td></tr>
+    <tr><td><code>password_cliente</code></td><td>TEXT</td><td>Contraseña del cliente</td></tr>
+  </tbody>
+</table>
+
+<h4>Campos relevantes por categoria</h4>
+<table>
+  <thead><tr><th>Categoria</th><th>Campos específicos</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Equipo</strong></td><td>tipo (PC, Portatil, Impresora...), usuario, contraseña, IP, AnyDesk ID</td></tr>
+    <tr><td><strong>Servidor</strong></td><td>tipo (Fisico, Virtual...), IP, usuario, contraseña, sistema operativo</td></tr>
+    <tr><td><strong>NAS</strong></td><td>tipo (Synology, QNAP), IP, usuario, contraseña, capacidad</td></tr>
+    <tr><td><strong>Red</strong></td><td>tipo (Router, Switch, AP, Firewall), IP, usuario, contraseña, modelo</td></tr>
+    <tr><td><strong>Correo</strong></td><td>correo_cliente, password_cliente</td></tr>
+    <tr><td><strong>Web</strong></td><td>URL</td></tr>
+    <tr><td><strong>Otro</strong></td><td>tipo (libre)</td></tr>
+  </tbody>
+</table>
+
+<!-- tickets_v2 -->
+<h3>4.2.4 Tabla <code>tickets_v2</code></h3>
+<p>Tabla principal del sistema de tickets. Cada ticket representa una incidencia, solicitud o tarea de soporte técnico.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>número</code></td><td>SERIAL (UNIQUE)</td><td>número secuencial legible (#001, #002...)</td></tr>
+    <tr><td><code>empresa_id</code></td><td>UUID (FK)</td><td>Empresa asociada al ticket</td></tr>
+    <tr><td><code>dispositivo_id</code></td><td>UUID (FK)</td><td>Dispositivo principal afectado</td></tr>
+    <tr><td><code>dispositivos_ids</code></td><td>UUID[]</td><td>Array de multiples dispositivos afectados</td></tr>
+    <tr><td><code>asunto</code></td><td>TEXT</td><td>Titulo descriptivo del ticket</td></tr>
+    <tr><td><code>descripción</code></td><td>TEXT</td><td>Descripción detallada del problema</td></tr>
+    <tr><td><code>prioridad</code></td><td>TEXT</td><td><code>Baja</code>, <code>Media</code>, <code>Alta</code> o <code>Urgente</code></td></tr>
+    <tr><td><code>estado</code></td><td>TEXT</td><td>Estado actual del ticket (ver flujo abajo)</td></tr>
+    <tr><td><code>notas</code></td><td>TEXT</td><td>Notas internas del equipo</td></tr>
+    <tr><td><code>contacto_nombre</code></td><td>TEXT</td><td>Nombre de contacto del cliente</td></tr>
+    <tr><td><code>telefono_cliente</code></td><td>TEXT</td><td>Telefono del cliente</td></tr>
+    <tr><td><code>created_by</code></td><td>UUID (FK)</td><td>Usuario creador</td></tr>
+    <tr><td><code>tiempo_acumulado_ms</code></td><td>BIGINT</td><td>Tiempo total acumulado en milisegundos</td></tr>
+    <tr><td><code>en_curso_desde</code></td><td>TIMESTAMPTZ</td><td>Marca desde que esta en curso (para cronometro)</td></tr>
+    <tr><td><code>created_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de creación</td></tr>
+    <tr><td><code>started_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de inicio de trabajo</td></tr>
+    <tr><td><code>completed_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de finalización</td></tr>
+    <tr><td><code>invoiced_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de facturación</td></tr>
+  </tbody>
+</table>
+
+<h4>Flujo de estados del ticket</h4>
+<div class="flow">
+  <div class="flow-step orange">Pendiente</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step active">En curso</div>
+  <span class="flow-arrow">&harr;</span>
+  <div class="flow-step">Pausado</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step green">Completado</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step purple">Pte. facturar</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step purple">Facturado</div>
+</div>
+
+<table>
+  <thead><tr><th>Estado</th><th>Descripción</th><th>Cronometro</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-orange">Pendiente</span></td><td>Ticket creado, a la espera de atención</td><td>Detenido</td></tr>
+    <tr><td><span class="badge badge-cyan">En curso</span></td><td>Un técnico esta trabajando activamente</td><td>Activo</td></tr>
+    <tr><td><span class="badge badge-gray">Pausado</span></td><td>Trabajo detenido temporalmente</td><td>Pausado</td></tr>
+    <tr><td><span class="badge badge-green">Completado</span></td><td>Trabajo finalizado</td><td>Detenido</td></tr>
+    <tr><td><span class="badge badge-purple">Pte. facturar</span></td><td>Completado, pendiente de factura</td><td>Detenido</td></tr>
+    <tr><td><span class="badge badge-purple">Facturado</span></td><td>Ticket cerrado y facturado</td><td>Detenido</td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_asignaciones -->
+<h3>4.2.5 Tabla <code>ticket_asignaciones</code></h3>
+<p>Relación muchos-a-muchos entre tickets y operarios (técnicos asignados). Un operario solo puede estar asignado una vez a cada ticket (restricción UNIQUE).</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>ticket_id</code></td><td>UUID (FK)</td><td>Ticket asignado</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (FK)</td><td>Operario asignado</td></tr>
+    <tr><td><code>asignado_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de asignación</td></tr>
+    <tr><td><code>asignado_by</code></td><td>UUID (FK)</td><td>Quien realizo la asignación</td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_comentarios -->
+<h3>4.2.6 Tabla <code>ticket_comentarios</code></h3>
+<p>Comentarios públicos en los tickets. El contenido debe tener al menos 1 caracter.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>ticket_id</code></td><td>UUID (FK)</td><td>Ticket asociado</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (FK)</td><td>Autor del comentario</td></tr>
+    <tr><td><code>contenido</code></td><td>TEXT</td><td>Texto del comentario</td></tr>
+    <tr><td><code>editado</code></td><td>BOOLEAN</td><td>Si ha sido editado tras su creación</td></tr>
+    <tr><td><code>created_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de creación</td></tr>
+    <tr><td><code>updated_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de ultima edición</td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_comentarios_archivos -->
+<h3>4.2.7 Tabla <code>ticket_comentarios_archivos</code></h3>
+<p>Archivos adjuntos a los comentarios de tickets.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>comentario_id</code></td><td>UUID (FK)</td><td>Comentario asociado</td></tr>
+    <tr><td><code>nombre_original</code></td><td>TEXT</td><td>Nombre original del archivo</td></tr>
+    <tr><td><code>nombre_storage</code></td><td>TEXT</td><td>Nombre interno en almacenamiento</td></tr>
+    <tr><td><code>mime_type</code></td><td>TEXT</td><td>Tipo MIME del archivo</td></tr>
+    <tr><td><code>tamaño</code></td><td>INTEGER</td><td>Tamaño en bytes</td></tr>
+    <tr><td><code>subido_by</code></td><td>UUID (FK)</td><td>Usuario que subio el archivo</td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_mensajes -->
+<h3>4.2.8 Tabla <code>ticket_mensajes</code></h3>
+<p>Mensajes en el hilo de comunicación del ticket. Soporta mensajes públicos y <strong>notas internas</strong> (solo visibles para el equipo).</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>ticket_id</code></td><td>UUID (FK)</td><td>Ticket asociado</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (FK)</td><td>Autor del mensaje</td></tr>
+    <tr><td><code>mensaje</code></td><td>TEXT</td><td>Contenido del mensaje</td></tr>
+    <tr><td><code>tipo</code></td><td>TEXT</td><td><code>mensaje</code> (público) o <code>nota_interna</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_archivos -->
+<h3>4.2.9 Tabla <code>ticket_archivos</code></h3>
+<p>Archivos adjuntos directamente a un ticket (almacenados en Supabase Storage).</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>ticket_id</code></td><td>UUID (FK)</td><td>Ticket asociado</td></tr>
+    <tr><td><code>nombre_original</code></td><td>TEXT</td><td>Nombre original del archivo</td></tr>
+    <tr><td><code>storage_path</code></td><td>TEXT</td><td>Ruta en Supabase Storage</td></tr>
+    <tr><td><code>mime_type</code></td><td>TEXT</td><td>Tipo MIME</td></tr>
+    <tr><td><code>tamaño</code></td><td>BIGINT</td><td>Tamaño en bytes</td></tr>
+    <tr><td><code>subido_by</code></td><td>UUID (FK)</td><td>Usuario que subio el archivo</td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_horas -->
+<h3>4.2.10 Tabla <code>ticket_horas</code></h3>
+<p>Registro de horas de trabajo dedicadas a cada ticket por cada operario.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>ticket_id</code></td><td>UUID (FK)</td><td>Ticket asociado</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (FK)</td><td>Operario que registro las horas</td></tr>
+    <tr><td><code>descripción</code></td><td>TEXT</td><td>Descripción del trabajo realizado</td></tr>
+    <tr><td><code>fecha_inicio</code></td><td>TIMESTAMPTZ</td><td>Inicio del periodo de trabajo</td></tr>
+    <tr><td><code>fecha_fin</code></td><td>TIMESTAMPTZ</td><td>Fin del periodo de trabajo</td></tr>
+  </tbody>
+</table>
+
+<!-- ticket_historial -->
+<h3>4.2.11 Tabla <code>ticket_historial</code></h3>
+<p>Auditoria completa de todos los cambios realizados en cada ticket.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>ticket_id</code></td><td>UUID (FK)</td><td>Ticket asociado</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (FK)</td><td>Usuario que realizo el cambio</td></tr>
+    <tr><td><code>tipo</code></td><td>TEXT</td><td>Tipo de evento</td></tr>
+    <tr><td><code>descripción</code></td><td>TEXT</td><td>Descripción legible del cambio</td></tr>
+    <tr><td><code>datos</code></td><td>JSONB</td><td>Datos adicionales del cambio en formato JSON</td></tr>
+  </tbody>
+</table>
+<p><strong>Tipos de eventos:</strong> <code>creación</code>, <code>estado</code>, <code>prioridad</code>, <code>asignación</code>, <code>desasignación</code>, <code>comentario</code>, <code>nota_interna</code>, <code>archivo</code>, <code>horas</code>, <code>empresa</code>.</p>
+
+<!-- chat_canales -->
+<h3>4.2.12 Tabla <code>chat_canales</code></h3>
+<p>Canales de comunicación del sistema de chat. Pueden ser <strong>canales grupales</strong> o <strong>mensajes directos</strong>.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>nombre</code></td><td>TEXT</td><td>Nombre del canal</td></tr>
+    <tr><td><code>descripción</code></td><td>TEXT</td><td>Descripción del canal</td></tr>
+    <tr><td><code>tipo</code></td><td>TEXT</td><td><code>canal</code> (grupal) o <code>directo</code> (DM)</td></tr>
+    <tr><td><code>creado_por</code></td><td>UUID (FK)</td><td>Usuario creador</td></tr>
+  </tbody>
+</table>
+
+<!-- chat_canales_miembros -->
+<h3>4.2.13 Tabla <code>chat_canales_miembros</code></h3>
+<p>Relación de miembros de cada canal. Clave primaria compuesta (<code>canal_id</code>, <code>user_id</code>). Eliminación en cascada al borrar canal o usuario.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>canal_id</code></td><td>UUID (PK, FK)</td><td>Canal</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (PK, FK)</td><td>Usuario miembro</td></tr>
+    <tr><td><code>rol</code></td><td>TEXT</td><td><code>admin</code> o <code>miembro</code></td></tr>
+    <tr><td><code>joined_at</code></td><td>TIMESTAMPTZ</td><td>Fecha de incorporación</td></tr>
+  </tbody>
+</table>
+
+<!-- chat_mensajes -->
+<h3>4.2.14 Tabla <code>chat_mensajes</code></h3>
+<p>Mensajes enviados en los canales. Soporta referencias a tickets, edición y anclaje de mensajes.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>canal_id</code></td><td>UUID (FK)</td><td>Canal donde se envio</td></tr>
+    <tr><td><code>user_id</code></td><td>UUID (FK)</td><td>Autor del mensaje</td></tr>
+    <tr><td><code>contenido</code></td><td>TEXT</td><td>Texto del mensaje</td></tr>
+    <tr><td><code>ticket_ref_id</code></td><td>UUID (FK)</td><td>Referencia a un ticket (opcional)</td></tr>
+    <tr><td><code>comentario_ref_id</code></td><td>UUID (FK)</td><td>Referencia a un comentario de ticket (opcional)</td></tr>
+    <tr><td><code>editado</code></td><td>BOOLEAN</td><td>Indica si fue editado</td></tr>
+    <tr><td><code>anclado</code></td><td>BOOLEAN</td><td>Indica si esta fijado/anclado en el canal</td></tr>
+  </tbody>
+</table>
+
+<!-- chat_mensajes_archivos -->
+<h3>4.2.15 Tabla <code>chat_mensajes_archivos</code></h3>
+<p>Archivos adjuntos a mensajes de chat.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>UUID (PK)</td><td>Identificador único</td></tr>
+    <tr><td><code>mensaje_id</code></td><td>UUID (FK)</td><td>Mensaje asociado</td></tr>
+    <tr><td><code>nombre_original</code></td><td>TEXT</td><td>Nombre original del archivo</td></tr>
+    <tr><td><code>nombre_storage</code></td><td>TEXT</td><td>Nombre en almacenamiento</td></tr>
+    <tr><td><code>mime_type</code></td><td>TEXT</td><td>Tipo MIME</td></tr>
+    <tr><td><code>tamaño</code></td><td>INTEGER</td><td>Tamaño en bytes</td></tr>
+  </tbody>
+</table>
+
+<!-- chat_user_prefs -->
+<h3>4.2.16 Tabla <code>chat_user_prefs</code></h3>
+<p>Preferencias de notificación y configuración de chat por usuario. Almacena un objeto JSON con preferencias como canales silenciados.</p>
+<table>
+  <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>user_id</code></td><td>UUID (PK, FK)</td><td>Usuario</td></tr>
+    <tr><td><code>prefs</code></td><td>JSONB</td><td>Objeto JSON con preferencias de configuración</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 5. AUTENTICACIÓN                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec5"><span class="section-num">5</span> Autenticación y Seguridad</h1>
+
+<h2>5.1 Mecanismo de Autenticación</h2>
+<p>El sistema utiliza autenticación basada en <strong>JSON Web Tokens (JWT)</strong> gestionados a traves de Supabase Auth.</p>
+
+<h3>Flujo de autenticación</h3>
+<ol>
+  <li>El usuario introduce email y contraseña en la pantalla de login.</li>
+  <li>El frontend envia <code>POST /api/auth/login</code> con las credenciales.</li>
+  <li>El backend valida las credenciales contra Supabase Auth.</li>
+  <li>Si son correctas, se devuelve un <strong>access token</strong> (JWT de corta duración) y un <strong>refresh token</strong> (de larga duración).</li>
+  <li>El frontend almacena ambos tokens en <code>sessionStorage</code>: <code>hola_token</code> y <code>hola_refresh</code>.</li>
+  <li>Todas las peticiones posteriores incluyen el access token en la cabecera <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+</ol>
+
+<h2>5.2 Renovación Automática de Tokens</h2>
+<p>El sistema implementa renovación proactiva de tokens para sesiones ininterrumpidas:</p>
+<ul>
+  <li>Al recibir un token, se calcula su fecha de expiración y se programa una renovación <strong>2 minutos antes</strong> de que expire.</li>
+  <li>Si el token esta a menos de 1 minuto de expirar al cargar la página, se renueva inmediatamente.</li>
+  <li>Cuando el usuario vuelve a la pestana (evento <code>visibilitychange</code>), se refresca el perfil.</li>
+  <li>Si la renovación falla, el usuario es desconectado automáticamente.</li>
+</ul>
+
+<h2>5.3 Cierre de Sesion</h2>
+<p>Al cerrar sesion se cancela el temporizador de renovación, se limpia <code>sessionStorage</code> y se redirige al login.</p>
+
+<h2>5.4 Protección de Rutas</h2>
+
+<div class="box box-orange">
+  <div class="box-title">Doble protección</div>
+  <p><strong>Frontend:</strong> Componente <code>ProtectedRoute</code> que verifica autenticación y permisos de rol antes de renderizar.</p>
+  <p><strong>Backend:</strong> Middleware <code>authGuard</code> (valida JWT) y <code>adminGuard</code> (restringe a admin/gestor).</p>
+</div>
+
+<h2>5.5 Almacenamiento de Credenciales</h2>
+<ul>
+  <li>Los tokens se almacenan en <code>sessionStorage</code> (se eliminan al cerrar la pestana), no en <code>localStorage</code>, para mayor seguridad.</li>
+  <li>Las contraseñas nunca se almacenan en el frontend; son gestionadas exclusivamente por Supabase Auth con hashing seguro.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 6. ROLES                                                                  -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec6"><span class="section-num">6</span> Roles de Usuario y Permisos</h1>
+
+<h2>6.1 Matriz de Permisos</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Funcionalidad</th>
+      <th class="center"><span class="badge badge-red">Admin</span></th>
+      <th class="center"><span class="badge badge-purple">Gestor</span></th>
+      <th class="center"><span class="badge badge-blue">Trabajador</span></th>
+      <th class="center"><span class="badge badge-green">Cliente</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Dashboard (empresas y dispositivos)</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Ver todos los tickets</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Crear y modificar tickets</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Eliminar tickets</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Gestión de usuarios</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Estadisticas y analiticas</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Chat interno</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Portal de incidencias (cliente)</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td></tr>
+    <tr><td>Cambiar ticket a &ldquo;Pte. de facturar&rdquo;</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Recibir email de incidencias de clientes</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+    <tr><td>Exportar datos a Excel</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td></tr>
+  </tbody>
+</table>
+
+<h2>6.2 Descripción Detallada de Cada Rol</h2>
+
+<h3>Administrador (<code>admin</code>)</h3>
+<div class="box box-red">
+  <p>Acceso completo a todas las funcionalidades. Puede crear, editar y eliminar usuarios. Accede al panel de estadisticas. Gestiona empresas, dispositivos y tickets sin restricción. Administra canales de chat.</p>
+</div>
+
+<h3>Gestor (<code>gestor</code>)</h3>
+<div class="box box-purple">
+  <p><strong>Mismos permisos que el administrador</strong> (acceso total a dashboard, tickets, usuarios, estadisticas, chat). Las diferencias clave son:</p>
+  <ul>
+    <li><strong>Recibe notificaciones por email</strong> cuando un cliente crea una nueva incidencia.</li>
+    <li>Es el <strong>único rol</strong> que puede cambiar el estado de un ticket a &ldquo;Pendiente de facturar&rdquo;.</li>
+  </ul>
+</div>
+
+<h3>Trabajador (<code>trabajador</code>)</h3>
+<div class="box box-blue">
+  <p>Acceso al dashboard para consultar empresas y dispositivos. Gestiona tickets asignados: cambia estados, anade comentarios, registra horas. Usa el chat interno. <strong>No accede a estadisticas ni gestión de usuarios.</strong></p>
+</div>
+
+<h3>Cliente (<code>cliente</code>)</h3>
+<div class="box box-green">
+  <p>Acceso exclusivo al portal de incidencias (<code>/incidencias</code>). Puede crear nuevas incidencias y ver su estado. Los estados internos &ldquo;Pendiente de facturar&rdquo; y &ldquo;Facturado&rdquo; se muestran simplificados como &ldquo;Completado&rdquo;. <strong>No tiene acceso al chat ni a ninguna otra sección interna.</strong> Esta asociado obligatoriamente a una empresa. Si su empresa es matriz, ve tickets de todas las filiales.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 7. NAVEGACIÓN                                                             -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec7"><span class="section-num">7</span> Navegación y Estructura de la Interfaz</h1>
+
+<h2>7.1 Barra de Navegación Superior</h2>
+<p>La interfaz presenta una barra de navegación horizontal en la parte superior de todas las páginas (excepto login). Los elementos visibles varian segun el rol:</p>
+
+<h3>Para Admin / Gestor / Trabajador</h3>
+<div class="flow">
+  <div class="flow-step active">Logo</div>
+  <div class="flow-step">Dashboard</div>
+  <div class="flow-step">Tickets</div>
+  <div class="flow-step" style="border-style:dashed">Usuarios*</div>
+  <div class="flow-step" style="border-style:dashed">Estadisticas*</div>
+  <div class="flow-step green">Chat</div>
+  <div class="flow-step">Tema</div>
+  <div class="flow-step orange">Cerrar sesion</div>
+</div>
+<p><em>* Solo visible para admin y gestor.</em></p>
+
+<h3>Para Cliente</h3>
+<p>Navegación simplificada: solo el portal de incidencias. No tiene acceso al chat ni a otras secciones internas.</p>
+
+<h2>7.2 Elementos de Navegación</h2>
+<table>
+  <thead><tr><th>Elemento</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Dashboard</strong></td><td><code>/</code></td><td>Panel principal de gestión de empresas y dispositivos</td></tr>
+    <tr><td><strong>Tickets</strong></td><td><code>/tickets</code></td><td>Gestión completa de incidencias y soporte</td></tr>
+    <tr><td><strong>Usuarios</strong></td><td><code>/usuarios</code></td><td>Administración de cuentas (solo admin)</td></tr>
+    <tr><td><strong>Estadisticas</strong></td><td><code>/estadisticas</code></td><td>Panel de analiticas (admin/gestor)</td></tr>
+    <tr><td><strong>Chat</strong></td><td><code>/chat</code></td><td>Mensajeria interna con badge de no leidos</td></tr>
+    <tr><td><strong>Tema</strong></td><td>&mdash;</td><td>Alterna entre modo claro y oscuro</td></tr>
+    <tr><td><strong>Cerrar sesion</strong></td><td><code>/login</code></td><td>Cierra la sesion actual</td></tr>
+  </tbody>
+</table>
+
+<h2>7.3 Badge de Notificaciones del Chat</h2>
+<p>El componente <code>ChatNavLink</code> muestra un contador con el número de mensajes no leidos. Se actualiza automáticamente cada 6 segundos mediante polling.</p>
+
+<h2>7.4 Redirecciones Automáticas</h2>
+<table>
+  <thead><tr><th>Situación</th><th>Redirección</th></tr></thead>
+  <tbody>
+    <tr><td>Usuario no autenticado accede a ruta protegida</td><td><code>/login</code></td></tr>
+    <tr><td>Cliente accede a Dashboard, Tickets, Usuarios o Estadisticas</td><td><code>/incidencias</code></td></tr>
+    <tr><td>No-cliente accede a <code>/incidencias</code></td><td><code>/tickets</code></td></tr>
+    <tr><td>No-admin accede a <code>/usuarios</code> o <code>/estadisticas</code></td><td><code>/tickets</code></td></tr>
+    <tr><td>Ruta no existente</td><td><code>/</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 8. LOGIN                                                                  -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec8"><span class="section-num">8</span> Página de Inicio de Sesion</h1>
+
+<h2>8.1 Descripción</h2>
+<p>La página de login (<code>/login</code>) es el punto de entrada al sistema. Presenta un formulario centrado con diseño limpio.</p>
+
+<h2>8.2 Elementos de la Interfaz</h2>
+<ul>
+  <li><strong>Campo de email:</strong> Input con validación de formato de correo electronico.</li>
+  <li><strong>Campo de contraseña:</strong> Input con boton de visibilidad (icono de ojo) para mostrar/ocultar.</li>
+  <li><strong>Boton &ldquo;Acceder&rdquo;:</strong> Boton principal que inicia el proceso de autenticación.</li>
+  <li><strong>Mensajes de error:</strong> Se muestran debajo del formulario en caso de credenciales incorrectas.</li>
+</ul>
+
+<h2>8.3 Comportamiento</h2>
+<ol>
+  <li>El usuario introduce su email y contraseña.</li>
+  <li>Al pulsar &ldquo;Acceder&rdquo;, se ejecuta <code>login(email, password)</code> del <code>AuthContext</code>.</li>
+  <li>Si la autenticación es exitosa:
+    <ul>
+      <li>Clientes &rarr; <code>/incidencias</code></li>
+      <li>Resto de roles &rarr; <code>/</code> (Dashboard)</li>
+    </ul>
+  </li>
+  <li>Si falla, se muestra un mensaje de error descriptivo.</li>
+</ol>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 9. DASHBOARD                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec9"><span class="section-num">9</span> Panel Principal &mdash; Dashboard</h1>
+
+<h2>9.1 Descripción General</h2>
+<p>El Dashboard (<code>/</code>) es la página principal para administradores, gestores y trabajadores. Funciona como un gestor dual de <strong>empresas</strong> y <strong>dispositivos</strong>, permitiendo navegar entre ambas vistas.</p>
+
+<h2>9.2 Vista de Empresas</h2>
+
+<h3>9.2.1 Listado de Empresas</h3>
+<ul>
+  <li>Todas las empresas se muestran en formato de tarjetas con avatar de iniciales y color único.</li>
+  <li>Cada tarjeta muestra: nombre, CIF, estado (badge), servicios contratados (badges de colores).</li>
+  <li>Buscador de texto para filtrar por nombre.</li>
+  <li>Boton para crear nueva empresa.</li>
+</ul>
+
+<h3>9.2.2 Modal de Empresa (Crear/Editar)</h3>
+<p>El modal se organiza en <strong>tres pestanas</strong>:</p>
+<table>
+  <thead><tr><th>Pestana</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Datos</strong></td>
+      <td>Nombre, CIF, email, telefono, dirección, estado, notas internas, selector de empresa matriz (dropdown con busqueda)</td>
+    </tr>
+    <tr>
+      <td><strong>Contactos</strong></td>
+      <td>Lista dinámica de contactos (nombre, email, telefono, cargo). Botones para anadir y eliminar contactos.</td>
+    </tr>
+    <tr>
+      <td><strong>Servicios</strong></td>
+      <td>Checkboxes para servicios contratados: Cloud, Soporte, Hardware, Redes, Seguridad, Backup. Cada uno con icono y color distintivo.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>9.2.3 Detalle de Empresa</h3>
+<p>Al seleccionar una empresa se muestra su información completa: contactos, servicios, empresas filiales y acceso directo a sus dispositivos. Botones para editar y eliminar (con confirmación).</p>
+
+<h2>9.3 Vista de Dispositivos</h2>
+<p>Al entrar en una empresa, se accede al inventario organizado por <strong>categorias mediante pestanas</strong>:</p>
+
+<table>
+  <thead><tr><th>Pestana</th><th>Tipos de dispositivo</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Equipos</strong></td><td>PC, Portatil, Camara de Seguridad, Impresora, Tablet, All-in-One</td></tr>
+    <tr><td><strong>Servidores</strong></td><td>Servidor Fisico, Servidor Virtual, Servidor de Archivos</td></tr>
+    <tr><td><strong>NAS</strong></td><td>NAS Synology, NAS QNAP</td></tr>
+    <tr><td><strong>Redes</strong></td><td>Router, Switch, Access Point, Firewall, Modem</td></tr>
+    <tr><td><strong>Web</strong></td><td>Sitios web, portales, aplicaciones web</td></tr>
+    <tr><td><strong>Correos</strong></td><td>Cuentas de correo electronico</td></tr>
+    <tr><td><strong>Otros</strong></td><td>Dispositivos no categorizados</td></tr>
+  </tbody>
+</table>
+
+<div class="box box-blue">
+  <div class="box-title">Campos copiables</div>
+  <p>Los campos como IP y AnyDesk ID disponen de un boton para copiar el valor al portapapeles con un solo clic, fácilitando el acceso remoto.</p>
+</div>
+
+<h2>9.4 Exportación a Excel</h2>
+<p>Desde el dashboard se pueden exportar datos de empresas y dispositivos a formato Excel (.xlsx).</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 10. TICKETS                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec10"><span class="section-num">10</span> Gestión de Tickets</h1>
+
+<h2>10.1 Descripción General</h2>
+<p>La página de Tickets (<code>/tickets</code>) es el centro de operaciones para la gestión de incidencias y solicitudes de soporte. Proporciona una vision completa con herramientas avanzadas de filtrado, busqueda y gestión integral.</p>
+
+<h2>10.2 Listado de Tickets</h2>
+
+<h3>10.2.1 Información Mostrada por Ticket</h3>
+<ul>
+  <li><strong>número:</strong> Identificador secuencial (#001, #002...).</li>
+  <li><strong>Asunto:</strong> Titulo descriptivo.</li>
+  <li><strong>Empresa:</strong> Nombre de la empresa asociada.</li>
+  <li><strong>Prioridad:</strong> Badge de color (<span class="badge badge-green">Baja</span> <span class="badge badge-blue">Media</span> <span class="badge badge-orange">Alta</span> <span class="badge badge-red">Urgente</span>).</li>
+  <li><strong>Estado:</strong> Badge con icono segun estado actual.</li>
+  <li><strong>Operarios:</strong> Avatares de los técnicos asignados.</li>
+  <li><strong>Tiempo:</strong> Indicador con icono (reloj en curso, pausa, candado si cerrado).</li>
+  <li><strong>Fecha de creación.</strong></li>
+</ul>
+
+<h3>10.2.2 Filtros Disponibles</h3>
+<table>
+  <thead><tr><th>Filtro</th><th>Opciones</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Estado</strong></td><td>Todos, Pendiente, En curso, Pausado, Completado, Pte. facturar, Facturado</td></tr>
+    <tr><td><strong>Prioridad</strong></td><td>Todas, Baja, Media, Alta, Urgente</td></tr>
+    <tr><td><strong>Empresa</strong></td><td>Selector con busqueda de todas las empresas</td></tr>
+    <tr><td><strong>Operario</strong></td><td>Filtrar por técnico asignado</td></tr>
+    <tr><td><strong>Busqueda</strong></td><td>Texto libre en asunto y descripción</td></tr>
+    <tr><td><strong>Fechas</strong></td><td>Rango Desde / Hasta</td></tr>
+  </tbody>
+</table>
+
+<h2>10.3 Detalle del Ticket</h2>
+<p>Al seleccionar un ticket se abre una vista detallada. La parte inferior se organiza en <strong>pestanas</strong> para acceder a las distintas secciones:</p>
+
+<div class="flow">
+  <div class="flow-step active">Comentarios</div>
+  <div class="flow-step">Archivos</div>
+  <div class="flow-step">Horas</div>
+  <div class="flow-step">Notas</div>
+  <div class="flow-step">Historial</div>
+</div>
+
+<h3>10.3.1 Cabecera</h3>
+<p>número, asunto, empresa, dispositivo, badges de prioridad y estado, tiempo transcurrido, botones de acción (editar, eliminar).</p>
+
+<h3>10.3.2 Operarios Asignados</h3>
+<p>Lista de técnicos con avatares. Se pueden asignar nuevos operarios (selector multiple con busqueda) o desasignar existentes. Al asignar, se envia un email de notificación automático.</p>
+
+<h3>10.3.3 Comentarios</h3>
+<p>Hilo cronologico de comentarios con soporte de archivos adjuntos. Cada comentario muestra autor, fecha, contenido y archivos. Se pueden eliminar comentarios propios.</p>
+
+<h3>10.3.4 Archivos Adjuntos</h3>
+<p>Lista de todos los archivos con nombre, icono segun tipo, tamaño y fecha. Tipos reconocidos con iconos específicos:</p>
+<table>
+  <thead><tr><th>Tipo</th><th>Icono</th></tr></thead>
+  <tbody>
+    <tr><td>Imagenes</td><td>fa-image (azul)</td></tr>
+    <tr><td>PDF</td><td>fa-file-pdf (rojo)</td></tr>
+    <tr><td>Word</td><td>fa-file-word (azul)</td></tr>
+    <tr><td>Excel</td><td>fa-file-excel (verde)</td></tr>
+    <tr><td>ZIP/Comprimidos</td><td>fa-file-archive (naranja)</td></tr>
+    <tr><td>Video</td><td>fa-file-video (morado)</td></tr>
+    <tr><td>Otros</td><td>fa-file (gris)</td></tr>
+  </tbody>
+</table>
+
+<h3>10.3.5 Registro de Horas</h3>
+<p>Lista de entradas de tiempo: operario, descripción, fecha inicio/fin, duración. Formato adaptable automático (minutos, horas, dias, meses). Formulario para anadir nuevas entradas.</p>
+
+<h3>10.3.6 Notas Internas</h3>
+<p>Campo de texto libre para notas que no son visibles para los clientes. Se guardan automáticamente.</p>
+
+<h3>10.3.7 Historial de Cambios</h3>
+<p>Registro cronologico completo de todas las acciones sobre el ticket: creación, cambios de estado, prioridad, asignaciones, comentarios, archivos, horas y mas.</p>
+
+<h2>10.4 Creación de Tickets</h2>
+<table>
+  <thead><tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td>Empresa</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td>Selector con busqueda</td></tr>
+    <tr><td>Asunto</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td>Titulo descriptivo</td></tr>
+    <tr><td>Contacto</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Contacto de la empresa (selector + crear/editar inline)</td></tr>
+    <tr><td>Descripción</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Detalle de la incidencia</td></tr>
+    <tr><td>Prioridad</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Baja / Media (defecto) / Alta / Urgente</td></tr>
+    <tr><td>Dispositivos</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Selección multiple de dispositivos afectados (filtrados por empresa). Con boton para crear uno nuevo inline.</td></tr>
+    <tr><td>Estado</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Pendiente (defecto). &ldquo;Pte. facturar&rdquo; solo disponible para gestor.</td></tr>
+    <tr><td>Operarios</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Selector multiple de técnicos a asignar</td></tr>
+  </tbody>
+</table>
+
+<h2>10.5 Cronometro de Tiempo</h2>
+<div class="box box-blue">
+  <div class="box-title">Cronometro automático</div>
+  <p>Se <strong>activa</strong> al pasar a &ldquo;En curso&rdquo; (se registra <code>en_curso_desde</code>). Se <strong>pausa</strong> al cambiar a &ldquo;Pausado&rdquo; o &ldquo;Pendiente&rdquo; (se acumula en <code>tiempo_acumulado_ms</code>). Se <strong>detiene</strong> definitivamente al completarse. El tiempo se muestra en tiempo real en la interfaz.</p>
+</div>
+
+<h2>10.6 Notificaciones por Email</h2>
+<table>
+  <thead><tr><th>Evento</th><th>Destinatario</th></tr></thead>
+  <tbody>
+    <tr><td>Asignación de ticket</td><td>Operario asignado</td></tr>
+    <tr><td>Nueva incidencia de cliente</td><td>Todos los gestores</td></tr>
+    <tr><td>Ticket completado</td><td>Cliente de la empresa</td></tr>
+  </tbody>
+</table>
+
+<h2>10.7 Creación Rapida de Dispositivos</h2>
+<p>Desde la vista de creación/edición de tickets es posible crear un nuevo dispositivo directamente sin salir del flujo de trabajo.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 11. USUARIOS                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec11"><span class="section-num">11</span> Gestión de Usuarios</h1>
+
+<h2>11.1 Descripción General</h2>
+<p>La página de Usuarios (<code>/usuarios</code>) esta disponible <strong>exclusivamente para administradores</strong> y permite gestionar todas las cuentas del sistema.</p>
+
+<h2>11.2 Listado de Usuarios</h2>
+<p>Muestra todos los usuarios con: avatar con iniciales, nombre, email, rol (badge de color), estado (Activo/Desactivado), empresa asociada (para clientes). Incluye busqueda por nombre/email y filtrado por rol.</p>
+
+<h2>11.3 Creación de Usuarios</h2>
+<table>
+  <thead><tr><th>Campo</th><th>Obligatorio</th><th>Notas</th></tr></thead>
+  <tbody>
+    <tr><td>Nombre completo</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td>Nombre visible en el sistema</td></tr>
+    <tr><td>Email</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td>Debe ser único en el sistema</td></tr>
+    <tr><td>Contraseña</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td>Contraseña de acceso inicial</td></tr>
+    <tr><td>Rol</td><td class="center"><span class="perm-yes"><i class="fas fa-check-circle"></i></span></td><td>Admin / Gestor / Trabajador / Cliente</td></tr>
+    <tr><td>Empresa</td><td class="center">Solo clientes</td><td>Empresa a la que pertenece el cliente</td></tr>
+    <tr><td>Telefono</td><td class="center"><span class="perm-no"><i class="fas fa-times-circle"></i></span></td><td>Solo para clientes (opcional)</td></tr>
+  </tbody>
+</table>
+
+<h2>11.4 Edición de Usuarios</h2>
+<p>Permite modificar: nombre, email, rol, estado (Activo/Desactivado), empresa (clientes), telefono (clientes) y contraseña (opcional, si se deja vacio no se modifica).</p>
+
+<h2>11.5 Eliminación</h2>
+<p>Requiere confirmación explicita. Elimina el usuario de <code>auth.users</code>, provocando eliminación en cascada del perfil y todas sus referencias.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 12. ESTADISTICAS                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec12"><span class="section-num">12</span> Estadisticas y Analiticas</h1>
+
+<h2>12.1 Descripción General</h2>
+<p>La página de Estadisticas (<code>/estadisticas</code>) esta disponible para administradores y gestores. Proporciona vision analitica del rendimiento del equipo y la actividad de las empresas.</p>
+
+<h2>12.2 Pestana &ldquo;Tickets&rdquo; &mdash; Resumen General</h2>
+
+<h3>Tarjetas KPI (7 indicadores)</h3>
+<ul>
+  <li><span class="badge badge-blue">Total tickets</span> &mdash; número global de tickets en el sistema</li>
+  <li><span class="badge badge-orange">Abiertos</span> &mdash; Pendientes + en curso</li>
+  <li><span class="badge badge-red">Sin asignar</span> &mdash; Tickets sin ningun operario asignado</li>
+  <li><span class="badge badge-green">Completados</span> &mdash; Tickets finalizados</li>
+  <li><span class="badge badge-purple">Facturados</span> &mdash; Tickets cerrados y facturados</li>
+  <li><span class="badge badge-red">Urgentes</span> &mdash; Con prioridad urgente</li>
+  <li><span class="badge badge-blue">últimos 7 dias</span> &mdash; Creados en la ultima semana</li>
+</ul>
+
+<h3>Graficas</h3>
+<ul>
+  <li><strong>Gráfico de barras (BarChart):</strong> Distribución de tickets por estado con colores diferenciados.</li>
+  <li><strong>Gráfico circular (PieChart):</strong> Porcentajes de cada estado.</li>
+  <li><strong>Gráfico de lineas (LineChart):</strong> Evolución semanal del número de tickets.</li>
+</ul>
+
+<h2>12.3 Pestana &ldquo;Operarios&rdquo; &mdash; Rendimiento del Equipo</h2>
+<p>Para cada técnico se muestra: avatar, nombre, tickets completados, tickets pendientes/en curso, horas totales registradas.</p>
+<ul>
+  <li><strong>Gráfico de barras comparativo:</strong> Tickets completados vs pendientes por operario.</li>
+  <li><strong>Gráfico radial (RadialBarChart):</strong> Horas trabajadas por operario.</li>
+</ul>
+
+<h2>12.4 Pestana &ldquo;Empresas&rdquo; &mdash; Actividad por Cliente</h2>
+<p>Para cada empresa: nombre, total de tickets, completados, pendientes, horas totales dedicadas.</p>
+<ul>
+  <li><strong>Gráfico de barras:</strong> Volumen de tickets por empresa.</li>
+</ul>
+
+<h2>12.5 Filtros</h2>
+<p>Rango de fechas (<strong>Desde</strong> / <strong>Hasta</strong>) que afecta a operarios y empresas. Los datos se recargan automáticamente al modificar los filtros.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 13. CHAT                                                                  -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec13"><span class="section-num">13</span> Sistema de Chat</h1>
+
+<h2>13.1 Descripción General</h2>
+<p>El Chat (<code>/chat</code>) es un sistema de mensajeria interna completo, accesible por administradores, gestores y trabajadores. Permite comunicación mediante canales grupales y mensajes directos.</p>
+
+<h2>13.2 Panel Lateral</h2>
+<ul>
+  <li><strong>Canales grupales:</strong> Listados con icono <code>#</code> y nombre.</li>
+  <li><strong>Mensajes directos:</strong> Listados con avatar del otro participante.</li>
+  <li><strong>Badge de no leidos:</strong> Contador por canal/conversación.</li>
+  <li>Botones para crear nuevo canal o iniciar nuevo DM.</li>
+</ul>
+
+<h2>13.3 Canales Grupales</h2>
+<h3>Creación de canal</h3>
+<ul>
+  <li>Nombre del canal (obligatorio) y descripción (opcional).</li>
+  <li>Selección de miembros con filtros rápidos: <strong>Todos</strong>, <strong>Solo admins</strong>, <strong>Solo trabajadores</strong>, <strong>Limpiar</strong>.</li>
+  <li>Busqueda de miembros por nombre.</li>
+</ul>
+<h3>Gestión del canal</h3>
+<p>Editar nombre/descripción, anadir/eliminar miembros, eliminar el canal.</p>
+
+<h2>13.4 Mensajes Directos</h2>
+<ul>
+  <li>Selector de usuarios para iniciar un DM.</li>
+  <li>Sistema de invitación: se envia invitación que el destinatario acepta o rechaza.</li>
+  <li>Mensajes del sistema con formato especial (invitación, aceptación, rechazo).</li>
+</ul>
+
+<h2>13.5 Funcionalidades de Mensajeria</h2>
+<table>
+  <thead><tr><th>Funcionalidad</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Enviar mensajes</strong></td><td>Campo de texto con Enter para enviar</td></tr>
+    <tr><td><strong>Adjuntar archivos</strong></td><td>Boton de clip para subir archivos con el mensaje</td></tr>
+    <tr><td><strong>Editar mensajes</strong></td><td>Los usuarios editan sus propios mensajes (se marca como &ldquo;editado&rdquo;)</td></tr>
+    <tr><td><strong>Eliminar mensajes</strong></td><td>Propios mensajes; admins pueden eliminar cualquiera</td></tr>
+    <tr><td><strong>Anclar mensajes</strong></td><td>Fijar mensajes importantes para acceso rápido</td></tr>
+    <tr><td><strong>Menciones (@)</strong></td><td>Sistema de @menciones que notifica al usuario mencionado</td></tr>
+    <tr><td><strong>Referencias a tickets</strong></td><td>Incluir referencia a un ticket existente en el mensaje</td></tr>
+    <tr><td><strong>Menu contextual</strong></td><td>Clic derecho muestra opciones: editar, eliminar, anclar</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 14. PORTAL CLIENTES                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec14"><span class="section-num">14</span> Portal de Clientes &mdash; Incidencias</h1>
+
+<h2>14.1 Descripción General</h2>
+<p>La página de Incidencias (<code>/incidencias</code>) es el portal exclusivo para usuarios con rol <code>cliente</code>. Ofrece una interfaz simplificada para reportar problemas y hacer seguimiento.</p>
+
+<h2>14.2 Creación de Incidencias</h2>
+<p>El modal de nueva incidencia incluye:</p>
+
+<h3>1. Sistema afectado (opcional)</h3>
+<p>Grid de botones con los sistemas/dispositivos de la empresa del cliente. Se muestran las categorias disponibles (Equipos, Servidores, NAS, Redes, Correos, Web, Otros). Opción &ldquo;Sin especificar&rdquo; disponible.</p>
+
+<h3>2. Asunto (obligatorio)</h3>
+<p>Campo de texto: &ldquo;Describe brevemente el problema...&rdquo;</p>
+
+<h3>3. Descripción (opcional)</h3>
+<p>Area de texto para detalles adicionales.</p>
+
+<h3>4. Archivos adjuntos (opcional)</h3>
+<p>Subida de uno o varios archivos con vista previa (nombre, tamaño) y posibilidad de eliminar antes de enviar.</p>
+
+<h2>14.3 Listado de Incidencias</h2>
+<p>Muestra las incidencias del cliente con asunto, fecha de creación y estado simplificado.</p>
+
+<div class="box box-green">
+  <div class="box-title">Simplificación de estados para clientes</div>
+  <p>Los estados internos &ldquo;Pendiente de facturar&rdquo; y &ldquo;Facturado&rdquo; se muestran al cliente como <strong>&ldquo;Completado&rdquo;</strong>, ocultando detalles internos de facturación.</p>
+</div>
+
+<h2>14.4 Visibilidad por Empresa</h2>
+<ul>
+  <li><strong>Empresa filial:</strong> El cliente solo ve tickets de su propia empresa.</li>
+  <li><strong>Empresa matriz:</strong> El cliente ve tickets de su empresa y de todas sus filiales.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 15. NOTIFICACIONES                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec15"><span class="section-num">15</span> Sistema de Notificaciones</h1>
+
+<h2>15.1 Notificaciones del Chat</h2>
+
+<h3>15.1.1 Polling de mensajes</h3>
+<p>Cada <strong>6 segundos</strong> se consultan los canales del usuario para detectar nuevos mensajes.</p>
+
+<h3>15.1.2 Contadores de no leidos</h3>
+<p>Cada canal tiene un contador independiente, persistido en <code>localStorage</code>. Se reinicia a cero al entrar en el canal.</p>
+
+<h3>15.1.3 Notificaciones del navegador</h3>
+<p>Si el usuario concede permiso, se muestran notificaciones nativas del navegador. Implementado mediante <strong>Service Worker</strong> (<code>sw-chat.js</code>) para funcionar en segundo plano. Compatible con Edge, Safari y Chrome.</p>
+
+<h3>15.1.4 Toasts in-app</h3>
+<p>Componente <code>ChatToasts</code> que muestra notificaciones emergentes dentro de la aplicación, visibles en todas las páginas.</p>
+
+<h3>15.1.5 Detección de menciones</h3>
+<p>El sistema detecta @menciones y genera notificaciones prioritarias.</p>
+
+<h3>15.1.6 Preferencias</h3>
+<p>Los usuarios pueden silenciar canales. Las preferencias se sincronizan con la tabla <code>chat_user_prefs</code>.</p>
+
+<h2>15.2 Notificaciones por Email</h2>
+<table>
+  <thead><tr><th>Evento</th><th>Destinatario</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr><td>Asignación de ticket</td><td>Operario asignado</td><td>Detalles del ticket asignado</td></tr>
+    <tr><td>Nueva incidencia de cliente</td><td>Todos los gestores</td><td>Datos de la incidencia creada</td></tr>
+    <tr><td>Ticket completado</td><td>Cliente de la empresa</td><td>Notificación de resolución</td></tr>
+  </tbody>
+</table>
+
+<h2>15.3 Toasts de Interfaz</h2>
+<p>Sistema de notificaciones emergentes en tres niveles:</p>
+<ul>
+  <li><span class="badge badge-green">Exito</span> &mdash; Operación completada correctamente</li>
+  <li><span class="badge badge-red">Error</span> &mdash; Se ha producido un error</li>
+  <li><span class="badge badge-orange">Advertencia</span> &mdash; Información importante</li>
+</ul>
+<p>Cada toast incluye icono, titulo, mensaje y boton de cierre. Se auto-eliminan tras 5 segundos.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 16. TEMAS                                                                 -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec16"><span class="section-num">16</span> Temas y Personalización Visual</h1>
+
+<h2>16.1 Sistema de Temas</h2>
+<table>
+  <thead><tr><th>Tema</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Claro (Light)</strong></td><td>Tema por defecto. Fondos blancos, texto oscuro.</td></tr>
+    <tr><td><strong>Oscuro (Dark)</strong></td><td>Fondos oscuros, texto claro. Reduce fatiga visual.</td></tr>
+  </tbody>
+</table>
+
+<h2>16.2 Implementación Técnica</h2>
+<ul>
+  <li>Gestionado por <code>ThemeContext</code> (React Context).</li>
+  <li>Se aplica el atributo <code>data-theme="dark"</code> en <code>&lt;html&gt;</code>.</li>
+  <li>Variables CSS responden al atributo para cambiar colores.</li>
+  <li>Estilos oscuros definidos en <code>dark.css</code>.</li>
+  <li>Preferencia persistida en <code>localStorage</code>.</li>
+</ul>
+
+<h2>16.3 Componente ThemeToggle</h2>
+<p>Boton con icono de luna (oscuro) o sol (claro), presente en la barra de navegación de todas las páginas. Cambio instantaneo sin recarga.</p>
+
+<h2>16.4 Avatares con Colores Únicos</h2>
+<p>El sistema genera avatares con iniciales y colores de fondo únicos (paleta de 8 colores) asignados mediante función hash basada en el ID del usuario.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 17. API                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec17"><span class="section-num">17</span> API REST &mdash; Endpoints del Backend</h1>
+
+<h2>17.1 Autenticación</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th><th>Auth</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/auth/login</code></td><td>Iniciar sesion</td><td>No</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/auth/refresh</code></td><td>Renovar access token</td><td>No</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/auth/me</code></td><td>Datos del usuario actual</td><td>Si</td></tr>
+  </tbody>
+</table>
+
+<h2>17.2 Empresas</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/empresas</code></td><td>Listar todas las empresas</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/empresas</code></td><td>Crear nueva empresa</td></tr>
+    <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/empresas/:id</code></td><td>Actualizar empresa</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/empresas/:id</code></td><td>Eliminar empresa</td></tr>
+  </tbody>
+</table>
+
+<h2>17.3 Dispositivos</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/dispositivos</code></td><td>Listar dispositivos (filtros: empresa_id, categoria)</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/dispositivos</code></td><td>Crear dispositivo</td></tr>
+    <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/dispositivos/:id</code></td><td>Actualizar dispositivo</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/dispositivos/:id</code></td><td>Eliminar dispositivo</td></tr>
+  </tbody>
+</table>
+
+<h2>17.4 Tickets (V2)</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/tickets</code></td><td>Listar tickets con filtros</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/tickets/:id</code></td><td>Detalle de un ticket</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/tickets</code></td><td>Crear ticket</td></tr>
+    <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/v2/tickets/:id</code></td><td>Actualizar ticket</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/tickets/:id</code></td><td>Eliminar ticket (admin/gestor)</td></tr>
+    <tr><td><span class="badge badge-cyan">PATCH</span></td><td><code>/api/v2/tickets/:id/notas</code></td><td>Actualizar notas</td></tr>
+  </tbody>
+</table>
+
+<h2>17.5 Asignaciones, Comentarios, Archivos y Horas</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/tickets/:id/asignaciones</code></td><td>Asignar operarios</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/tickets/:id/asignaciones/:userId</code></td><td>Desasignar operario</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/tickets/:id/comentarios</code></td><td>Listar comentarios</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/tickets/:id/comentarios</code></td><td>Crear comentario (con archivos)</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/comentarios/:id</code></td><td>Eliminar comentario</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/tickets/:id/archivos</code></td><td>Subir archivos</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/archivos/:id</code></td><td>Eliminar archivo</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/archivos/:id/url</code></td><td>URL de descarga</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/tickets/:id/horas</code></td><td>Registrar horas</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/tickets/:id/horas/:horaId</code></td><td>Eliminar registro de horas</td></tr>
+  </tbody>
+</table>
+
+<h2>17.6 Usuarios</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/usuarios</code></td><td>Listar usuarios (admin)</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/usuarios</code></td><td>Crear usuario (admin)</td></tr>
+    <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/usuarios/:id</code></td><td>Actualizar usuario (admin)</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/usuarios/:id</code></td><td>Eliminar usuario (admin)</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/operarios</code></td><td>Listar operarios</td></tr>
+  </tbody>
+</table>
+
+<h2>17.7 Estadisticas</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/estadisticas/resumen</code></td><td>Resumen general de tickets</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/estadisticas/operarios</code></td><td>Estadisticas por operario</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/estadisticas/empresas</code></td><td>Estadisticas por empresa</td></tr>
+  </tbody>
+</table>
+
+<h2>17.8 Chat</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/chat/canales</code></td><td>Listar canales del usuario</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/chat/canales</code></td><td>Crear canal</td></tr>
+    <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/v2/chat/canales/:id</code></td><td>Actualizar canal</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/chat/canales/:id</code></td><td>Eliminar canal</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/chat/canales/:id/mensajes</code></td><td>Obtener mensajes</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/chat/canales/:id/mensajes</code></td><td>Enviar mensaje (con archivos)</td></tr>
+    <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/v2/chat/mensajes/:id</code></td><td>Eliminar mensaje</td></tr>
+    <tr><td><span class="badge badge-cyan">PATCH</span></td><td><code>/api/v2/chat/mensajes/:id</code></td><td>Editar mensaje</td></tr>
+    <tr><td><span class="badge badge-cyan">PATCH</span></td><td><code>/api/v2/chat/mensajes/:id/pin</code></td><td>Anclar/desanclar</td></tr>
+    <tr><td><span class="badge badge-green">POST</span></td><td><code>/api/v2/chat/canales/:id/miembros</code></td><td>Anadir miembros</td></tr>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/v2/chat/prefs</code></td><td>Obtener preferencias</td></tr>
+    <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/v2/chat/prefs</code></td><td>Actualizar preferencias</td></tr>
+  </tbody>
+</table>
+
+<h2>17.9 Health Check</h2>
+<table>
+  <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-blue">GET</span></td><td><code>/api/health</code></td><td>Verificar estado del servidor</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 18. FLUJOS DE TRABAJO                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec18"><span class="section-num">18</span> Flujos de Trabajo Paso a Paso</h1>
+
+<p>Esta sección describe, paso a paso, como realizar las operaciones mas comunes del sistema. Esta pensada para que cualquier usuario nuevo pueda seguir los pasos sin conocimiento previo.</p>
+
+<h2>18.1 Dar de alta una empresa nueva</h2>
+<ol>
+  <li>Acceder al <strong>Dashboard</strong> (página principal, ruta <code>/</code>).</li>
+  <li>Pulsar el boton <strong>&ldquo;Nueva Empresa&rdquo;</strong> (icono <code>+</code>).</li>
+  <li>Se abre un modal con tres pestanas:
+    <ul>
+      <li><strong>Datos:</strong> Rellenar nombre (obligatorio), CIF (obligatorio), email, telefono, dirección, estado y notas. Si esta empresa depende de otra, seleccionar la <strong>empresa matriz</strong> en el desplegable con busqueda.</li>
+      <li><strong>Servicios:</strong> Marcar los servicios contratados (Cloud, Soporte, Hardware, Redes, Seguridad, Backup).</li>
+      <li><strong>Contactos:</strong> Pulsar &ldquo;Anadir Contacto&rdquo; y rellenar nombre, telefono, email y cargo. Se pueden anadir multiples contactos.</li>
+    </ul>
+  </li>
+  <li>Pulsar <strong>&ldquo;Guardar&rdquo;</strong>. La empresa aparecera en el listado.</li>
+</ol>
+
+<h2>18.2 Registrar un dispositivo en una empresa</h2>
+<ol>
+  <li>En el Dashboard, pulsar sobre la <strong>tarjeta de la empresa</strong> deseada.</li>
+  <li>Se abre la vista de dispositivos con pestanas por categoria (Equipos, Servidores, NAS, Redes, Web, Correos, Otros).</li>
+  <li>Seleccionar la <strong>pestana de la categoria</strong> correspondiente.</li>
+  <li>Pulsar el boton <strong>&ldquo;Anadir&rdquo;</strong> dentro de la pestana.</li>
+  <li>Se abre un modal con los campos específicos de esa categoria. Ejemplo para un equipo:
+    <ul>
+      <li>Nombre del dispositivo (obligatorio) y tipo (PC, Portatil, etc.).</li>
+      <li>número de serie (obligatorio para equipos).</li>
+      <li>IP, AnyDesk ID, usuario y contraseña.</li>
+    </ul>
+  </li>
+  <li>Opcionalmente, anadir <strong>campos personalizados</strong> pulsando &ldquo;Anadir&rdquo; en la sección de campos extra (por ejemplo: &ldquo;Ubicación&rdquo; = &ldquo;Oficina 3&rdquo;).</li>
+  <li>Pulsar <strong>&ldquo;Guardar&rdquo;</strong>.</li>
+</ol>
+
+<div class="box box-blue">
+  <div class="box-title">Campos especiales para la categoria &ldquo;Web&rdquo;</div>
+  <p>Además de la URL, se pueden registrar: puerto, usuario FTP, contraseña FTP y contraseña del panel de administración. Estos se almacenan en <code>campos_extra</code> (JSONB).</p>
+</div>
+
+<h2>18.3 Crear un ticket de soporte (como admin/gestor/trabajador)</h2>
+<ol>
+  <li>Ir a la página de <strong>Tickets</strong> (<code>/tickets</code>).</li>
+  <li>Pulsar <strong>&ldquo;Nuevo Ticket&rdquo;</strong>.</li>
+  <li>Se abre un modal con los siguientes campos:
+    <ul>
+      <li><strong>Empresa</strong> (obligatorio): Selector con busqueda. Al seleccionar una empresa, se cargan automáticamente sus contactos y dispositivos.</li>
+      <li><strong>Contacto</strong> (opcional): Seleccionar de la lista de contactos de la empresa. también se puede <strong>crear un contacto nuevo</strong> pulsando &ldquo;Crear contacto&rdquo; (se abre un panel lateral sin cerrar el modal) o <strong>editar uno existente</strong> pulsando &ldquo;Editar contacto&rdquo;.</li>
+      <li><strong>Dispositivos</strong> (opcional, selección multiple): Lista de checkboxes con buscador. Se pueden seleccionar varios dispositivos afectados. también se puede <strong>crear un dispositivo nuevo</strong> pulsando &ldquo;Anadir dispositivo&rdquo; (panel lateral con selector de categoria y formulario).</li>
+      <li><strong>Asunto</strong> (obligatorio): Titulo breve del problema.</li>
+      <li><strong>Descripción</strong> (opcional): Detalles adicionales.</li>
+      <li><strong>Prioridad:</strong> Baja / Media (por defecto) / Alta / Urgente.</li>
+      <li><strong>Estado:</strong> Pendiente (por defecto) / En curso / Pausado / Completado / Pendiente de facturar (solo gestor) / Facturado.</li>
+      <li><strong>Operarios:</strong> Selector multiple con filtros rápidos (&ldquo;Todos&rdquo;, &ldquo;Solo admins&rdquo;, &ldquo;Solo trabajadores&rdquo;) y busqueda.</li>
+    </ul>
+  </li>
+  <li>Pulsar <strong>&ldquo;Guardar&rdquo;</strong>. Los operarios asignados recibiran un email de notificación.</li>
+</ol>
+
+<h2>18.4 Flujo completo de un ticket: de creación a facturación</h2>
+<ol>
+  <li><strong>Creación:</strong> Se crea el ticket con estado &ldquo;Pendiente&rdquo; y prioridad adecuada. Se asignan uno o varios operarios.</li>
+  <li><strong>Inicio del trabajo:</strong> El operario cambia el estado a <strong>&ldquo;En curso&rdquo;</strong>. El cronometro de tiempo se activa automáticamente.</li>
+  <li><strong>Durante el trabajo:</strong> El operario puede:
+    <ul>
+      <li>Anadir <strong>comentarios</strong> con archivos adjuntos describiendo el progreso.</li>
+      <li>Subir <strong>archivos</strong> directamente al ticket (capturas, logs, etc.).</li>
+      <li>Registrar <strong>horas de trabajo</strong> con descripción y rango de fechas.</li>
+      <li>Escribir <strong>notas internas</strong> que solo ve el equipo (no el cliente).</li>
+      <li><strong>Pausar</strong> el ticket si necesita esperar (estado &ldquo;Pausado&rdquo;): el cronometro se pausa.</li>
+      <li><strong>Reanudar</strong> el trabajo volviendo a &ldquo;En curso&rdquo;.</li>
+    </ul>
+  </li>
+  <li><strong>Finalización:</strong> El operario cambia el estado a <strong>&ldquo;Completado&rdquo;</strong>. El cronometro se detiene. El cliente recibe un email informando de la resolución.</li>
+  <li><strong>Facturación:</strong> El gestor cambia el estado a <strong>&ldquo;Pendiente de facturar&rdquo;</strong> (solo gestores pueden hacer esto). Tras emitir la factura, se cambia a <strong>&ldquo;Facturado&rdquo;</strong>.</li>
+</ol>
+
+<div class="box box-orange">
+  <div class="box-title">Importante: Solo el gestor puede facturar</div>
+  <p>El estado &ldquo;Pendiente de facturar&rdquo; solo puede ser seleccionado por usuarios con rol <strong>gestor</strong>. Si otro rol tiene un ticket en ese estado, vera la opción deshabilitada en el formulario.</p>
+</div>
+
+<h2>18.5 Crear una incidencia (como cliente)</h2>
+<ol>
+  <li>El cliente inicia sesion. Es redirigido automáticamente a <code>/incidencias</code>.</li>
+  <li>Ve un listado con sus incidencias anteriores (si las tiene) o un mensaje &ldquo;Todo en orden&rdquo;.</li>
+  <li>Pulsa <strong>&ldquo;Nueva incidencia&rdquo;</strong>.</li>
+  <li>Se abre un modal con:
+    <ul>
+      <li><strong>Sistema afectado</strong> (opcional): Grid de botones con los sistemas de su empresa (Equipos, Servidores, NAS, etc.). Puede elegir &ldquo;Sin especificar&rdquo;.</li>
+      <li><strong>Asunto</strong> (obligatorio, maximo 200 caracteres): Descripción breve.</li>
+      <li><strong>Descripción</strong> (opcional, maximo 2000 caracteres): Detalles del problema.</li>
+      <li><strong>Archivos</strong> (opcional): Subida de imagenes, PDFs, documentos. Se muestra una lista con nombre y tamaño de cada archivo, con boton para eliminar antes de enviar.</li>
+    </ul>
+  </li>
+  <li>Pulsa <strong>&ldquo;Enviar incidencia&rdquo;</strong>. Aparece un mensaje de confirmación.</li>
+  <li>Todos los <strong>gestores</strong> reciben un email notificandoles de la nueva incidencia.</li>
+  <li>La incidencia aparece en el sistema de tickets para el equipo interno.</li>
+</ol>
+
+<h2>18.6 Que ve el cliente tras crear la incidencia</h2>
+<ul>
+  <li>La incidencia aparece en su listado con estado <strong>&ldquo;Pendiente&rdquo;</strong>.</li>
+  <li>Cuando el equipo la atiende, el estado cambia a <strong>&ldquo;En curso&rdquo;</strong>.</li>
+  <li>Cuando se completa, el cliente ve <strong>&ldquo;Completado&rdquo;</strong> (los estados &ldquo;Pendiente de facturar&rdquo; y &ldquo;Facturado&rdquo; se muestran simplificados como &ldquo;Completado&rdquo;).</li>
+  <li>Al pulsar sobre una incidencia, se abre un modal de detalle con: asunto, estado, fecha, descripción y archivos adjuntos con posibilidad de descarga.</li>
+  <li>Si la empresa del cliente es <strong>matriz</strong> y tiene filiales, el cliente vera las incidencias de todas las filiales además de las propias. En ese caso se muestra una columna extra &ldquo;Empresa&rdquo; en la tabla.</li>
+</ul>
+
+<h2>18.7 Crear un usuario nuevo (como admin)</h2>
+<ol>
+  <li>Ir a <strong>Usuarios</strong> (<code>/usuarios</code>).</li>
+  <li>Pulsar <strong>&ldquo;Nuevo Usuario&rdquo;</strong>.</li>
+  <li>Rellenar el formulario:
+    <ul>
+      <li><strong>Nombre completo</strong> (obligatorio).</li>
+      <li><strong>Email</strong> (obligatorio, debe ser único).</li>
+      <li><strong>Rol</strong>:
+        <ul>
+          <li><em>Trabajador</em> &mdash; acceso estandar.</li>
+          <li><em>Gestor</em> &mdash; recibe incidencias de clientes, puede facturar.</li>
+          <li><em>Administrador</em> &mdash; acceso total.</li>
+          <li><em>Cliente</em> &mdash; portal de incidencias.</li>
+        </ul>
+      </li>
+      <li><strong>Empresa</strong> (obligatorio solo si el rol es &ldquo;cliente&rdquo;): Selector con busqueda.</li>
+      <li><strong>Telefono</strong> (opcional, solo para clientes).</li>
+      <li><strong>Contraseña</strong> (obligatoria en creación).</li>
+    </ul>
+  </li>
+  <li>Pulsar <strong>&ldquo;Guardar&rdquo;</strong>. El usuario ya puede iniciar sesion.</li>
+</ol>
+
+<h2>18.8 Usar el chat interno</h2>
+<ol>
+  <li>Ir a <strong>Chat</strong> (<code>/chat</code>).</li>
+  <li>En el <strong>panel lateral izquierdo</strong> se ven los canales grupales y los mensajes directos.</li>
+  <li>Para <strong>crear un canal</strong>: Pulsar el icono &ldquo;+&rdquo; junto a &ldquo;Canales&rdquo;, poner nombre, descripción y seleccionar miembros.</li>
+  <li>Para <strong>enviar un mensaje directo</strong>: Pulsar el icono &ldquo;+&rdquo; junto a &ldquo;Directos&rdquo;, seleccionar la persona. Se envia una invitación que el destinatario debe aceptar.</li>
+  <li>En la ventana de chat:
+    <ul>
+      <li>Escribir el mensaje en el campo inferior y pulsar Enter o el boton de envio.</li>
+      <li>Para <strong>adjuntar un archivo</strong>: Pulsar el icono del clip.</li>
+      <li>Para <strong>mencionar a alguien</strong>: Escribir <code>@</code> seguido del nombre. Aparece un selector de personas.</li>
+      <li>Para <strong>vincular un ticket</strong>: Usar el boton de ticket para buscar y seleccionar un ticket existente.</li>
+      <li><strong>Clic derecho</strong> sobre un mensaje para: editar (solo propios), eliminar, anclar/desanclar.</li>
+      <li><strong>Clic derecho</strong> sobre un canal para: fijar/desfijar, silenciar/activar notificaciones, ocultar/mostrar, editar (admin), eliminar.</li>
+    </ul>
+  </li>
+  <li>Los canales se pueden <strong>reordenar</strong> arrastrando y soltando (drag &amp; drop).</li>
+</ol>
+
+<h2>18.9 Consultar estadisticas</h2>
+<ol>
+  <li>Ir a <strong>Estadisticas</strong> (<code>/estadisticas</code>) &mdash; solo admin y gestor.</li>
+  <li>En la parte superior se ven <strong>7 tarjetas KPI</strong>:
+    <ul>
+      <li><strong>Total tickets</strong> &mdash; número global.</li>
+      <li><strong>Abiertos</strong> &mdash; pendientes + en curso.</li>
+      <li><strong>Sin asignar</strong> &mdash; sin operario asignado.</li>
+      <li><strong>Completados</strong> &mdash; finalizados.</li>
+      <li><strong>Facturados</strong> &mdash; cerrados y facturados.</li>
+      <li><strong>Urgentes</strong> &mdash; con prioridad urgente.</li>
+      <li><strong>últimos 7 dias</strong> &mdash; creados en la ultima semana.</li>
+    </ul>
+  </li>
+  <li>Debajo, tres pestanas: <strong>Tickets</strong>, <strong>Operarios</strong>, <strong>Empresas</strong>.</li>
+  <li>Usar el <strong>filtro de fechas</strong> (Desde/Hasta) en la cabecera para acotar el rango de datos. Pulsar &ldquo;Todo&rdquo; para quitar los filtros.</li>
+</ol>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 19. FUNCIONALIDADES AVANZADAS                                             -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec19"><span class="section-num">19</span> Funcionalidades Avanzadas</h1>
+
+<h2>19.1 Creación de contactos y dispositivos desde el modal de ticket</h2>
+<p>Al crear o editar un ticket, no es necesario salir del modal para crear contactos o dispositivos nuevos:</p>
+<ul>
+  <li><strong>Crear contacto:</strong> Pulsar &ldquo;Crear contacto&rdquo; junto al campo de contacto. Se despliega un <strong>panel lateral</strong> a la derecha del modal con el formulario (nombre, telefono, email, cargo). El contacto se anade a la empresa seleccionada y queda disponible inmediatamente.</li>
+  <li><strong>Editar contacto:</strong> Si hay un contacto seleccionado, aparece el boton &ldquo;Editar contacto&rdquo; que abre otro panel lateral con los datos precargados.</li>
+  <li><strong>Crear dispositivo:</strong> Pulsar &ldquo;Anadir dispositivo&rdquo; junto a la lista de dispositivos. Se abre un panel lateral con dos pasos: primero seleccionar la categoria (grid de botones) y luego rellenar el formulario específico de esa categoria.</li>
+</ul>
+
+<div class="box box-blue">
+  <div class="box-title">Panel lateral &ldquo;side panel&rdquo;</div>
+  <p>Estos paneles laterales aparecen junto al formulario principal sin cerrarlo, permitiendo completar la operación auxiliar y continuar con la creación del ticket de forma fluida.</p>
+</div>
+
+<h2>19.2 Selección multiple de dispositivos en tickets</h2>
+<p>Un ticket puede estar asociado a <strong>varios dispositivos</strong> simultaneamente (no solo uno). Al crear/editar un ticket:</p>
+<ul>
+  <li>Se muestra una lista de checkboxes con todos los dispositivos de la empresa.</li>
+  <li>Un buscador permite filtrar por nombre o tipo.</li>
+  <li>Se puede seleccionar/deseleccionar haciendo clic en cada dispositivo.</li>
+  <li>Un contador muestra cuantos estan seleccionados, con boton &ldquo;Limpiar&rdquo;.</li>
+</ul>
+
+<h2>19.3 Campos personalizados en dispositivos</h2>
+<p>Todos los tipos de dispositivos soportan <strong>campos personalizados</strong> (<code>campos_extra</code>). Son pares clave-valor libres que permiten almacenar información adicional no prevista en el formulario estandar. Ejemplos:</p>
+<ul>
+  <li>&ldquo;Ubicación&rdquo; = &ldquo;Planta 2, Rack B&rdquo;</li>
+  <li>&ldquo;Garantia hasta&rdquo; = &ldquo;2027-03-15&rdquo;</li>
+  <li>&ldquo;Proveedor&rdquo; = &ldquo;Dell Technologies&rdquo;</li>
+</ul>
+
+<h2>19.4 Jerarquia de empresas (matriz y filiales)</h2>
+<p>El sistema soporta relaciones <strong>matriz-filial</strong> entre empresas:</p>
+<ul>
+  <li>Al crear/editar una empresa, se puede seleccionar una <strong>empresa matriz</strong> mediante un dropdown con busqueda.</li>
+  <li>Una empresa que es filial no puede seleccionarse como matriz de otra (se excluye de la lista).</li>
+  <li><strong>Impacto en clientes:</strong> Un cliente vinculado a una empresa matriz ve los tickets de todas sus filiales. Un cliente vinculado a una filial solo ve los de su propia empresa.</li>
+  <li>En el Dashboard, las empresas filiales se visualizan asociadas a su matriz.</li>
+</ul>
+
+<h2>19.5 Sistema de contactos de empresas</h2>
+<p>Cada empresa puede tener multiples <strong>contactos</strong> almacenados en formato JSON. Cada contacto tiene: nombre, telefono, email y cargo. Los contactos son accesibles desde:</p>
+<ul>
+  <li>El <strong>detalle de empresa</strong> en el Dashboard.</li>
+  <li>El <strong>formulario de tickets</strong>, donde se puede seleccionar un contacto como referencia para ese ticket. Los datos del contacto (nombre, telefono) se copian al ticket.</li>
+</ul>
+
+<h2>19.6 Chat: funcionalidades avanzadas</h2>
+
+<h3>Menu contextual de canal</h3>
+<p>Al hacer <strong>clic derecho sobre un canal</strong> en el panel lateral aparecen opciones:</p>
+<table>
+  <thead><tr><th>Opción</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Fijar / Desfijar canal</strong></td><td>Fija el canal en la parte superior de la lista.</td></tr>
+    <tr><td><strong>Silenciar / Activar notificaciones</strong></td><td>Desactiva las notificaciones de ese canal.</td></tr>
+    <tr><td><strong>Ocultar / Mostrar canal</strong></td><td>Oculta el canal de la lista (se puede volver a mostrar).</td></tr>
+    <tr><td><strong>Editar canal</strong></td><td>Modificar nombre, descripción y miembros (solo admin).</td></tr>
+    <tr><td><strong>Eliminar canal/chat</strong></td><td>Elimina permanentemente (admin para canales, cualquiera para DMs propios).</td></tr>
+  </tbody>
+</table>
+
+<h3>Reorden de canales por arrastre</h3>
+<p>Los canales en el panel lateral se pueden <strong>arrastrar y soltar</strong> (drag &amp; drop) para reorganizar su orden personal. El orden personalizado se guarda en las preferencias del usuario.</p>
+
+<h3>Selector de tickets en chat</h3>
+<p>Al pulsar el boton de ticket en la zona de redacción, aparece un <strong>buscador de tickets</strong> que permite buscar por número (<code>#001</code>) o por asunto. Al seleccionar un ticket, se adjunta como referencia al mensaje, mostrando su número, asunto y estado con colores.</p>
+
+<h3>Flujo de mensajes directos (DM)</h3>
+<ol>
+  <li>El usuario A selecciona al usuario B para iniciar un DM.</li>
+  <li>Se crea el canal y se envia un mensaje de sistema: <em>&ldquo;Invitación de chat directo&rdquo;</em>.</li>
+  <li>El usuario B ve la invitación y puede <strong>aceptar</strong> o <strong>rechazar</strong>.</li>
+  <li>Si acepta, ambos pueden conversar. Si rechaza, se notifica al usuario A.</li>
+</ol>
+
+<h2>19.7 Exportación de datos a Excel</h2>
+<p>Desde el Dashboard se pueden exportar datos a formato <strong>.xlsx</strong> (Microsoft Excel). La exportación incluye la información de empresas y sus dispositivos en formato tabular, fácilitando la generación de informes externos o la migración de datos.</p>
+
+<h2>19.8 Cronometro inteligente de tickets</h2>
+<p>El sistema gestiona un cronometro automático que funciona asi:</p>
+<table>
+  <thead><tr><th>Acción</th><th>Campo afectado</th><th>Resultado</th></tr></thead>
+  <tbody>
+    <tr><td>Cambiar a &ldquo;En curso&rdquo;</td><td><code>en_curso_desde</code> = ahora</td><td>El cronometro empieza a contar en tiempo real</td></tr>
+    <tr><td>Cambiar a &ldquo;Pausado&rdquo; o &ldquo;Pendiente&rdquo;</td><td><code>tiempo_acumulado_ms</code> += diferencia</td><td>Se acumula el tiempo y se limpia <code>en_curso_desde</code></td></tr>
+    <tr><td>Cambiar a &ldquo;Completado&rdquo;</td><td><code>tiempo_acumulado_ms</code> += diferencia</td><td>El cronometro se detiene definitivamente</td></tr>
+  </tbody>
+</table>
+<p>En la interfaz, el tiempo se muestra en formato legible: minutos (&lt;1h), horas y minutos (&lt;24h), dias y horas (&lt;30d), o meses y dias.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 20. RESPONSIVE                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec20"><span class="section-num">20</span> Diseño Responsive y Navegación Movil</h1>
+
+<h2>20.1 Doble sistema de navegación</h2>
+<p>La aplicación implementa un <strong>diseño responsive</strong> con dos sistemas de navegación:</p>
+<table>
+  <thead><tr><th>Pantalla</th><th>Navegación</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Desktop</strong> (ancho &gt; 768px)</td><td>Barra superior horizontal (<code>topbar</code>)</td><td>Logo + enlaces + area de usuario</td></tr>
+    <tr><td><strong>Movil</strong> (ancho &le; 768px)</td><td>Barra inferior fija (<code>bottom-nav</code>)</td><td>Iconos con texto corto, fija en la parte inferior de la pantalla</td></tr>
+  </tbody>
+</table>
+
+<h2>20.2 Navegación movil (bottom-nav)</h2>
+<p>En pantallas pequenas, se muestra una barra de navegación fija en la parte inferior con iconos y etiquetas cortas:</p>
+<ul>
+  <li><strong>Empresas</strong> (icono edificio) &mdash; Dashboard</li>
+  <li><strong>Usuarios</strong> (icono personas) &mdash; Solo admin/gestor</li>
+  <li><strong>Tickets</strong> (icono auricular) &mdash; Gestión de tickets</li>
+  <li><strong>Stats</strong> (icono grafica) &mdash; Estadisticas, solo admin/gestor</li>
+  <li><strong>Chat</strong> (icono bocadillo) &mdash; Con badge de no leidos</li>
+</ul>
+
+<h2>20.3 Portal de clientes en movil</h2>
+<p>La página de incidencias del cliente tiene un diseño específico para movil:</p>
+<ul>
+  <li>En <strong>desktop</strong> se muestra una tabla con columnas (asunto, estado, fecha).</li>
+  <li>En <strong>movil</strong> se muestran tarjetas individuales por incidencia, mas fáciles de leer en pantalla pequena.</li>
+</ul>
+
+<h2>20.4 Modales adaptables</h2>
+<p>Todos los modales del sistema (creación de tickets, empresas, dispositivos, usuarios) se adaptan al tamaño de la pantalla, con scroll interno cuando el contenido excede la altura visible.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 21. DESPLIEGUE (antes era 18)                                             -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec21"><span class="section-num">21</span> Despliegue y Configuración</h1>
+
+<h2>18.1 Variables de Entorno</h2>
+
+<h3>Frontend (<code>.env</code>)</h3>
+<table>
+  <thead><tr><th>Variable</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>VITE_API_URL</code></td><td>URL base del backend (ej: <code>http://localhost:3000</code>)</td></tr>
+  </tbody>
+</table>
+
+<h3>Backend (<code>.env</code>)</h3>
+<table>
+  <thead><tr><th>Variable</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>PORT</code></td><td>Puerto del servidor Express (por defecto: 3000)</td></tr>
+    <tr><td><code>SUPABASE_URL</code></td><td>URL de la instancia de Supabase</td></tr>
+    <tr><td><code>SUPABASE_SERVICE_KEY</code></td><td>Clave de servicio de Supabase (admin)</td></tr>
+    <tr><td><code>FRONTEND_URL</code></td><td>URL del frontend (para CORS)</td></tr>
+    <tr><td><code>STORAGE_BUCKET</code></td><td>Nombre del bucket de Storage (por defecto: <code>ticket-archivos</code>)</td></tr>
+    <tr><td>Variables SMTP</td><td>Configuración de Nodemailer para envio de correos</td></tr>
+  </tbody>
+</table>
+
+<h2>18.2 Estructura de Carpetas</h2>
+<pre>
+proyectoHola/
+|
++-- gestión-frontend/                 # Aplicación web (React + Vite)
+|   +-- public/
+|   |   +-- sw-chat.js                # Service Worker notificaciones
+|   +-- src/
+|   |   +-- components/               # Componentes reutilizables
+|   |   |   +-- ChatNavLink.jsx
+|   |   |   +-- ChatToasts.jsx
+|   |   |   +-- ThemeToggle.jsx
+|   |   +-- context/                  # Contextos de React
+|   |   |   +-- AuthContext.jsx
+|   |   |   +-- ThemeContext.jsx
+|   |   |   +-- ChatNotificationsContext.jsx
+|   |   +-- pages/                    # Páginas principales
+|   |   |   +-- Login.jsx
+|   |   |   +-- Dashboard.jsx
+|   |   |   +-- Tickets.jsx
+|   |   |   +-- Usuarios.jsx
+|   |   |   +-- Estadisticas.jsx
+|   |   |   +-- Chat.jsx
+|   |   |   +-- ClienteIncidencias.jsx
+|   |   +-- services/                 # Capa de comunicación
+|   |   |   +-- api.js
+|   |   |   +-- auth-helpers.js
+|   |   +-- App.jsx                   # Componente raiz y rutas
+|   +-- package.json
+|
++-- gestión-backend/                  # API REST (Node.js + Express)
+|   +-- src/
+|   |   +-- server.js                 # Servidor principal
+|   |   +-- supabase.js               # Cliente Supabase
+|   |   +-- routes/                   # Rutas de la API
+|   |   +-- middleware/               # Middleware de auth
+|   |   +-- helpers/                  # Utilidades (email, multer, historial)
+|   +-- package.json
+|
++-- gestión-frontend-movil/           # App movil (React Native)
+</pre>
+
+<h2>18.3 Scripts Disponibles</h2>
+<table>
+  <thead><tr><th>Proyecto</th><th>Comando</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td>Frontend</td><td><code>npm run dev</code></td><td>Servidor de desarrollo (Vite)</td></tr>
+    <tr><td>Frontend</td><td><code>npm run build</code></td><td>Build de producción</td></tr>
+    <tr><td>Frontend</td><td><code>npm run preview</code></td><td>Previsualizar build</td></tr>
+    <tr><td>Backend</td><td><code>npm start</code></td><td>Iniciar servidor Express</td></tr>
+    <tr><td>Backend</td><td><code>npm run dev</code></td><td>Desarrollo con nodemon (recarga automática)</td></tr>
+  </tbody>
+</table>
+
+<h2>18.4 Configuración de CORS</h2>
+<p>El backend acepta peticiones de cualquier origen (<code>origin: true</code>) con credenciales, soportando métodos GET, POST, PUT, PATCH, DELETE y OPTIONS.</p>
+
+<h2>18.5 Limites del Servidor</h2>
+<ul>
+  <li>Payload JSON maximo: <strong>10 MB</strong></li>
+  <li>Archivos gestionados via multipart/form-data (Multer)</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 22. FAQ                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec22"><span class="section-num">22</span> Preguntas Frecuentes (FAQ)</h1>
+
+<h2>Generales</h2>
+
+<h3>Que necesito para acceder al sistema?</h3>
+<p>Un navegador web moderno (Chrome, Edge, Firefox o Safari) y unas credenciales (email y contraseña) proporcionadas por un administrador. No se requiere instalar ningun software adicional.</p>
+
+<h3>Se me ha cerrado la sesion sin hacer nada, por que?</h3>
+<p>Los tokens de sesion se almacenan en <code>sessionStorage</code>. Esto significa que <strong>si cierras la pestana o el navegador, la sesion se pierde</strong> y tendras que volver a iniciar sesion. Dentro de una misma pestana, la sesion se renueva automáticamente mientras no cierres el navegador.</p>
+
+<h3>He olvidado mi contraseña, como la recupero?</h3>
+<p>Contacta con un administrador del sistema para que restablezca tu contraseña desde la página de gestión de usuarios.</p>
+
+<h2>Empresas y dispositivos</h2>
+
+<h3>Que es una empresa matriz y una filial?</h3>
+<p>Una <strong>empresa matriz</strong> es la empresa principal de un grupo. Las <strong>filiales</strong> son empresas que dependen de ella. En el sistema, al crear una empresa puedes asignarle una empresa matriz. Esto afecta a la visibilidad: un cliente de una empresa matriz puede ver los tickets de todas sus filiales.</p>
+
+<h3>Puedo anadir campos que no aparecen en el formulario del dispositivo?</h3>
+<p>Si. Todos los formularios de dispositivos tienen una sección &ldquo;Campos personalizados&rdquo; donde puedes anadir pares <strong>campo/valor</strong> libres. Por ejemplo: &ldquo;Ubicación&rdquo; = &ldquo;Rack A3&rdquo;.</p>
+
+<h3>Que tipos de dispositivos puedo registrar?</h3>
+<p>Equipos (PCs, portatiles, impresoras...), servidores (fisicos, virtuales), NAS (Synology, QNAP), dispositivos de red (routers, switches, APs, firewalls), cuentas de correo, páginas web y otros no categorizados.</p>
+
+<h2>Tickets</h2>
+
+<h3>Puedo asignar varios operarios a un mismo ticket?</h3>
+<p>Si. Al crear o editar un ticket, el selector de operarios permite selección multiple. Cada operario asignado recibe un email de notificación.</p>
+
+<h3>Puedo asociar un ticket a varios dispositivos?</h3>
+<p>Si. El selector de dispositivos es de selección multiple (checkboxes). Puedes buscar y seleccionar tantos como necesites.</p>
+
+<h3>Que es una nota interna?</h3>
+<p>Las notas internas son textos que solo puede ver el equipo interno (admin, gestor, trabajador). <strong>Los clientes nunca ven las notas internas.</strong> Son utiles para anotar información sensible o instrucciones entre companeros.</p>
+
+<h3>Por que no puedo cambiar un ticket a &ldquo;Pendiente de facturar&rdquo;?</h3>
+<p>Solo los usuarios con rol <strong>gestor</strong> pueden cambiar un ticket a ese estado. Si eres admin o trabajador, veras la opción deshabilitada.</p>
+
+<h3>Como funciona el cronometro de tiempo?</h3>
+<p>Se activa automáticamente al pasar el ticket a &ldquo;En curso&rdquo; y se pausa al ponerlo en &ldquo;Pausado&rdquo; o &ldquo;Pendiente&rdquo;. El tiempo acumulado se muestra en la lista de tickets y en el detalle. No es necesario iniciarlo manualmente.</p>
+
+<h3>Puedo crear un contacto o dispositivo sin salir del formulario de ticket?</h3>
+<p>Si. Junto a los campos de contacto y dispositivo hay botones &ldquo;Crear contacto&rdquo; y &ldquo;Anadir dispositivo&rdquo; que abren un panel lateral sin cerrar el formulario del ticket. Tras guardarlo, el nuevo elemento queda disponible inmediatamente.</p>
+
+<h2>Portal de clientes</h2>
+
+<h3>Que estados ve el cliente?</h3>
+<p>El cliente ve: <strong>Pendiente</strong>, <strong>En curso</strong>, <strong>Pausado</strong> y <strong>Completado</strong>. Los estados internos &ldquo;Pendiente de facturar&rdquo; y &ldquo;Facturado&rdquo; se muestran simplificados como &ldquo;Completado&rdquo;, ya que la información de facturación no es relevante para el cliente.</p>
+
+<h3>El cliente puede acceder al chat?</h3>
+<p><strong>No.</strong> El chat es una herramienta exclusiva del equipo interno (admin, gestor, trabajador). Los clientes solo tienen acceso al portal de incidencias.</p>
+
+<h3>El cliente puede ver los comentarios internos de sus tickets?</h3>
+<p>El cliente no tiene acceso a la vista de detalle completa del ticket. Solo ve el asunto, descripción, estado (simplificado), fecha y archivos adjuntos que el mismo subio al crear la incidencia.</p>
+
+<h2>Chat</h2>
+
+<h3>Como menciono a alguien en el chat?</h3>
+<p>Escribe <code>@</code> seguido del nombre de la persona. Aparecera un selector automático donde puedes elegir al usuario. Al mencionarlo, recibira una notificación destacada.</p>
+
+<h3>Puedo vincular un ticket en un mensaje de chat?</h3>
+<p>Si. Usa el boton de ticket (icono de ticket) en la barra de redacción. Aparecera un buscador donde puedes buscar por número o asunto. El mensaje mostrara una tarjeta con la información del ticket.</p>
+
+<h3>Como silencio un canal que tiene mucha actividad?</h3>
+<p>Haz <strong>clic derecho</strong> sobre el canal en el panel lateral y selecciona &ldquo;Silenciar notificaciones&rdquo;. Seguiras viendo los mensajes, pero no recibiras notificaciones.</p>
+
+<h3>Como funcionan las notificaciones del navegador?</h3>
+<p>La primera vez que accedes al chat, el navegador te pedira permiso para mostrar notificaciones. Si aceptas, recibiras notificaciones nativas incluso cuando la pestana este en segundo plano. Si las rechazas, solo veras los contadores de no leidos dentro de la app.</p>
+
+<h2>Estadisticas</h2>
+
+<h3>Que tarjetas KPI se muestran en la cabecera?</h3>
+<p>Total de tickets, abiertos (pendientes + en curso), sin asignar, completados, facturados, urgentes, y creados en los últimos 7 dias.</p>
+
+<h3>El filtro de fechas afecta a todas las graficas?</h3>
+<p>El filtro de fechas afecta a las pestanas de <strong>Operarios</strong> y <strong>Empresas</strong>. Las tarjetas KPI de la cabecera y la pestana de Tickets muestran siempre el resumen global.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 23. GLOSARIO                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<h1 id="sec23"><span class="section-num">23</span> Glosario de Terminos</h1>
+
+<table>
+  <thead><tr><th>Termino</th><th>Definición</th></tr></thead>
+  <tbody>
+    <tr><td><strong>SPA</strong></td><td>Single Page Application &mdash; Aplicación que se carga una vez y actualiza dinámicamente.</td></tr>
+    <tr><td><strong>JWT</strong></td><td>JSON Web Token &mdash; Estandar para transmision segura de información entre partes.</td></tr>
+    <tr><td><strong>UUID</strong></td><td>Universally Unique Identifier &mdash; Identificador único universal de 128 bits.</td></tr>
+    <tr><td><strong>CRUD</strong></td><td>Create, Read, Update, Delete &mdash; Las cuatro operaciones basicas de persistencia.</td></tr>
+    <tr><td><strong>RBAC</strong></td><td>Role-Based Access Control &mdash; Control de acceso basado en roles.</td></tr>
+    <tr><td><strong>API REST</strong></td><td>Interfaz de programación basada en el estilo arquitectonico REST.</td></tr>
+    <tr><td><strong>Supabase</strong></td><td>Plataforma Backend-as-a-Service basada en PostgreSQL de código abierto.</td></tr>
+    <tr><td><strong>Polling</strong></td><td>Técnica de consulta periódica a un servidor para obtener actualizaciones.</td></tr>
+    <tr><td><strong>Service Worker</strong></td><td>Script que el navegador ejecuta en segundo plano, independiente de la página web.</td></tr>
+    <tr><td><strong>Multer</strong></td><td>Middleware de Node.js para manejar datos multipart/form-data.</td></tr>
+    <tr><td><strong>Nodemailer</strong></td><td>Modulo de Node.js para envio de correos electronicos.</td></tr>
+    <tr><td><strong>Vite</strong></td><td>Herramienta de construcción frontend rapida basada en ES modules.</td></tr>
+    <tr><td><strong>Recharts</strong></td><td>Libreria de graficas basada en componentes React y D3.</td></tr>
+    <tr><td><strong>Ticket</strong></td><td>Unidad de trabajo que representa una incidencia o tarea de soporte.</td></tr>
+    <tr><td><strong>Operario</strong></td><td>Técnico o trabajador asignado a resolver tickets.</td></tr>
+    <tr><td><strong>Empresa matriz</strong></td><td>Empresa principal que puede tener filiales asociadas.</td></tr>
+    <tr><td><strong>Empresa filial</strong></td><td>Empresa subordinada vinculada a una matriz.</td></tr>
+    <tr><td><strong>AnyDesk</strong></td><td>Software de escritorio remoto para soporte técnico a distancia.</td></tr>
+    <tr><td><strong>NAS</strong></td><td>Network Attached Storage &mdash; Dispositivo de almacenamiento en red.</td></tr>
+    <tr><td><strong>Badge</strong></td><td>Indicador visual en forma de etiqueta con texto o número.</td></tr>
+    <tr><td><strong>Toast</strong></td><td>Notificación emergente temporal en pantalla.</td></tr>
+    <tr><td><strong>DM</strong></td><td>Direct Message &mdash; Mensaje directo entre dos usuarios.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                                    -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="footer">
+  <p><strong>Hola Informática</strong> &mdash; Documentación Técnica y Funcional v1.0</p>
+  <p>Abril 2026 &mdash; Uso interno</p>
+</div>
+
+<script>
+// Auto-wrap each h1 section into a card
+(function() {
+  var headings = document.querySelectorAll('h1[id^="sec"]');
+  headings.forEach(function(h1) {
+    var card = document.createElement('div');
+    card.className = 'section-card';
+    h1.parentNode.insertBefore(card, h1);
+    card.appendChild(h1);
+    var next = card.nextSibling;
+    while (next) {
+      var nn = next.nextSibling;
+      if (next.nodeType === 1) {
+        // Stop at next h1 with id, cover, toc, footer, or script
+        if ((next.tagName === 'H1' && next.id) || next.classList.contains('cover') || next.classList.contains('toc') || next.classList.contains('footer') || next.tagName === 'SCRIPT') break;
+        // Stop at HTML comments rendered as elements
+        if (next.nodeType === 8) break;
+      }
+      // Skip comment nodes between sections
+      if (next.nodeType === 8) { next = nn; continue; }
+      var el = next;
+      next = nn;
+      card.appendChild(el);
+    }
+  });
+})();
+</script>
+
+<script>
+// Auto-generate IDs for h2/h3 and expose heading tree
+(function() {
+  var headings = document.querySelectorAll('h1[id^="sec"], h2, h3');
+  var counter2 = 0, counter3 = 0, lastH1 = '';
+  headings.forEach(function(h) {
+    if (h.tagName === 'H1') {
+      lastH1 = h.id;
+      counter2 = 0; counter3 = 0;
+    } else if (h.tagName === 'H2') {
+      counter2++;
+      counter3 = 0;
+      if (!h.id) h.id = lastH1 + '_h2_' + counter2;
+    } else if (h.tagName === 'H3') {
+      counter3++;
+      if (!h.id) h.id = lastH1 + '_h3_' + counter2 + '_' + counter3;
+    }
+  });
+
+  window.getHeadingTree = function() {
+    var tree = [];
+    var all = document.querySelectorAll('h1[id^="sec"], h2[id], h3[id]');
+    var currentH1 = null, currentH2 = null;
+    all.forEach(function(h) {
+      var text = h.textContent.replace(/^\s+|\s+$/g, '');
+      if (h.tagName === 'H1') {
+        currentH1 = { id: h.id, text: text, level: 1, children: [] };
+        tree.push(currentH1);
+        currentH2 = null;
+      } else if (h.tagName === 'H2' && currentH1) {
+        currentH2 = { id: h.id, text: text, level: 2, children: [] };
+        currentH1.children.push(currentH2);
+      } else if (h.tagName === 'H3' && currentH2) {
+        currentH2.children.push({ id: h.id, text: text, level: 3 });
+      }
+    });
+    return tree;
+  };
+})();
+</script>
+
+<script>
+// Search functions (called from parent React page)
+(function() {
+  var highlights = [];
+  var currentIdx = -1;
+
+  window.doSearch = function(term, caseSensitive) {
+    clearHighlights();
+    if (!term) return;
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    var compare = caseSensitive
+      ? function(t) { return t.indexOf(term); }
+      : function(t) { return t.toLowerCase().indexOf(term.toLowerCase()); };
+    var termLen = term.length;
+    nodes.forEach(function(node) {
+      var text = node.textContent;
+      if (compare(text) === -1) return;
+      var parts = [], last = 0, pos;
+      var searchIn = caseSensitive ? text : text.toLowerCase();
+      var searchFor = caseSensitive ? term : term.toLowerCase();
+      while ((pos = searchIn.indexOf(searchFor, last)) !== -1) {
+        if (pos > last) parts.push(document.createTextNode(text.substring(last, pos)));
+        var mark = document.createElement('mark');
+        mark.className = 'search-highlight';
+        mark.textContent = text.substring(pos, pos + termLen);
+        parts.push(mark);
+        highlights.push(mark);
+        last = pos + termLen;
+      }
+      if (last < text.length) parts.push(document.createTextNode(text.substring(last)));
+      var frag = document.createDocumentFragment();
+      parts.forEach(function(p) { frag.appendChild(p); });
+      node.parentNode.replaceChild(frag, node);
+    });
+    currentIdx = -1;
+    if (highlights.length) window.searchNext();
+  };
+
+  window.searchNext = function() {
+    if (!highlights.length) return;
+    if (currentIdx >= 0) highlights[currentIdx].className = 'search-highlight';
+    currentIdx = (currentIdx + 1) % highlights.length;
+    highlights[currentIdx].className = 'search-highlight-active';
+    highlights[currentIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  window.searchPrev = function() {
+    if (!highlights.length) return;
+    if (currentIdx >= 0) highlights[currentIdx].className = 'search-highlight';
+    currentIdx = (currentIdx - 1 + highlights.length) % highlights.length;
+    highlights[currentIdx].className = 'search-highlight-active';
+    highlights[currentIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  function clearHighlights() {
+    highlights.forEach(function(mark) {
+      var parent = mark.parentNode;
+      if (parent) { parent.replaceChild(document.createTextNode(mark.textContent), mark); parent.normalize(); }
+    });
+    highlights = [];
+    currentIdx = -1;
+  }
+})();
+</script>
+</body>
+</html>

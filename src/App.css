@@ -184,6 +184,26 @@ select option {
   flex-shrink: 0;
 }
 
+.btn-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  color: var(--primary);
+  font-size: 1rem;
+  transition: all 0.18s;
+  text-decoration: none;
+}
+.btn-help:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
 .btn-logout {
   display: flex;
   align-items: center;
@@ -1727,6 +1747,8 @@ body:not(.is-admin) [data-admin-only] { display: none !important; }
 }
 
 /* Buttons */
+[data-theme="dark"] .btn-help         { background: #1e293b; border-color: #2d3f5c; color: #60a5fa; }
+[data-theme="dark"] .btn-help:hover   { background: #2563eb; border-color: #2563eb; color: #fff; }
 [data-theme="dark"] .btn-logout       { background: #1e293b; border-color: #2d3f5c; }
 [data-theme="dark"] .btn-logout:hover { background: #4c1d1d; border-color: #7f1d1d; color: #f87171; }
 [data-theme="dark"] .btn-secondary    { background: #1e293b; border-color: #2d3f5c; color: #e2e8f0; }

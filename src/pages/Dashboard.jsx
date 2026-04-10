@@ -838,6 +838,7 @@ export default function Dashboard() {
       </nav>
       <div className="user-area">
 <div className="user-info"><div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div><span>{user?.nombre || user?.email}</span></div>
+        <Link to="/documentacion" className="btn-help" title="Documentación técnica"><i className="fas fa-question-circle"></i></Link>
         <ThemeToggle />
         <button className="btn-logout" onClick={handleLogout}><i className="fas fa-sign-out-alt"></i><span>Salir</span></button>
       </div>

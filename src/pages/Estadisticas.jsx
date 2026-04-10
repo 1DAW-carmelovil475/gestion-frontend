@@ -195,6 +195,7 @@ export default function Estadisticas() {
             </div>
             <span>{user?.nombre || user?.email}</span>
           </div>
+          <Link to="/documentacion" className="btn-help" title="Documentación técnica"><i className="fas fa-question-circle"></i></Link>
           <ThemeToggle />
           <button className="btn-logout" onClick={handleLogout}>
             <i className="fas fa-sign-out-alt"></i><span>Salir</span>

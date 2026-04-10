@@ -10,6 +10,7 @@ import Tickets from './pages/Tickets'
 import Estadisticas from './pages/Estadisticas'
 import Chat from './pages/Chat'
 import ClienteIncidencias from './pages/ClienteIncidencias'
+import Documentacion from './pages/Documentacion'
 import './App.css'
 import './dark.css'
 
@@ -93,6 +94,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/documentacion"
+          element={
+            <ProtectedRoute>
+              <Documentacion />
             </ProtectedRoute>
           }
         />

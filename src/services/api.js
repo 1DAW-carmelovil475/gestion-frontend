@@ -199,4 +199,11 @@ export async function gsetChatArchivoUrl(archivoId) {
 export const getChatPrefs    = ()      => apiFetch('/api/v2/chat/prefs')
 export const updateChatPrefs = (prefs) => apiFetch('/api/v2/chat/prefs', { method: 'PUT', body: JSON.stringify({ prefs }) })
 
+// ── Calendario ───────────────────────────────────────────────────────────
+export async function getCalendarioEventos(params = {}) { return apiFetch(`/api/v2/calendario?${new URLSearchParams(params)}`) }
+export async function getCalendarioTodos(params = {})   { return apiFetch(`/api/v2/calendario/todos?${new URLSearchParams(params)}`) }
+export async function createCalendarioEvento(data)      { return apiFetch('/api/v2/calendario', { method: 'POST', body: JSON.stringify(data) }) }
+export async function updateCalendarioEvento(id, data)  { return apiFetch(`/api/v2/calendario/${id}`, { method: 'PUT', body: JSON.stringify(data) }) }
+export async function deleteCalendarioEvento(id)        { return apiFetch(`/api/v2/calendario/${id}`, { method: 'DELETE' }) }
+
 export { API_URL }

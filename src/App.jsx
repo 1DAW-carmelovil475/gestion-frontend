@@ -9,6 +9,7 @@ import Usuarios from './pages/Usuarios'
 import Tickets from './pages/Tickets'
 import Estadisticas from './pages/Estadisticas'
 import Chat from './pages/Chat'
+import Calendario from './pages/Calendario'
 import ClienteIncidencias from './pages/ClienteIncidencias'
 import Documentacion from './pages/Documentacion'
 import './App.css'
@@ -86,6 +87,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute adminOnly>
               <Estadisticas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendario"
+          element={
+            <ProtectedRoute>
+              <Calendario />
             </ProtectedRoute>
           }
         />

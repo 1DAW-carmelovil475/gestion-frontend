@@ -32,7 +32,7 @@ export default function Documentacion() {
   const [searchCount, setSearchCount] = useState(0)
   const [searchCurrent, setSearchCurrent] = useState(0)
   const [searchActive, setSearchActive] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [activeSection, setActiveSection] = useState('')
   const [headingTree, setHeadingTree] = useState([])
   const [expandedSections, setExpandedSections] = useState({})
@@ -188,6 +188,8 @@ export default function Documentacion() {
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } catch (_) {}
     setActiveSection(sectionId)
+    // Close sidebar on mobile after clicking
+    if (window.innerWidth <= 768) setSidebarOpen(false)
   }
 
   function toggleExpand(sectionId) {
@@ -217,6 +219,7 @@ export default function Documentacion() {
           )}
           <Link to="/tickets" className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
           {(isAdmin() || isGestor()) && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
+          <Link to="/calendario" className="nav-link"><i className="fas fa-calendar-alt"></i> Calendario</Link>
           <ChatNavLink mode="top" />
         </nav>
         <div className="user-area">
@@ -239,6 +242,7 @@ export default function Documentacion() {
         {isAdmin() && <Link to="/usuarios" className="bottom-nav-item"><i className="fas fa-users-cog"></i><span>Usuarios</span></Link>}
         <Link to="/tickets" className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
         {(isAdmin() || isGestor()) && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
+        <Link to="/calendario" className="bottom-nav-item"><i className="fas fa-calendar-alt"></i><span>Calendario</span></Link>
         <ChatNavLink mode="bottom" />
       </nav>
 

@@ -411,4 +411,17 @@
     background: rgba(0,0,0,0.3);
     z-index: 9;
   }
+
+  /* Tree items slightly larger touch targets on mobile */
+  .doc-tree-label {
+    padding: 7px 8px;
+    font-size: 0.82rem;
+  }
+  .doc-tree-toggle {
+    width: 28px;
+    height: 28px;
+  }
+  .doc-tree-h3 {
+    padding-left: 18px;
+  }
 }

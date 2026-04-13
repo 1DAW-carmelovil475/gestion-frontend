@@ -834,6 +834,7 @@ export default function Dashboard() {
         )}
         <Link to="/tickets"      className="nav-link"><i className="fas fa-headset"></i> Tickets</Link>
         {(isAdmin() || isGestor()) && <Link to="/estadisticas" className="nav-link"><i className="fas fa-chart-bar"></i> Estadísticas</Link>}
+        <Link to="/calendario" className="nav-link"><i className="fas fa-calendar-alt"></i> Calendario</Link>
         <ChatNavLink mode="top" />
       </nav>
       <div className="user-area">
@@ -1167,6 +1168,7 @@ export default function Dashboard() {
         )}
         <Link to="/tickets"      className="bottom-nav-item"><i className="fas fa-headset"></i><span>Tickets</span></Link>
         {(isAdmin() || isGestor()) && <Link to="/estadisticas" className="bottom-nav-item"><i className="fas fa-chart-bar"></i><span>Stats</span></Link>}
+        <Link to="/calendario" className="bottom-nav-item"><i className="fas fa-calendar-alt"></i><span>Calendario</span></Link>
         <ChatNavLink mode="bottom" />
       </nav>
 

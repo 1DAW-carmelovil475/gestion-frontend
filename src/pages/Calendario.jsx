@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   getCalendarioEventos, createCalendarioEvento, updateCalendarioEvento, deleteCalendarioEvento,
-  getOperarios,
+  getOperarios, getEmpresas, getTickets, getDispositivos,
 } from '../services/api'
 import ChatNavLink from '../components/ChatNavLink'
 import ThemeToggle from '../components/ThemeToggle'
@@ -19,6 +19,109 @@ function getAvatarColor(str) {
 function getInitials(nombre) {
   if (!nombre) return '?'
   return nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+}
+
+// ── SearchableSelect (empresa) ────────────────────────────────
+function SearchableSelect({ value, onChange, options, placeholder = 'Seleccionar...' }) {
+  const [query, setQuery]   = useState('')
+  const [open, setOpen]     = useState(false)
+  const [typing, setTyping] = useState(false)
+  const wrapRef             = useRef(null)
+  const inputRef            = useRef(null)
+  const selected            = options.find(o => o.value === value)
+  const displayValue        = typing ? query : (selected?.label || '')
+  const filtered            = typing && query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options
+  useEffect(() => {
+    function h(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) { setOpen(false); setTyping(false); setQuery('') } }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+  function select(val) { onChange(val); setTyping(false); setQuery(''); setOpen(false) }
+  return (
+    <div className="ss-wrap" ref={wrapRef}>
+      <div className={`ss-input-wrap ${open ? 'open' : ''}`}>
+        <i className="fas fa-search ss-input-icon"></i>
+        <input ref={inputRef} className="ss-input" value={displayValue}
+          onChange={e => { setQuery(e.target.value); setTyping(true); setOpen(true) }}
+          onFocus={() => { setOpen(true); setTyping(true); setQuery(''); setTimeout(() => inputRef.current?.select(), 0) }}
+          placeholder={placeholder} autoComplete="off" />
+        {value && !typing && (
+          <button type="button" className="ss-clear-query" onMouseDown={e => { e.preventDefault(); onChange(''); setTyping(true); setQuery(''); setOpen(true); inputRef.current?.focus() }}>
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+        <i className={`fas fa-chevron-down ss-arrow ${open ? 'open' : ''}`}></i>
+      </div>
+      {open && (
+        <div className="ss-dropdown">
+          <div className="ss-list">
+            {filtered.length === 0 ? <div className="ss-empty">Sin resultados</div>
+              : filtered.map(o => (
+                <div key={o.value} className={`ss-option ${value === o.value ? 'active' : ''}`}
+                  onMouseDown={e => { e.preventDefault(); select(o.value) }}>
+                  <span className="ss-opt-label">{o.label}</span>
+                  {value === o.value && <i className="fas fa-check ss-opt-check"></i>}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── OperariosSelector ─────────────────────────────────────────
+function OperariosSelector({ operarios, selected, onChange }) {
+  const [query, setQuery] = useState('')
+  const admins  = operarios.filter(o => o.rol === 'admin' || o.rol === 'gestor')
+  const workers = operarios.filter(o => o.rol === 'trabajador')
+  const filtered = query.trim()
+    ? operarios.filter(o => (o.nombre || o.email || '').toLowerCase().includes(query.toLowerCase()))
+    : operarios
+  function toggle(id) { onChange(selected.includes(id) ? selected.filter(s => s !== id) : [...selected, id]) }
+  return (
+    <div>
+      <div className="cal-op-quick-filters">
+        <button type="button" className="cal-op-qf qf-all"     onClick={() => onChange(operarios.map(o => o.id))}><i className="fas fa-users"></i> Todos</button>
+        <button type="button" className="cal-op-qf qf-admins"  onClick={() => onChange(admins.map(o => o.id))}><i className="fas fa-shield-alt"></i> Admins</button>
+        <button type="button" className="cal-op-qf qf-workers" onClick={() => onChange(workers.map(o => o.id))}><i className="fas fa-hard-hat"></i> Trabajadores</button>
+        {selected.length > 0 && <button type="button" className="cal-op-qf qf-clear" onClick={() => onChange([])}><i className="fas fa-times"></i> Limpiar</button>}
+      </div>
+      <div className="cal-op-search-bar">
+        <i className="fas fa-search cal-op-search-icon"></i>
+        <input type="text" placeholder="Buscar operario..." value={query}
+          onChange={e => setQuery(e.target.value)} className="cal-op-search-input" />
+        {query && <button type="button" onClick={() => setQuery('')} className="cal-op-search-clear"><i className="fas fa-times"></i></button>}
+      </div>
+      <div className="cal-op-list">
+        {filtered.length === 0 && <p className="cal-op-empty">Sin resultados.</p>}
+        {filtered.map(op => {
+          const isSel = selected.includes(op.id)
+          return (
+            <div key={op.id} className={`cal-op-item ${isSel ? 'selected' : ''}`} onClick={() => toggle(op.id)}>
+              <div className="cal-op-avatar" style={{ background: getAvatarColor(op.id) }}>{getInitials(op.nombre)}</div>
+              <div className="cal-op-info">
+                <span className="cal-op-nombre">{op.nombre || op.email}</span>
+                {op.rol === 'admin'
+                  ? <span className="cal-op-badge admin"><i className="fas fa-shield-alt"></i> Admin</span>
+                  : op.rol === 'gestor'
+                  ? <span className="cal-op-badge gestor"><i className="fas fa-user-tie"></i> Gestor</span>
+                  : <span className="cal-op-badge worker"><i className="fas fa-hard-hat"></i> Trabajador</span>}
+              </div>
+              <span className="cal-op-check"><i className="fas fa-check"></i></span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="cal-op-count">
+        {selected.length > 0
+          ? `${selected.length} operario${selected.length > 1 ? 's' : ''} seleccionado${selected.length > 1 ? 's' : ''}`
+          : <span style={{ color: '#aaa' }}>Ningún operario seleccionado</span>}
+      </div>
+    </div>
+  )
 }
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -62,7 +165,12 @@ export default function Calendario() {
   const { user, logout, isAdmin, isGestor } = useAuth()
   const [eventos, setEventos] = useState([])
   const [operarios, setOperarios] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
+  // Datos del modal (tickets/dispositivos de la empresa seleccionada)
+  const [modalTickets, setModalTickets] = useState([])
+  const [modalDispositivos, setModalDispositivos] = useState([])
+  const [loadingModalData, setLoadingModalData] = useState(false)
 
   // Vista: 'mes' o 'semana' o 'dia'
   const [vista, setVista] = useState('mes')
@@ -79,7 +187,8 @@ export default function Calendario() {
   const [form, setForm] = useState({
     titulo: '', descripcion: '', fecha_inicio_date: '', fecha_inicio_time: '09:00',
     fecha_fin_date: '', fecha_fin_time: '10:00', todo_el_dia: false,
-    color: '#0047b3', tipo: 'evento', asignado_a: '', avisos: [],
+    color: '#0047b3', tipo: 'evento', asignados: [], avisos: [],
+    empresa_id: '', ticket_ids: [], dispositivo_ids: [],
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -92,8 +201,9 @@ export default function Calendario() {
   const cargar = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await getCalendarioEventos()
+      const [data, emps] = await Promise.all([getCalendarioEventos(), getEmpresas()])
       setEventos(data)
+      setEmpresas(emps || [])
       if (canAssign) {
         const ops = await getOperarios()
         setOperarios(ops)
@@ -105,6 +215,32 @@ export default function Calendario() {
   }, [canAssign])
 
   useEffect(() => { cargar() }, [cargar])
+
+  // Cargar tickets y dispositivos cuando cambia la empresa en el formulario
+  useEffect(() => {
+    if (!showModal || !form.empresa_id) {
+      setModalTickets([])
+      setModalDispositivos([])
+      return
+    }
+    let cancelled = false
+    async function loadEmpresaData() {
+      setLoadingModalData(true)
+      try {
+        const [tickets, dispos] = await Promise.all([
+          getTickets({ empresa_id: form.empresa_id }),
+          getDispositivos(form.empresa_id),
+        ])
+        if (!cancelled) {
+          setModalTickets(tickets || [])
+          setModalDispositivos(dispos || [])
+        }
+      } catch {}
+      if (!cancelled) setLoadingModalData(false)
+    }
+    loadEmpresaData()
+    return () => { cancelled = true }
+  }, [form.empresa_id, showModal])
 
   function handleLogout() { logout() }
 
@@ -165,7 +301,7 @@ export default function Calendario() {
       fecha_inicio_date: dateStr, fecha_inicio_time: '09:00',
       fecha_fin_date: dateStr, fecha_fin_time: '10:00',
       todo_el_dia: false, color: '#0047b3', tipo: 'evento',
-      asignado_a: '', avisos: [],
+      asignados: [], avisos: [], empresa_id: '', ticket_ids: [], dispositivo_ids: [],
     })
     setError('')
     setShowModal(true)
@@ -179,7 +315,7 @@ export default function Calendario() {
       fecha_inicio_date: dateStr, fecha_inicio_time: `${hora.toString().padStart(2, '0')}:00`,
       fecha_fin_date: dateStr, fecha_fin_time: `${(hora + 1).toString().padStart(2, '0')}:00`,
       todo_el_dia: false, color: '#0047b3', tipo: 'evento',
-      asignado_a: '', avisos: [],
+      asignados: [], avisos: [], empresa_id: '', ticket_ids: [], dispositivo_ids: [],
     })
     setError('')
     setShowModal(true)
@@ -200,8 +336,11 @@ export default function Calendario() {
       todo_el_dia: ev.todo_el_dia || false,
       color: ev.color || '#0047b3',
       tipo: ev.tipo || 'evento',
-      asignado_a: ev.asignado_a || '',
+      asignados: (ev.asignados || []).map(a => a.id),
       avisos: (ev.calendario_avisos || []).map(a => a.minutos_antes),
+      empresa_id: ev.empresa_id || '',
+      ticket_ids: (ev.tickets_vinculados || []).map(t => t.id),
+      dispositivo_ids: (ev.dispositivos_vinculados || []).map(d => d.id),
     })
     setError('')
     setShowDetalle(null)
@@ -218,10 +357,10 @@ export default function Calendario() {
     try {
       const fecha_inicio = form.todo_el_dia
         ? `${form.fecha_inicio_date}T00:00:00`
-        : `${form.fecha_inicio_date}T${form.fecha_inicio_time}:00`
+        : new Date(`${form.fecha_inicio_date}T${form.fecha_inicio_time}:00`).toISOString()
       const fecha_fin = form.todo_el_dia
         ? `${form.fecha_fin_date || form.fecha_inicio_date}T23:59:59`
-        : `${form.fecha_fin_date || form.fecha_inicio_date}T${form.fecha_fin_time}:00`
+        : new Date(`${form.fecha_fin_date || form.fecha_inicio_date}T${form.fecha_fin_time}:00`).toISOString()
 
       const payload = {
         titulo: form.titulo.trim(),
@@ -231,8 +370,11 @@ export default function Calendario() {
         todo_el_dia: form.todo_el_dia,
         color: form.color,
         tipo: form.tipo,
-        asignado_a: form.asignado_a || null,
+        asignados: form.asignados,
         avisos: form.avisos,
+        empresa_id: form.empresa_id || null,
+        ticket_ids: form.ticket_ids,
+        dispositivo_ids: form.dispositivo_ids,
       }
 
       if (editEvento) {
@@ -646,6 +788,84 @@ export default function Calendario() {
                   placeholder="Detalles del evento..." />
               </div>
 
+              {/* ── Empresa ─────────────────────────── */}
+              <div className="form-group">
+                <label><i className="fas fa-building" style={{ marginRight: 5, color: '#64748b' }}></i>Empresa relacionada</label>
+                <SearchableSelect
+                  value={form.empresa_id}
+                  onChange={val => setForm(f => ({ ...f, empresa_id: val, ticket_ids: [], dispositivo_ids: [] }))}
+                  placeholder="— Sin empresa —"
+                  options={[
+                    { value: '', label: '— Sin empresa —' },
+                    ...empresas.map(e => ({ value: e.id, label: e.nombre })),
+                  ]}
+                />
+              </div>
+
+              {/* ── Tickets de la empresa ───────────── */}
+              {form.empresa_id && (
+                <div className="form-group">
+                  <label><i className="fas fa-headset" style={{ marginRight: 5, color: '#64748b' }}></i>Tickets relacionados</label>
+                  {loadingModalData ? (
+                    <div className="cal-modal-loading"><i className="fas fa-spinner fa-spin"></i> Cargando...</div>
+                  ) : modalTickets.filter(t => t.estado !== 'Completado').length === 0 ? (
+                    <p className="cal-empty-hint">Sin tickets abiertos para esta empresa.</p>
+                  ) : (
+                    <div className="cal-ticket-list">
+                      {modalTickets.filter(t => t.estado !== 'Completado').map(t => {
+                        const sel = form.ticket_ids.includes(t.id)
+                        return (
+                          <div key={t.id} className={`cal-ticket-item${sel ? ' selected' : ''}`}
+                            onClick={() => setForm(f => ({
+                              ...f,
+                              ticket_ids: sel ? f.ticket_ids.filter(id => id !== t.id) : [...f.ticket_ids, t.id],
+                            }))}>
+                            <span className="cal-ticket-num">#{t.numero}</span>
+                            <span className="cal-ticket-asunto">{t.asunto}</span>
+                            <span className={`cal-ticket-estado est-${(t.estado || '').toLowerCase().replace(/\s+/g, '-')}`}>{t.estado}</span>
+                            <span className="cal-tick-check"><i className="fas fa-check"></i></span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Equipos / Servidores de la empresa ── */}
+              {form.empresa_id && (
+                <div className="form-group">
+                  <label><i className="fas fa-desktop" style={{ marginRight: 5, color: '#64748b' }}></i>Equipos / Servidores</label>
+                  {loadingModalData ? (
+                    <div className="cal-modal-loading"><i className="fas fa-spinner fa-spin"></i> Cargando...</div>
+                  ) : modalDispositivos.length === 0 ? (
+                    <p className="cal-empty-hint">Sin equipos registrados para esta empresa.</p>
+                  ) : (
+                    <div className="cal-disp-list">
+                      {modalDispositivos.map(d => {
+                        const sel = form.dispositivo_ids.includes(d.id)
+                        const iconMap = { equipo: 'fa-desktop', servidor: 'fa-server', nas: 'fa-hdd', red: 'fa-network-wired', correo: 'fa-envelope', web: 'fa-globe', otro: 'fa-box' }
+                        const icon = iconMap[d.categoria] || 'fa-box'
+                        return (
+                          <div key={d.id} className={`cal-disp-item${sel ? ' selected' : ''}`}
+                            onClick={() => setForm(f => ({
+                              ...f,
+                              dispositivo_ids: sel ? f.dispositivo_ids.filter(id => id !== d.id) : [...f.dispositivo_ids, d.id],
+                            }))}>
+                            <i className={`fas ${icon} cal-disp-icon`}></i>
+                            <div className="cal-disp-info">
+                              <span className="cal-disp-nombre">{d.nombre}</span>
+                              {d.ip && <span className="cal-disp-ip">{d.ip}</span>}
+                            </div>
+                            <span className="cal-disp-check"><i className="fas fa-check"></i></span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="form-group">
                 <label>Color</label>
                 <div className="cal-color-picker">
@@ -656,15 +876,14 @@ export default function Calendario() {
                 </div>
               </div>
 
-              {canAssign && (
+              {canAssign && operarios.length > 0 && (
                 <div className="form-group">
-                  <label>Asignar a operario</label>
-                  <select value={form.asignado_a} onChange={e => setForm(f => ({ ...f, asignado_a: e.target.value }))}>
-                    <option value="">— Sin asignar (evento propio) —</option>
-                    {operarios.map(o => (
-                      <option key={o.id} value={o.id}>{o.nombre || o.email} ({o.rol})</option>
-                    ))}
-                  </select>
+                  <label>Asignar a operarios</label>
+                  <OperariosSelector
+                    operarios={operarios}
+                    selected={form.asignados}
+                    onChange={ids => setForm(f => ({ ...f, asignados: ids }))}
+                  />
                 </div>
               )}
 
@@ -672,11 +891,12 @@ export default function Calendario() {
                 <label>Avisos / Recordatorios</label>
                 <div className="cal-avisos-list">
                   {AVISO_OPCIONES.map(a => (
-                    <label key={a.value} className="cal-aviso-check">
-                      <input type="checkbox" checked={form.avisos.includes(a.value)}
-                        onChange={() => toggleAviso(a.value)} />
+                    <button key={a.value} type="button"
+                      className={`cal-aviso-chip${form.avisos.includes(a.value) ? ' active' : ''}`}
+                      onClick={() => toggleAviso(a.value)}>
+                      <i className={`fas ${form.avisos.includes(a.value) ? 'fa-bell' : 'fa-bell-slash'}`}></i>
                       {a.label}
-                    </label>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -721,16 +941,34 @@ export default function Calendario() {
                     {!showDetalle.todo_el_dia && ` ${toLocalTimeStr(new Date(showDetalle.fecha_inicio))} – ${toLocalTimeStr(new Date(showDetalle.fecha_fin))}`}
                   </span>
                 </div>
+                {showDetalle.empresa && (
+                  <div className="cal-detalle-row">
+                    <i className="fas fa-building"></i>
+                    <span>{showDetalle.empresa.nombre}</span>
+                  </div>
+                )}
                 {showDetalle.creador?.nombre && (
                   <div className="cal-detalle-row">
                     <i className="fas fa-user"></i>
                     <span>Creado por: {showDetalle.creador.nombre}</span>
                   </div>
                 )}
-                {showDetalle.asignado?.nombre && (
+                {showDetalle.asignados?.length > 0 && (
                   <div className="cal-detalle-row">
-                    <i className="fas fa-user-tag"></i>
-                    <span>Asignado a: {showDetalle.asignado.nombre}</span>
+                    <i className="fas fa-users"></i>
+                    <span>
+                      Asignado a:{' '}
+                      <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {showDetalle.asignados.map(a => (
+                          <span key={a.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 22, height: 22, borderRadius: '50%', background: getAvatarColor(a.id), color: '#fff', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {getInitials(a.nombre)}
+                            </span>
+                            {a.nombre}
+                          </span>
+                        ))}
+                      </span>
+                    </span>
                   </div>
                 )}
                 {showDetalle.calendario_avisos?.length > 0 && (
@@ -743,6 +981,39 @@ export default function Calendario() {
                   </div>
                 )}
               </div>
+
+              {showDetalle.tickets_vinculados?.length > 0 && (
+                <div className="cal-detalle-vinculados">
+                  <div className="cal-vinc-title"><i className="fas fa-headset"></i> Tickets</div>
+                  {showDetalle.tickets_vinculados.map(t => {
+                    const iconMap = { 'Pendiente': 'fa-clock', 'En curso': 'fa-spinner', 'Completado': 'fa-check-circle' }
+                    return (
+                      <div key={t.id} className="cal-vinc-item">
+                        <span className="cal-ticket-num">#{t.numero}</span>
+                        <span className="cal-vinc-label">{t.asunto}</span>
+                        <span className={`cal-ticket-estado est-${(t.estado || '').toLowerCase().replace(/\s+/g, '-')}`}>{t.estado}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {showDetalle.dispositivos_vinculados?.length > 0 && (
+                <div className="cal-detalle-vinculados">
+                  <div className="cal-vinc-title"><i className="fas fa-desktop"></i> Equipos</div>
+                  {showDetalle.dispositivos_vinculados.map(d => {
+                    const iconMap = { equipo: 'fa-desktop', servidor: 'fa-server', nas: 'fa-hdd', red: 'fa-network-wired', correo: 'fa-envelope', web: 'fa-globe', otro: 'fa-box' }
+                    const icon = iconMap[d.categoria] || 'fa-box'
+                    return (
+                      <div key={d.id} className="cal-vinc-item">
+                        <i className={`fas ${icon}`} style={{ color: '#64748b', width: 14 }}></i>
+                        <span className="cal-vinc-label">{d.nombre}</span>
+                        {d.ip && <span className="cal-disp-ip">{d.ip}</span>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
               {showDetalle.descripcion && (
                 <div className="cal-detalle-desc">

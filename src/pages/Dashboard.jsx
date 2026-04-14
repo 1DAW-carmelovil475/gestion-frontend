@@ -382,7 +382,7 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
               </div>
             )}
             {cat === 'equipo' && (<>
-              <div className="form-group"><label>Número de Serie *</label><input type="text" name="numero_serie" defaultValue={editingITItem?.numero_serie} placeholder="Ej: SN-2024-ABC123" required /></div>
+              <div className="form-group"><label>Número de Serie</label><input type="text" name="numero_serie" defaultValue={editingITItem?.numero_serie} placeholder="Ej: SN-2024-ABC123" /></div>
               <div className="form-row">
                 <div className="form-group"><label>IP</label><input type="text" name="ip" defaultValue={editingITItem?.ip} placeholder="192.168.1.10" /></div>
                 <div className="form-group"><label>AnyDesk ID</label><input type="text" name="anydesk_id" defaultValue={editingITItem?.anydesk_id} placeholder="123456789" /></div>
@@ -500,6 +500,7 @@ export default function Dashboard() {
   const [currentITCategory, setCurrentITCategory] = useState('equipo')
   const [itItems, setItItems]   = useState([])
   const [itSearch, setItSearch] = useState('')
+  const [dispositivosCounts, setDispositivosCounts] = useState({})
 
   const [showCompanyModal, setShowCompanyModal] = useState(false)
   const [showITModal, setShowITModal]           = useState(false)
@@ -519,9 +520,14 @@ export default function Dashboard() {
   async function loadData() {
     setLoading(true)
     try {
-      const [empresasData, ticketsData] = await Promise.all([getEmpresas(), getTickets()])
+      const [empresasData, ticketsData, todosDispositivos] = await Promise.all([getEmpresas(), getTickets(), getDispositivos()])
       setEmpresas(empresasData || [])
       setTickets(ticketsData || [])
+      const counts = {}
+      ;(todosDispositivos || []).forEach(d => {
+        if (d.empresa_id) counts[d.empresa_id] = (counts[d.empresa_id] || 0) + 1
+      })
+      setDispositivosCounts(counts)
       // Si venimos desde Tickets con una empresa concreta, abrirla directamente
       if (location.state?.empresa_id) {
         viewCompany(location.state.empresa_id)
@@ -695,6 +701,17 @@ export default function Dashboard() {
     }
   }
 
+  async function refreshDispositivosCounts() {
+    try {
+      const todos = await getDispositivos()
+      const counts = {}
+      ;(todos || []).forEach(d => {
+        if (d.empresa_id) counts[d.empresa_id] = (counts[d.empresa_id] || 0) + 1
+      })
+      setDispositivosCounts(counts)
+    } catch { /* silencioso */ }
+  }
+
   async function handleITTabChange(tabLabel) {
     const categoria = TAB_TO_CAT[tabLabel]
     setCurrentITCategory(categoria)
@@ -751,12 +768,11 @@ export default function Dashboard() {
       }
     }
     if (!['correo', 'web'].includes(selectedITCategory) && !payload.nombre) { showToast('error', 'Error', 'El nombre es obligatorio'); return }
-    if (selectedITCategory === 'equipo' && !payload.numero_serie) { showToast('error', 'Error', 'El número de serie es obligatorio'); return }
     try {
       if (editingITItem) { await updateDispositivo(editingITItem.id, payload); showToast('success', 'Actualizado', 'Dispositivo actualizado correctamente') }
       else { await createDispositivo(payload); showToast('success', 'Guardado', 'Dispositivo añadido correctamente') }
       setShowITModal(false)
-      await loadITItems(currentCompanyId, selectedITCategory)
+      await Promise.all([loadITItems(currentCompanyId, selectedITCategory), refreshDispositivosCounts()])
     } catch (error) {
       showToast('error', 'Error', error.message)
     }
@@ -767,7 +783,7 @@ export default function Dashboard() {
     try {
       await deleteDispositivo(id)
       showToast('success', 'Eliminado', 'Dispositivo eliminado')
-      await loadITItems(currentCompanyId, currentITCategory)
+      await Promise.all([loadITItems(currentCompanyId, currentITCategory), refreshDispositivosCounts()])
     } catch (error) {
       showToast('error', 'Error', error.message)
     }
@@ -1225,11 +1241,11 @@ export default function Dashboard() {
         <div className="table-container desktop-only">
           <table>
             <thead>
-              <tr><th>Empresa</th><th>CIF</th><th>Email</th><th>Teléfono</th><th>Servicios</th><th>Estado</th><th>Acciones</th></tr>
+              <tr><th>Empresa</th><th>CIF</th><th>Email</th><th>Teléfono</th><th>Servicios</th><th>Estado</th><th style={{ textAlign: 'center' }}>Dispositivos</th><th>Acciones</th></tr>
             </thead>
             <tbody>
               {paginatedCompanies.length === 0 ? (
-                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--gray)' }}>
+                <tr><td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--gray)' }}>
                   <i className="fas fa-search" style={{ fontSize: '2rem', opacity: 0.3, display: 'block', marginBottom: '10px' }}></i>
                   No se encontraron empresas
                 </td></tr>
@@ -1255,6 +1271,12 @@ export default function Dashboard() {
                       <td>{c.telefono || '—'}</td>
                       <td><div className="services-tags">{(c.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
                       <td><span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span></td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
+                          <i className="fas fa-server" style={{ marginRight: 4, fontSize: '0.72rem' }}></i>
+                          {dispositivosCounts[c.id] || 0}
+                        </span>
+                      </td>
                       <td>
                         <button className="btn-action btn-view"   onClick={() => viewCompany(c.id)}         title="Ver IT"><i className="fas fa-server"></i></button>
                         <button className="btn-action btn-edit"   onClick={() => openCompanyModal(c)}       title="Editar"><i className="fas fa-edit"></i></button>
@@ -1274,6 +1296,12 @@ export default function Dashboard() {
                         <td>{f.telefono || '—'}</td>
                         <td><div className="services-tags">{(f.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
                         <td><span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span></td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
+                            <i className="fas fa-server" style={{ marginRight: 4, fontSize: '0.72rem' }}></i>
+                            {dispositivosCounts[f.id] || 0}
+                          </span>
+                        </td>
                         <td>
                           <button className="btn-action btn-view"   onClick={() => viewCompany(f.id)}         title="Ver IT"><i className="fas fa-server"></i></button>
                           <button className="btn-action btn-edit"   onClick={() => openCompanyModal(f)}       title="Editar"><i className="fas fa-edit"></i></button>
@@ -1321,6 +1349,10 @@ export default function Dashboard() {
                     <div className="company-card-info">
                       {c.email    && <div className="company-card-info-item"><i className="fas fa-envelope"></i> {c.email}</div>}
                       {c.telefono && <div className="company-card-info-item"><i className="fas fa-phone"></i> {c.telefono}</div>}
+                      <div className="company-card-info-item">
+                        <i className="fas fa-server"></i>
+                        <span style={{ fontWeight: 600 }}>{dispositivosCounts[c.id] || 0}</span> dispositivo{(dispositivosCounts[c.id] || 0) !== 1 ? 's' : ''}
+                      </div>
                     </div>
                     {(c.servicios || []).length > 0 && (
                       <div className="services-tags" style={{ marginBottom: '12px' }}>
@@ -1352,6 +1384,10 @@ export default function Dashboard() {
                       <div className="company-card-info">
                         {f.email    && <div className="company-card-info-item"><i className="fas fa-envelope"></i> {f.email}</div>}
                         {f.telefono && <div className="company-card-info-item"><i className="fas fa-phone"></i> {f.telefono}</div>}
+                        <div className="company-card-info-item">
+                          <i className="fas fa-server"></i>
+                          <span style={{ fontWeight: 600 }}>{dispositivosCounts[f.id] || 0}</span> dispositivo{(dispositivosCounts[f.id] || 0) !== 1 ? 's' : ''}
+                        </div>
                       </div>
                       <div className="company-card-actions">
                         <button className="btn-action btn-view"   onClick={() => viewCompany(f.id)}><i className="fas fa-server"></i> Ver IT</button>

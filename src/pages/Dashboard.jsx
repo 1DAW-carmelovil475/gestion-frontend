@@ -709,7 +709,7 @@ export default function Dashboard() {
         if (d.empresa_id) counts[d.empresa_id] = (counts[d.empresa_id] || 0) + 1
       })
       setDispositivosCounts(counts)
-    } catch { /* silencioso */ }
+    } catch (_) { /* silencioso */ }
   }
 
   async function handleITTabChange(tabLabel) {

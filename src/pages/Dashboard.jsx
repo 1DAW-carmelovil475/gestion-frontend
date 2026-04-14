@@ -694,8 +694,15 @@ export default function Dashboard() {
 
   async function loadITItems(empresaId, categoria) {
     try {
-      const items = await getDispositivos(empresaId, categoria)
-      setItItems(items || [])
+      const filiales = getFiliales(empresaId)
+      if (filiales.length > 0) {
+        const allIds = [empresaId, ...filiales.map(f => f.id)]
+        const results = await Promise.all(allIds.map(id => getDispositivos(id, categoria)))
+        setItItems(results.flat())
+      } else {
+        const items = await getDispositivos(empresaId, categoria)
+        setItItems(items || [])
+      }
     } catch (error) {
       showToast('error', 'Error', error.message)
     }
@@ -1274,7 +1281,7 @@ export default function Dashboard() {
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
                           <i className="fas fa-server" style={{ marginRight: 4, fontSize: '0.72rem' }}></i>
-                          {dispositivosCounts[c.id] || 0}
+                          {(dispositivosCounts[c.id] || 0) + filiales.reduce((sum, f) => sum + (dispositivosCounts[f.id] || 0), 0)}
                         </span>
                       </td>
                       <td>
@@ -1351,7 +1358,7 @@ export default function Dashboard() {
                       {c.telefono && <div className="company-card-info-item"><i className="fas fa-phone"></i> {c.telefono}</div>}
                       <div className="company-card-info-item">
                         <i className="fas fa-server"></i>
-                        <span style={{ fontWeight: 600 }}>{dispositivosCounts[c.id] || 0}</span> dispositivo{(dispositivosCounts[c.id] || 0) !== 1 ? 's' : ''}
+                        {(() => { const n = (dispositivosCounts[c.id] || 0) + filiales.reduce((sum, f) => sum + (dispositivosCounts[f.id] || 0), 0); return <><span style={{ fontWeight: 600 }}>{n}</span> dispositivo{n !== 1 ? 's' : ''}</>; })()}
                       </div>
                     </div>
                     {(c.servicios || []).length > 0 && (

@@ -19,27 +19,30 @@ import './Tickets.css'
 const AVATAR_COLORS = ['#0066ff', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#be185d', '#065f46']
 
 const DEVICE_TIPO_SUGERENCIAS = {
-  equipo:   ['PC', 'Portátil', 'Cámara de Seguridad', 'Impresora', 'Tablet', 'All-in-One'],
-  servidor: ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
-  nas:      ['NAS Synology', 'NAS QNAP'],
-  red:      ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
-  web:      ['Web corporativa', 'Tienda online', 'Portal', 'Aplicación web'],
+  equipo:    ['PC', 'Portátil', 'Cámara de Seguridad', 'Tablet', 'All-in-One'],
+  servidor:  ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
+  nas:       ['NAS Synology', 'NAS QNAP'],
+  red:       ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
+  web:       ['Web corporativa', 'Tienda online', 'Portal', 'Aplicación web'],
+  impresora: ['Láser', 'Inkjet', 'Multifunción', 'Térmica', 'Ploter'],
 }
 
 const DEVICE_CAT_LABELS = {
-  equipo:   'Equipos',
-  servidor: 'Servidores',
-  nas:      'NAS',
-  red:      'Redes',
-  web:      'Web',
+  equipo:    'Equipos',
+  servidor:  'Servidores',
+  nas:       'NAS',
+  red:       'Redes',
+  web:       'Web',
+  impresora: 'Impresoras',
 }
 
 const DEVICE_ICONOS = {
-  equipo:   'fa-desktop',
-  servidor: 'fa-server',
-  nas:      'fa-hdd',
-  red:      'fa-network-wired',
-  web:      'fa-globe',
+  equipo:    'fa-desktop',
+  servidor:  'fa-server',
+  nas:       'fa-hdd',
+  red:       'fa-network-wired',
+  web:       'fa-globe',
+  impresora: 'fa-print',
 }
 
 function getAvatarColor(str) {
@@ -480,7 +483,7 @@ function TicketModal({
             </div>
           )}
           {cat === 'equipo' && (<>
-            <div className="form-group"><label>Número de Serie *</label><input type="text" name="numero_serie" placeholder="Ej: SN-2024-ABC123" required /></div>
+            <div className="form-group"><label>Número de Serie</label><input type="text" name="numero_serie" placeholder="Ej: SN-2024-ABC123" /></div>
             <div className="form-row">
               <div className="form-group"><label>IP</label><input type="text" name="ip" placeholder="192.168.1.10" /></div>
               <div className="form-group"><label>AnyDesk ID</label><input type="text" name="anydesk_id" placeholder="123456789" /></div>
@@ -518,6 +521,12 @@ function TicketModal({
             <div className="form-row">
               <div className="form-group"><label>Usuario</label><input type="text" name="usuario" placeholder="admin" /></div>
               <div className="form-group"><label>Contraseña</label><input type="text" name="password" placeholder="••••••••" /></div>
+            </div>
+          </>)}
+          {cat === 'impresora' && (<>
+            <div className="form-row">
+              <div className="form-group"><label>Modelo</label><input type="text" name="modelo" placeholder="HP LaserJet Pro M404n" /></div>
+              <div className="form-group"><label>IP</label><input type="text" name="ip" placeholder="192.168.1.30" /></div>
             </div>
           </>)}
 
@@ -1560,7 +1569,6 @@ export default function Tickets() {
               <div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div>
               <span>{user?.nombre || user?.email}</span>
             </div>
-            <Link to="/documentacion" className="btn-help" title="Documentación técnica"><i className="fas fa-question-circle"></i></Link>
             <ThemeToggle />
             <button className="btn-logout" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i><span>Salir</span>

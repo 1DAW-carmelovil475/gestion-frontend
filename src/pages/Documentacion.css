@@ -42,6 +42,38 @@
   border-color: var(--primary);
 }
 
+.doc-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.18s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.doc-download-btn:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+[data-theme="dark"] .doc-download-btn {
+  background: #1e293b;
+  border-color: #2d3f5c;
+  color: #f87171;
+}
+[data-theme="dark"] .doc-download-btn:hover {
+  background: rgba(248,113,113,0.15);
+  border-color: #f87171;
+}
+
 .doc-search-wrapper {
   display: flex;
   align-items: center;

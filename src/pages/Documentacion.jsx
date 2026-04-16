@@ -257,6 +257,22 @@ export default function Documentacion() {
           <i className="fas fa-list-ul"></i>
         </button>
 
+        {/* Download PDF */}
+        <button
+          className="doc-download-btn"
+          title="Descargar como PDF"
+          onClick={() => {
+            try {
+              iframeRef.current?.contentWindow?.print()
+            } catch (_) {
+              window.open('/documentacion.html', '_blank')
+            }
+          }}
+        >
+          <i className="fas fa-file-pdf"></i>
+          <span>PDF</span>
+        </button>
+
         {/* Search input group */}
         <div className="doc-search-wrapper">
           <i className="fas fa-search doc-search-icon"></i>

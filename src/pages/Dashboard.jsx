@@ -28,10 +28,11 @@ function getInitials(nombre) {
 }
 
 const TIPO_SUGERENCIAS = {
-  equipo:   ['PC', 'Portátil', 'Cámara de Seguridad', 'Impresora', 'Tablet', 'All-in-One'],
-  servidor: ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
-  nas:      ['NAS Synology', 'NAS QNAP'],
-  red:      ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
+  equipo:    ['PC', 'Portátil', 'Cámara de Seguridad', 'Tablet', 'All-in-One'],
+  servidor:  ['Servidor Físico', 'Servidor Virtual', 'Servidor de Archivos'],
+  nas:       ['NAS Synology', 'NAS QNAP'],
+  red:       ['Router', 'Switch', 'Access Point', 'Firewall', 'Modem'],
+  impresora: ['Láser', 'Inkjet', 'Multifunción', 'Térmica', 'Ploter'],
 }
 
 const CAMPOS = {
@@ -63,6 +64,10 @@ const CAMPOS = {
     { key: 'password', label: 'Contraseña', password: true },
     { key: 'modelo',   label: 'Modelo' },
   ],
+  impresora: [
+    { key: 'modelo', label: 'Modelo' },
+    { key: 'ip',     label: 'IP', copyable: true },
+  ],
   correo: [
     { key: 'correo_cliente',   label: 'Correo' },
     { key: 'password_cliente', label: 'Contraseña', password: true },
@@ -76,13 +81,14 @@ const CAMPOS = {
 }
 
 const ICONOS = {
-  equipo:   'fa-desktop',
-  servidor: 'fa-server',
-  nas:      'fa-hdd',
-  red:      'fa-network-wired',
-  correo:   'fa-envelope',
-  otro:     'fa-cube',
-  web:      'fa-globe',
+  equipo:    'fa-desktop',
+  servidor:  'fa-server',
+  nas:       'fa-hdd',
+  red:       'fa-network-wired',
+  impresora: 'fa-print',
+  correo:    'fa-envelope',
+  otro:      'fa-cube',
+  web:       'fa-globe',
 }
 
 const TAB_TO_CAT = {
@@ -90,29 +96,32 @@ const TAB_TO_CAT = {
   servidores: 'servidor',
   nas:        'nas',
   redes:      'red',
+  impresoras: 'impresora',
   web:        'web',
   correos:    'correo',
   otros:      'otro',
 }
 
 const CAT_LABELS = {
-  equipo:   'Equipos',
-  servidor: 'Servidores',
-  nas:      'NAS',
-  red:      'Redes',
-  correo:   'Correos',
-  otro:     'Otros',
-  web:      'Web',
+  equipo:    'Equipos',
+  servidor:  'Servidores',
+  nas:       'NAS',
+  red:       'Redes',
+  impresora: 'Impresoras',
+  correo:    'Correos',
+  otro:      'Otros',
+  web:       'Web',
 }
 
 const CAT_LABELS_SING = {
-  equipo:   'Equipo',
-  servidor: 'Servidor',
-  nas:      'NAS',
-  red:      'Red',
-  correo:   'Correo',
-  otro:     'Otro',
-  web:      'Web',
+  equipo:    'Equipo',
+  servidor:  'Servidor',
+  nas:       'NAS',
+  red:       'Red',
+  impresora: 'Impresora',
+  correo:    'Correo',
+  otro:      'Otro',
+  web:       'Web',
 }
 
 const SERVICIO_COLORS = {
@@ -420,6 +429,12 @@ function ITModal({ editingITItem, selectedITCategory, extraFields, setExtraField
               <div className="form-row">
                 <div className="form-group"><label>Usuario</label><input type="text" name="usuario" defaultValue={editingITItem?.usuario} placeholder="admin" /></div>
                 <div className="form-group"><label>Contraseña</label><input type="text" name="password" defaultValue={editingITItem?.password} placeholder="••••••••" /></div>
+              </div>
+            </>)}
+            {cat === 'impresora' && (<>
+              <div className="form-row">
+                <div className="form-group"><label>Modelo</label><input type="text" name="modelo" defaultValue={editingITItem?.modelo} placeholder="HP LaserJet Pro M404n" /></div>
+                <div className="form-group"><label>IP</label><input type="text" name="ip" defaultValue={editingITItem?.ip} placeholder="192.168.1.30" /></div>
               </div>
             </>)}
             {cat === 'correo' && (<>
@@ -862,7 +877,6 @@ export default function Dashboard() {
       </nav>
       <div className="user-area">
 <div className="user-info"><div className="user-avatar" style={{ background: getAvatarColor(user?.id) }}>{getInitials(user?.nombre || user?.email)}</div><span>{user?.nombre || user?.email}</span></div>
-        <Link to="/documentacion" className="btn-help" title="Documentación técnica"><i className="fas fa-question-circle"></i></Link>
         <ThemeToggle />
         <button className="btn-logout" onClick={handleLogout}><i className="fas fa-sign-out-alt"></i><span>Salir</span></button>
       </div>

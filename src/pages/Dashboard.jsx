@@ -219,10 +219,9 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
             <div className="form-row">
               <div className="form-group"><label><i className="fas fa-map-marker-alt"></i> Dirección</label><input type="text" name="direccion" defaultValue={editingCompany?.direccion} placeholder="Ej: Calle Mayor 1, Madrid" /></div>
               <div className="form-group">
-                <label><i className="fas fa-toggle-on"></i> Estado</label>
+                <label><i className="fas fa-toggle-on"></i> Mantenimiento</label>
                 <select name="estado" defaultValue={editingCompany?.estado || 'Activo'}>
                   <option value="Activo">Activo</option>
-                  <option value="En revisión">En revisión</option>
                   <option value="Suspendido">Suspendido</option>
                 </select>
               </div>
@@ -1247,9 +1246,8 @@ export default function Dashboard() {
           </div>
           <div className="filter-row">
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1) }}>
-              <option value="all">Estado</option>
+              <option value="all">Mantenimiento</option>
               <option value="Activo">Activo</option>
-              <option value="En revisión">En revisión</option>
               <option value="Suspendido">Suspendido</option>
             </select>
             <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value); setCurrentPage(1) }}>
@@ -1262,7 +1260,7 @@ export default function Dashboard() {
         <div className="table-container desktop-only">
           <table>
             <thead>
-              <tr><th>Empresa</th><th>CIF</th><th>Email</th><th>Teléfono</th><th>Servicios</th><th>Estado</th><th style={{ textAlign: 'center' }}>Dispositivos</th><th>Acciones</th></tr>
+              <tr><th>Empresa</th><th>CIF</th><th>Email</th><th>Teléfono</th><th>Servicios</th><th style={{ textAlign: 'center' }}>Mantenimiento</th><th style={{ textAlign: 'center' }}>Dispositivos</th><th>Acciones</th></tr>
             </thead>
             <tbody>
               {paginatedCompanies.length === 0 ? (
@@ -1291,7 +1289,7 @@ export default function Dashboard() {
                       <td>{c.email || '—'}</td>
                       <td>{c.telefono || '—'}</td>
                       <td><div className="services-tags">{(c.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
-                      <td><span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span></td>
+                      <td style={{ textAlign: 'center' }}><span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span></td>
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
                           <i className="fas fa-server" style={{ marginRight: 4, fontSize: '0.72rem' }}></i>
@@ -1316,7 +1314,7 @@ export default function Dashboard() {
                         <td>{f.email || '—'}</td>
                         <td>{f.telefono || '—'}</td>
                         <td><div className="services-tags">{(f.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
-                        <td><span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span></td>
+                        <td style={{ textAlign: 'center' }}><span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span></td>
                         <td style={{ textAlign: 'center' }}>
                           <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
                             <i className="fas fa-server" style={{ marginRight: 4, fontSize: '0.72rem' }}></i>

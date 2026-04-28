@@ -752,6 +752,7 @@ select option {
 
 .form-group select {
   padding: 9px 34px 9px 12px;
+  text-align: center;
 }
 
 .form-group input:focus,

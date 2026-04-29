@@ -862,15 +862,13 @@ export default function Chat() {
     setShowMentionPicker(true)
   }
 
-  // Enter para enviar, Shift+Enter para nueva línea
   function handleKeyDownEditor(e) {
     if (e.key === 'Escape' && showMentionPicker) {
       e.preventDefault(); setShowMentionPicker(false); mentionQueryRef.current = null; return
     }
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje() }
   }
   function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); guardarEdicionMsg() }
+    // Enter inserts line break; send via button only
   }
 
   async function descargarArchivo(archivoId, nombre) {
@@ -1473,7 +1471,7 @@ export default function Chat() {
                         className="chat-editor-content"
                         contentEditable
                         suppressContentEditableWarning
-                        data-placeholder="Escribe un mensaje… (@ para mencionar, Enter para enviar)"
+                        data-placeholder="Escribe un mensaje… (@ para mencionar)"
                         onInput={handleEditorInput}
                         onKeyDown={handleKeyDownEditor}
                         onPaste={handlePaste}

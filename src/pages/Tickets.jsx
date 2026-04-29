@@ -2094,20 +2094,9 @@ export default function Tickets() {
                             className="editor-content"
                             contentEditable
                             suppressContentEditableWarning
-                            data-placeholder="Escribe un comentario... (Enter para enviar, Shift+Enter para nueva línea)"
+                            data-placeholder="Escribe un comentario..."
                             ref={editorRef}
                             onInput={e => setComentarioText(e.currentTarget.innerHTML)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                if (e.shiftKey) {
-                                  e.preventDefault()
-                                  document.execCommand('insertLineBreak')
-                                } else {
-                                  e.preventDefault()
-                                  enviarComentario()
-                                }
-                              }
-                            }}
                           />
                         </div>
                         <div className="comentario-nuevo-acciones">

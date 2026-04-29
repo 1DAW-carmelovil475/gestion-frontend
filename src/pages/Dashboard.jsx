@@ -196,7 +196,6 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
           <div className="form-tabs">
             {[
               { key: 'datos', icon: 'fa-info-circle', label: 'Datos' },
-              { key: 'servicios', icon: 'fa-cogs', label: 'Servicios' },
               { key: 'contactos', icon: 'fa-users', label: 'Contactos' },
             ].map(({ key, icon, label }) => (
               <button key={key} type="button"
@@ -225,6 +224,11 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
                   <option value="Suspendido">Suspendido</option>
                 </select>
               </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label><i className="fas fa-city"></i> Población</label><input type="text" name="poblacion" defaultValue={editingCompany?.poblacion} placeholder="Ej: Sevilla" /></div>
+              <div className="form-group"><label><i className="fas fa-map"></i> Provincia</label><input type="text" name="provincia" defaultValue={editingCompany?.provincia} placeholder="Ej: Sevilla" /></div>
+              <div className="form-group"><label><i className="fas fa-mail-bulk"></i> CP</label><input type="text" name="cp" defaultValue={editingCompany?.cp} placeholder="Ej: 41001" /></div>
             </div>
             <div className="form-group"><label><i className="fas fa-sticky-note"></i> Notas</label><textarea name="notas" defaultValue={editingCompany?.notas} placeholder="Observaciones internas sobre la empresa..."></textarea></div>
 
@@ -304,18 +308,6 @@ function CompanyModal({ editingCompany, contactos, setContactos, onSave, onClose
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className={`form-tab-content ${activeTab === 'servicios' ? 'active' : ''}`}>
-            <div className="services-grid">
-              {SERVICIOS.map(s => (
-                <label className="service-checkbox" key={s}>
-                  <input type="checkbox" name="services" value={s} defaultChecked={editingCompany?.servicios?.includes(s)} />
-                  <span className="checkmark"><i className="fas fa-check"></i></span>
-                  <span>{s}</span>
-                </label>
-              ))}
             </div>
           </div>
 
@@ -527,7 +519,7 @@ export default function Dashboard() {
   const [visiblePwds, setVisiblePwds] = useState({})
   const [copiedField, setCopiedField] = useState(null)
   const excelInputRef = useRef(null)
-  const itemsPerPage = 10
+  const itemsPerPage = 20
 
   useEffect(() => { loadData() }, [])
 
@@ -598,7 +590,8 @@ export default function Dashboard() {
     const data = empresas.map(c => ({
       Nombre: c.nombre || '', CIF: c.cif || '', Email: c.email || '',
       Teléfono: c.telefono || '', Dirección: c.direccion || '',
-      Estado: c.estado || '', Servicios: Array.isArray(c.servicios) ? c.servicios.join(', ') : '',
+      Estado: c.estado || '', Población: c.poblacion || '',
+      Provincia: c.provincia || '', CP: c.cp || '',
     }))
     const worksheet = XLSX.utils.json_to_sheet(data)
     const workbook  = XLSX.utils.book_new()
@@ -624,7 +617,8 @@ export default function Dashboard() {
             nombre: row['Nombre'] || '', cif: row['CIF'] || '',
             email: row['Email'] || null, telefono: row['Teléfono'] || null,
             direccion: row['Dirección'] || null, estado: row['Estado'] || 'Activo',
-            servicios: row['Servicios'] ? row['Servicios'].split(',').map(s => s.trim()) : [],
+            poblacion: row['Población'] || null, provincia: row['Provincia'] || null,
+            cp: row['CP'] || null,
           }
           if (!payload.nombre || !payload.cif) continue
           await createEmpresa(payload)
@@ -663,6 +657,9 @@ export default function Dashboard() {
       email:             formData.get('email')            || null,
       telefono:          formData.get('telefono')         || null,
       direccion:         formData.get('direccion')        || null,
+      poblacion:         formData.get('poblacion')        || null,
+      provincia:         formData.get('provincia')        || null,
+      cp:                formData.get('cp')               || null,
       estado:            formData.get('estado'),
       notas:             formData.get('notas')            || null,
       empresa_matriz_id: formData.get('empresa_matriz_id') || null,
@@ -913,10 +910,13 @@ export default function Dashboard() {
                 <h1>{company?.nombre}</h1>
               </div>
               <div className="emp-header-meta">
-                {company?.cif      && <span><i className="fas fa-id-card"></i> {company.cif}</span>}
-                {company?.email    && <a href={`mailto:${company.email}`}><i className="fas fa-envelope"></i> {company.email}</a>}
-                {company?.telefono && <a href={`tel:${company.telefono}`}><i className="fas fa-phone"></i> {company.telefono}</a>}
+                {company?.cif       && <span><i className="fas fa-id-card"></i> {company.cif}</span>}
+                {company?.email     && <a href={`mailto:${company.email}`}><i className="fas fa-envelope"></i> {company.email}</a>}
+                {company?.telefono  && <a href={`tel:${company.telefono}`}><i className="fas fa-phone"></i> {company.telefono}</a>}
                 {company?.direccion && <span><i className="fas fa-map-marker-alt"></i> {company.direccion}</span>}
+                {company?.poblacion && <span><i className="fas fa-city"></i> {company.poblacion}</span>}
+                {company?.provincia && <span><i className="fas fa-map"></i> {company.provincia}</span>}
+                {company?.cp        && <span><i className="fas fa-mail-bulk"></i> {company.cp}</span>}
               </div>
               {company?.servicios?.length > 0 && (
                 <div className="emp-header-services">
@@ -1250,21 +1250,17 @@ export default function Dashboard() {
               <option value="Activo">Activo</option>
               <option value="Suspendido">Suspendido</option>
             </select>
-            <select value={serviceFilter} onChange={e => { setServiceFilter(e.target.value); setCurrentPage(1) }}>
-              <option value="all">Servicio</option>
-              {SERVICIOS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
           </div>
         </div>
 
         <div className="table-container desktop-only">
           <table>
             <thead>
-              <tr><th>Empresa</th><th>CIF</th><th>Email</th><th>Teléfono</th><th>Servicios</th><th style={{ textAlign: 'center' }}>Mantenimiento</th><th style={{ textAlign: 'center' }}>Dispositivos</th><th>Acciones</th></tr>
+              <tr><th>Empresa</th><th>CIF</th><th>Email</th><th>Teléfono</th><th style={{ textAlign: 'center' }}>Mantenimiento</th><th style={{ textAlign: 'center' }}>Dispositivos</th><th>Acciones</th></tr>
             </thead>
             <tbody>
               {paginatedCompanies.length === 0 ? (
-                <tr><td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--gray)' }}>
+                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--gray)' }}>
                   <i className="fas fa-search" style={{ fontSize: '2rem', opacity: 0.3, display: 'block', marginBottom: '10px' }}></i>
                   No se encontraron empresas
                 </td></tr>
@@ -1288,7 +1284,6 @@ export default function Dashboard() {
                       <td>{c.cif || '—'}</td>
                       <td>{c.email || '—'}</td>
                       <td>{c.telefono || '—'}</td>
-                      <td><div className="services-tags">{(c.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
                       <td style={{ textAlign: 'center' }}><span className={`status ${(c.estado || '').replace(/ /g, '-')}`}>{c.estado || '—'}</span></td>
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
@@ -1313,7 +1308,6 @@ export default function Dashboard() {
                         <td>{f.cif || '—'}</td>
                         <td>{f.email || '—'}</td>
                         <td>{f.telefono || '—'}</td>
-                        <td><div className="services-tags">{(f.servicios || []).map(s => <span className="service-tag" key={s}>{s}</span>)}</div></td>
                         <td style={{ textAlign: 'center' }}><span className={`status ${(f.estado || '').replace(/ /g, '-')}`}>{f.estado || '—'}</span></td>
                         <td style={{ textAlign: 'center' }}>
                           <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
@@ -1373,11 +1367,6 @@ export default function Dashboard() {
                         {(() => { const n = (dispositivosCounts[c.id] || 0) + filiales.reduce((sum, f) => sum + (dispositivosCounts[f.id] || 0), 0); return <><span style={{ fontWeight: 600 }}>{n}</span> dispositivo{n !== 1 ? 's' : ''}</>; })()}
                       </div>
                     </div>
-                    {(c.servicios || []).length > 0 && (
-                      <div className="services-tags" style={{ marginBottom: '12px' }}>
-                        {c.servicios.map(s => <span className="service-tag" key={s}>{s}</span>)}
-                      </div>
-                    )}
                     <div className="company-card-actions">
                       <button className="btn-action btn-view"   onClick={() => viewCompany(c.id)}><i className="fas fa-server"></i> Ver IT</button>
                       <button className="btn-action btn-edit"   onClick={() => openCompanyModal(c)}><i className="fas fa-edit"></i> Editar</button>

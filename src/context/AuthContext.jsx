@@ -100,24 +100,29 @@ export function AuthProvider({ children }) {
   }
 
   async function login(email, password) {
-    const res = await fetch(
-      `${API_URL}/api/auth/login`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      }
-    )
+    let res
+    try {
+      res = await fetch(
+        `${API_URL}/api/auth/login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }
+      )
+    } catch {
+      throw new Error('Error de conexión con el servidor. ¿Está el backend corriendo?')
+    }
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      throw new Error(`Respuesta inesperada del servidor (${res.status}). Comprueba que el backend esté en ${API_URL}`)
+    }
 
     const data = await res.json()
 
     if (!res.ok) {
-      throw new Error(
-        data.error ||
-        'Email o contraseña incorrectos.'
-      )
+      throw new Error(data.error || 'Email o contraseña incorrectos.')
     }
 
     sessionStorage.setItem('hola_token', data.access_token)
